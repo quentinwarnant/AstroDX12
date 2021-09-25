@@ -4,6 +4,7 @@
 
 #pragma once
 #include "Common.h"
+#include "Rendering/IRenderer.h"
 
 // A basic game implementation that creates a D3D12 device and
 // provides a game loop.
@@ -41,4 +42,6 @@ private:
 
     void Update(/*Timer*/);
     void Render();
+
+    std::unique_ptr<IRenderer> m_renderer;
 };

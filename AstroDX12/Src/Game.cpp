@@ -3,6 +3,7 @@
 //
 
 #include "Game.h"
+#include "Rendering/RendererDX12.h"
 
 extern void ExitGame() noexcept;
 
@@ -14,10 +15,13 @@ Game::Game() noexcept(false)
 {
     //m_deviceResources = std::make_unique<DX::DeviceResources>();
     //m_deviceResources->RegisterDeviceNotify(this);
+    m_renderer = std::make_unique<RendererDX12>();
 }
 
 Game::~Game()
 {
+    m_renderer->Shutdown();
+    m_renderer.reset();
     //if (m_deviceResources)
     //{
     //    m_deviceResources->WaitForGpu();
@@ -27,6 +31,8 @@ Game::~Game()
 // Initialize the Direct3D resources required to run.
 void Game::Initialize(HWND window, int width, int height)
 {
+    m_renderer->Init();
+
     //m_deviceResources->SetWindow(window, width, height);
 
     // TODO: Change the timer settings if you want something other than the default variable timestep mode.
@@ -67,7 +73,8 @@ void Game::Update(/*DX::StepTimer const& timer*/)
 // Draws the scene.
 void Game::Render()
 {
-   
+    m_renderer->Render();
+
 }
 #pragma endregion
 
