@@ -22,6 +22,7 @@
     <!-- - - - -->
     <MinimumVisualStudioVersion>16.0</MinimumVisualStudioVersion>
     <TargetRuntime>Native</TargetRuntime>
+    <WindowsTargetPlatformVersion>$([Microsoft.Build.Utilities.ToolLocationHelper]::GetLatestSDKTargetPlatformVersion('Windows', '10.0'))</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Gaming.Desktop.x64'" Label="Configuration">
@@ -71,6 +72,8 @@
     <LibraryPath>$(Console_SdkLibPath);$(LibraryPath)</LibraryPath>
     <IncludePath>$(Console_SdkIncludeRoot);$(IncludePath)</IncludePath>
     <LinkIncremental>true</LinkIncremental>
+    <PublicIncludeDirectories>
+    </PublicIncludeDirectories>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Gaming.Desktop.x64'">
     <Link>
@@ -126,28 +129,26 @@
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
     </Manifest>
     <ClCompile>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>Src\pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <MinimalRebuild>false</MinimalRebuild>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;__WRL_NO_DEFAULT_LIB__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="d3dx12.h" />
-    <ClInclude Include="Game.h" />
-    <ClInclude Include="pch.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Game.cpp" />
-    <ClCompile Include="Main.cpp" />
-    <ClCompile Include="pch.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Gaming.Desktop.x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Profile|Gaming.Desktop.x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Gaming.Desktop.x64'">Create</PrecompiledHeader>
-    </ClCompile>
+    <ClInclude Include="IRenderer.h" />
+    <ClInclude Include="Src\Common.h" />
+    <ClInclude Include="Src\d3dx12.h" />
+    <ClInclude Include="Src\Game.h" />
+    <ClInclude Include="Src\Rendering\IRenderable.h" />
+    <ClInclude Include="Src\Rendering\IRenderer.h" />
+    <ClInclude Include="Src\Rendering\RendererDX12.h" />
   </ItemGroup>
   <ItemGroup>
     <MGCCompile Include="MicrosoftGame.Config" />
@@ -169,6 +170,11 @@
       <DeploymentContent>true</DeploymentContent>
       <DestinationFileName>%(Filename)%(Extension)</DestinationFileName>
     </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Src\Game.cpp" />
+    <ClCompile Include="Src\Main.cpp" />
+    <ClCompile Include="Src\Rendering\RendererDX12.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

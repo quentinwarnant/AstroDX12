@@ -2,7 +2,7 @@
 // Main.cpp
 //
 
-#include "pch.h"
+#include "Common.h"
 
 #include "Game.h"
 

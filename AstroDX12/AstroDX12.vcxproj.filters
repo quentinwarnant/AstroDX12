@@ -1,29 +1,49 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Common">
-      <UniqueIdentifier>51d0335e-19b3-4fe3-b6bc-76b89d269e80</UniqueIdentifier>
+    <Filter Include="Src">
+      <UniqueIdentifier>{a1f5cf59-6431-44c0-b191-c03dafd28f34}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Rendering">
+      <UniqueIdentifier>{76548881-d99e-4a36-aa62-d105dce23212}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pch.h" />
-    <ClInclude Include="Game.h" />
-    <ClInclude Include="d3dx12.h">
-      <Filter>Common</Filter>
+    <ClInclude Include="Src\d3dx12.h">
+      <Filter>Src</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="pch.cpp" />
-    <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Game.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <MGCCompile Include="MicrosoftGame.Config" />
+    <ClInclude Include="Src\Game.h">
+      <Filter>Src</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Rendering\IRenderable.h">
+      <Filter>Src\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Rendering\IRenderer.h">
+      <Filter>Src\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Rendering\RendererDX12.h">
+      <Filter>Src\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="IRenderer.h" />
+    <ClInclude Include="Src\Common.h">
+      <Filter>Src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="GraphicsLogo.png" />
     <CopyFileToFolders Include="SmallLogo.png" />
     <CopyFileToFolders Include="SplashScreen.png" />
     <CopyFileToFolders Include="StoreLogo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Src\Game.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Main.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Rendering\RendererDX12.cpp">
+      <Filter>Src\Rendering</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
