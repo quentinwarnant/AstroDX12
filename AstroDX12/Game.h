@@ -4,13 +4,9 @@
 
 #pragma once
 
-#include "DeviceResources.h"
-#include "StepTimer.h"
-
-
 // A basic game implementation that creates a D3D12 device and
 // provides a game loop.
-class Game final : public DX::IDeviceNotify
+class Game final 
 {
 public:
 
@@ -29,10 +25,6 @@ public:
     // Basic game loop
     void Tick();
 
-    // IDeviceNotify
-    void OnDeviceLost() override;
-    void OnDeviceRestored() override;
-
     // Messages
     void OnActivated();
     void OnDeactivated();
@@ -46,17 +38,6 @@ public:
 
 private:
 
-    void Update(DX::StepTimer const& timer);
+    void Update(/*Timer*/);
     void Render();
-
-    void Clear();
-
-    void CreateDeviceDependentResources();
-    void CreateWindowSizeDependentResources();
-
-    // Device resources.
-    std::unique_ptr<DX::DeviceResources>    m_deviceResources;
-
-    // Rendering loop timer.
-    DX::StepTimer                           m_timer;
 };

@@ -7,13 +7,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="StepTimer.h">
-      <Filter>Common</Filter>
-    </ClInclude>
     <ClInclude Include="Game.h" />
-    <ClInclude Include="DeviceResources.h">
-      <Filter>Common</Filter>
-    </ClInclude>
     <ClInclude Include="d3dx12.h">
       <Filter>Common</Filter>
     </ClInclude>
@@ -22,9 +16,6 @@
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Game.cpp" />
-    <ClCompile Include="DeviceResources.cpp">
-      <Filter>Common</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <MGCCompile Include="MicrosoftGame.Config" />
