@@ -4,6 +4,7 @@
 
 #include "Game.h"
 #include "Rendering/RendererDX12.h"
+#include "winnt.h"
 
 extern void ExitGame() noexcept;
 
@@ -31,7 +32,7 @@ Game::~Game()
 // Initialize the Direct3D resources required to run.
 void Game::Initialize(HWND window, int width, int height)
 {
-    m_renderer->Init(width, height);
+    m_renderer->Init( window, width, height);
 
     //m_deviceResources->SetWindow(window, width, height);
 

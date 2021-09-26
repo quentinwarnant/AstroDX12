@@ -12,7 +12,7 @@ public:
     virtual ~RendererDX12();
 
     // IRenderer - BEGIN
-    virtual void Init(int  width, int height) override;
+    virtual void Init(HWND window, int  width, int height) override;
     virtual void Render() override;
     virtual void AddRenderable(IRenderable* renderable) override;
     virtual void FlushRenderQueue() override;
@@ -20,15 +20,17 @@ public:
     // IRenderer - END
 private:
     void CreateCommandObjects();
-
+    void CreateSwapChain(HWND window);
 
 private:
+    const uint8_t m_swapChainBufferCount = 2;
     int m_width = 32;
     int m_height = 32;
 
     ComPtr<IDXGIFactory4> m_dxgiFactory;
     ComPtr<ID3D12Device> m_device;
     ComPtr<ID3D12Fence> m_fence;
+    ComPtr<IDXGISwapChain1> m_swapChain;
 
     UINT m_descriptorSizeRTV;   // Render Target View
     UINT m_descriptorSizeDSV;   // Depth/Stencil View
@@ -42,5 +44,6 @@ private:
     ComPtr<ID3D12CommandQueue> m_commandQueue;
     ComPtr<ID3D12CommandAllocator> m_directCommandListAllocator;
     ComPtr<ID3D12GraphicsCommandList> m_commandList;
+
 };
 

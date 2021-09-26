@@ -9,7 +9,7 @@ RendererDX12::~RendererDX12()
 	IRenderer::~IRenderer();
 }
 
-void RendererDX12::Init(int width, int height)
+void RendererDX12::Init(HWND window, int width, int height)
 {
 #if _DEBUG
 	ComPtr<ID3D12Debug> debugController;
@@ -20,7 +20,13 @@ void RendererDX12::Init(int width, int height)
 	m_width = width;
 	m_height = height;
 
-	ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&m_dxgiFactory)));
+	ThrowIfFailed(CreateDXGIFactory2(
+#if _DEBUG
+		DXGI_CREATE_FACTORY_DEBUG,
+#else
+		0,
+#endif
+		IID_PPV_ARGS(&m_dxgiFactory)));
 
 	// Device
 	auto deviceCreateResult = D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_device));
@@ -40,18 +46,24 @@ void RendererDX12::Init(int width, int height)
 	m_descriptorSizeDSV = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 	m_descriptorSizeCBV = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	// MSAA
-	D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msQualityLevels;
-	msQualityLevels.Format = m_backbufferFormat;
-	msQualityLevels.SampleCount = 4; // 4X MSAA
-	msQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
-	msQualityLevels.NumQualityLevels = 0;
-	ThrowIfFailed(m_device->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &msQualityLevels, sizeof(msQualityLevels)));
-	m_msaaQualityLevel = msQualityLevels.NumQualityLevels;
-	assert(m_msaaQualityLevel > 0 && "Unexpected MSAA quality level.");
+	// MSAA - DISABLED
+	//const auto msaaSampleCount = 4;
+	//D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msQualityLevels;
+	//msQualityLevels.Format = m_backbufferFormat;
+	//msQualityLevels.SampleCount = msaaSampleCount; // 4X MSAA
+	//msQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
+	//msQualityLevels.NumQualityLevels = 0;
+	//ThrowIfFailed(m_device->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &msQualityLevels, sizeof(msQualityLevels)));
+	//m_msaaQualityLevel = msQualityLevels.NumQualityLevels;
+	//assert(m_msaaQualityLevel > 0 && "Unexpected MSAA quality level.");
 
 	// Command Queue
 	CreateCommandObjects();
+
+	// Swap Chain
+	CreateSwapChain(window);
+	
+
 }
 
 void RendererDX12::CreateCommandObjects()
@@ -73,6 +85,38 @@ void RendererDX12::CreateCommandObjects()
 	));
 	m_commandList->Close();
 }
+
+void RendererDX12::CreateSwapChain(HWND window)
+{
+	m_swapChain.Reset();
+
+	DXGI_SWAP_CHAIN_DESC1 swapchainDesc{};
+	swapchainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+	swapchainDesc.BufferCount = m_swapChainBufferCount;
+	swapchainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	swapchainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+	swapchainDesc.Format = m_backbufferFormat;
+	swapchainDesc.Height = m_height;
+	swapchainDesc.Width = m_width;
+	swapchainDesc.SampleDesc.Count = 1; //msaaSampleCount; NO MSAA, not compatible with this swapchain setup anymore
+	swapchainDesc.SampleDesc.Quality = 0;// m_msaaQualityLevel - 1;
+	swapchainDesc.Scaling = DXGI_SCALING_STRETCH;
+	swapchainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+	swapchainDesc.Stereo = false;
+
+	DXGI_SWAP_CHAIN_FULLSCREEN_DESC swapchainFullscreenDesc{};
+	swapchainFullscreenDesc.Windowed = TRUE;
+
+	ThrowIfFailed(m_dxgiFactory->CreateSwapChainForHwnd(
+		m_commandQueue.Get(),
+		window, 
+		&swapchainDesc,
+		&swapchainFullscreenDesc,
+		nullptr, 
+		m_swapChain.GetAddressOf()));
+
+}
+
 
 void RendererDX12::Render()
 {
