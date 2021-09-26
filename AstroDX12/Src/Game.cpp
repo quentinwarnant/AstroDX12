@@ -31,7 +31,7 @@ Game::~Game()
 // Initialize the Direct3D resources required to run.
 void Game::Initialize(HWND window, int width, int height)
 {
-    m_renderer->Init();
+    m_renderer->Init(width, height);
 
     //m_deviceResources->SetWindow(window, width, height);
 
