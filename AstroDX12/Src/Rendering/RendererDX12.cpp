@@ -117,6 +117,39 @@ void RendererDX12::CreateSwapChain(HWND window)
 
 }
 
+void RendererDX12::CreateDescriptorHeaps()
+{
+	D3D12_DESCRIPTOR_HEAP_DESC rtvDescriptorHeapDesc{};
+	rtvDescriptorHeapDesc.NumDescriptors = m_swapChainBufferCount;
+	rtvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	rtvDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	rtvDescriptorHeapDesc.NodeMask = 0; // device/Adapter index
+	ThrowIfFailed(m_device->CreateDescriptorHeap(&rtvDescriptorHeapDesc, IID_PPV_ARGS(m_rtvHeap.GetAddressOf())));
+
+	D3D12_DESCRIPTOR_HEAP_DESC dsvDescriptorHeapDesc{};
+	dsvDescriptorHeapDesc.NumDescriptors = 1;
+	dsvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	dsvDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	dsvDescriptorHeapDesc.NodeMask = 0; // device/Adapter index
+	ThrowIfFailed(m_device->CreateDescriptorHeap(&dsvDescriptorHeapDesc, IID_PPV_ARGS(m_dsvHeap.GetAddressOf())));
+
+
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE RendererDX12::GetCurrentBackBufferView() const
+{
+	return CD3DX12_CPU_DESCRIPTOR_HANDLE(
+		m_rtvHeap->GetCPUDescriptorHandleForHeapStart(),
+		m_currentBackBuffer,
+		m_descriptorSizeRTV
+	);
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE RendererDX12::GetDepthStencilView() const
+{
+	return m_dsvHeap->GetCPUDescriptorHandleForHeapStart();
+}
+
 
 void RendererDX12::Render()
 {

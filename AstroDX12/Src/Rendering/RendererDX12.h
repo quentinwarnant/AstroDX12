@@ -21,11 +21,16 @@ public:
 private:
     void CreateCommandObjects();
     void CreateSwapChain(HWND window);
+    void CreateDescriptorHeaps();
+
+    D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentBackBufferView() const;
+    D3D12_CPU_DESCRIPTOR_HANDLE GetDepthStencilView() const;
 
 private:
-    const uint8_t m_swapChainBufferCount = 2;
     int m_width = 32;
     int m_height = 32;
+    const uint8_t m_swapChainBufferCount = 2;
+    int m_currentBackBuffer = 0;
 
     ComPtr<IDXGIFactory4> m_dxgiFactory;
     ComPtr<ID3D12Device> m_device;
@@ -44,6 +49,10 @@ private:
     ComPtr<ID3D12CommandQueue> m_commandQueue;
     ComPtr<ID3D12CommandAllocator> m_directCommandListAllocator;
     ComPtr<ID3D12GraphicsCommandList> m_commandList;
+
+    ComPtr<ID3D12DescriptorHeap> m_rtvHeap; // Render Target
+    ComPtr<ID3D12DescriptorHeap> m_dsvHeap; // Depth/Stencil 
+
 
 };
 
