@@ -22,6 +22,7 @@ private:
     void CreateCommandObjects();
     void CreateSwapChain(HWND window);
     void CreateDescriptorHeaps();
+    void CreateDepthStencilBuffer();
 
     D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentBackBufferView() const;
     D3D12_CPU_DESCRIPTOR_HANDLE GetDepthStencilView() const;
@@ -29,7 +30,7 @@ private:
 private:
     int m_width = 32;
     int m_height = 32;
-    const uint8_t m_swapChainBufferCount = 2;
+    static const uint8_t m_swapChainBufferCount = 2;
     int m_currentBackBuffer = 0;
 
     ComPtr<IDXGIFactory4> m_dxgiFactory;
@@ -53,6 +54,7 @@ private:
     ComPtr<ID3D12DescriptorHeap> m_rtvHeap; // Render Target
     ComPtr<ID3D12DescriptorHeap> m_dsvHeap; // Depth/Stencil 
 
-
+    ComPtr<ID3D12Resource> m_swapchainBuffers[m_swapChainBufferCount];
+    ComPtr<ID3D12Resource> m_depthStencilBuffer;
 };
 

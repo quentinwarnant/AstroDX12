@@ -63,6 +63,26 @@ void RendererDX12::Init(HWND window, int width, int height)
 	// Swap Chain
 	CreateSwapChain(window);
 	
+	CreateDescriptorHeaps();
+
+	// Backbuffer Render Target
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart());
+	for (auto i = 0; i < m_swapChainBufferCount; ++i)
+	{
+		ThrowIfFailed(m_swapChain->GetBuffer(i, IID_PPV_ARGS(&m_swapchainBuffers[i])));
+
+		//Create RT view for buffer
+		m_device->CreateRenderTargetView(m_swapchainBuffers[i].Get(), nullptr, rtvHeapHandle);
+
+		//Offset heap handle for next loop 
+		rtvHeapHandle.Offset(1, m_descriptorSizeRTV);
+	}
+
+
+	ThrowIfFailed(m_commandList->Reset(m_directCommandListAllocator.Get(), nullptr));
+
+	// Depth/Stencil Buffer
+	CreateDepthStencilBuffer();
 
 }
 
@@ -132,8 +152,54 @@ void RendererDX12::CreateDescriptorHeaps()
 	dsvDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	dsvDescriptorHeapDesc.NodeMask = 0; // device/Adapter index
 	ThrowIfFailed(m_device->CreateDescriptorHeap(&dsvDescriptorHeapDesc, IID_PPV_ARGS(m_dsvHeap.GetAddressOf())));
+}
 
+void RendererDX12::CreateDepthStencilBuffer()
+{
+	D3D12_RESOURCE_DESC depthStencilDesc;
+	depthStencilDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	depthStencilDesc.Alignment = 0;
+	depthStencilDesc.Width = m_width;
+	depthStencilDesc.Height = m_height;
+	depthStencilDesc.DepthOrArraySize = 1;
+	depthStencilDesc.MipLevels = 1;
+	depthStencilDesc.Format = m_depthStencilFormat;
+	depthStencilDesc.SampleDesc.Count = 1; // NO MSAA, not compatible with this swapchain setup anymore
+	depthStencilDesc.SampleDesc.Quality = 0;
+	depthStencilDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
+	D3D12_CLEAR_VALUE depthClearValue;
+	depthClearValue.Format = m_depthStencilFormat;
+	depthClearValue.DepthStencil.Depth = 1.0f;
+	depthClearValue.DepthStencil.Stencil = 0;
+	
+	const auto depthStencilHeapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+	ThrowIfFailed(m_device->CreateCommittedResource(
+		&depthStencilHeapProp, // Default heap (others: upload, readback & custom
+		D3D12_HEAP_FLAG_NONE,
+		&depthStencilDesc,
+		D3D12_RESOURCE_STATE_COMMON,
+		&depthClearValue,
+		IID_PPV_ARGS(m_depthStencilBuffer.GetAddressOf())
+	));
+
+	// Create Depth/Stencil buffer View
+	m_device->CreateDepthStencilView(
+		m_depthStencilBuffer.Get(),
+		nullptr, // Buffer is typed so no need to define it here
+		GetDepthStencilView()
+	);
+
+	// Transition resource from initial state to be used as depth buffer
+	const auto depthStencilStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
+		m_depthStencilBuffer.Get(),
+		D3D12_RESOURCE_STATE_COMMON,
+		D3D12_RESOURCE_STATE_DEPTH_WRITE);
+	m_commandList->ResourceBarrier(
+		1,
+		&depthStencilStateTransition
+	);
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE RendererDX12::GetCurrentBackBufferView() const
