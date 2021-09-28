@@ -5,12 +5,14 @@
 #include "Common.h"
 
 #include "Game.h"
+#include "Timing/GameTimer.h"
 
 using namespace DirectX;
 
 namespace
 {
     std::unique_ptr<Game> g_game;
+    std::unique_ptr<GameTimer> g_gameTimer;
 };
 
 LPCWSTR g_szAppName = L"AstroDX12";
@@ -82,6 +84,8 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 
         g_game->Initialize(hwnd, rc.right - rc.left, rc.bottom - rc.top);
     }
+    g_gameTimer = std::make_unique<GameTimer>();
+    g_gameTimer->Reset();
 
     // Main message loop
     MSG msg = {};
@@ -94,7 +98,8 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         }
         else
         {
-            g_game->Tick();
+            g_gameTimer->Tick();
+            g_game->Tick(g_gameTimer->DeltaTime());
         }
     }
 
@@ -121,7 +126,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_PAINT:
         if (s_in_sizemove && game)
         {
-            game->Tick();
+            game->Tick(g_gameTimer->DeltaTime());
         }
         else
         {

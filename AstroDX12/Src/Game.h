@@ -25,7 +25,7 @@ public:
     void Initialize(HWND window, int width, int height);
 
     // Basic game loop
-    void Tick();
+    void Tick(float deltaTime);
 
     // Messages
     void OnActivated();
@@ -41,7 +41,7 @@ public:
 private:
 
     void Update(/*Timer*/);
-    void Render();
+    void Render(float deltaTime);
 
     std::unique_ptr<IRenderer> m_renderer;
 };

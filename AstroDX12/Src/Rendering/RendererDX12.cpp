@@ -237,7 +237,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE RendererDX12::GetDepthStencilView() const
 }
 
 
-void RendererDX12::Render()
+void RendererDX12::Render(float deltaTime)
 {
 }
 

@@ -143,13 +143,13 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="IRenderer.h" />
     <ClInclude Include="Src\Common.h" />
     <ClInclude Include="Src\d3dx12.h" />
     <ClInclude Include="Src\Game.h" />
     <ClInclude Include="Src\Rendering\IRenderable.h" />
     <ClInclude Include="Src\Rendering\IRenderer.h" />
     <ClInclude Include="Src\Rendering\RendererDX12.h" />
+    <ClInclude Include="Src\Timing\GameTimer.h" />
   </ItemGroup>
   <ItemGroup>
     <MGCCompile Include="MicrosoftGame.Config" />
@@ -176,6 +176,7 @@
     <ClCompile Include="Src\Game.cpp" />
     <ClCompile Include="Src\Main.cpp" />
     <ClCompile Include="Src\Rendering\RendererDX12.cpp" />
+    <ClCompile Include="Src\Timing\GameTimer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

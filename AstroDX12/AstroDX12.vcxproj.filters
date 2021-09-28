@@ -2,18 +2,41 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Src">
-      <UniqueIdentifier>{a1f5cf59-6431-44c0-b191-c03dafd28f34}</UniqueIdentifier>
+      <UniqueIdentifier>{fee4f239-80c6-45e8-bd29-0ae12c2cfcff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Timing">
+      <UniqueIdentifier>{104cfdff-2ca5-4db4-b817-5e1ecad1cb8d}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Rendering">
-      <UniqueIdentifier>{76548881-d99e-4a36-aa62-d105dce23212}</UniqueIdentifier>
+      <UniqueIdentifier>{d4f6f8c9-8ecd-4f36-9ac0-c5ec54e74213}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Game.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Main.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Timing\GameTimer.cpp">
+      <Filter>Src\Timing</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Rendering\RendererDX12.cpp">
+      <Filter>Src\Rendering</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Src\Common.h">
+      <Filter>Src</Filter>
+    </ClInclude>
     <ClInclude Include="Src\d3dx12.h">
       <Filter>Src</Filter>
     </ClInclude>
     <ClInclude Include="Src\Game.h">
       <Filter>Src</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Timing\GameTimer.h">
+      <Filter>Src\Timing</Filter>
     </ClInclude>
     <ClInclude Include="Src\Rendering\IRenderable.h">
       <Filter>Src\Rendering</Filter>
@@ -24,26 +47,11 @@
     <ClInclude Include="Src\Rendering\RendererDX12.h">
       <Filter>Src\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="IRenderer.h" />
-    <ClInclude Include="Src\Common.h">
-      <Filter>Src</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="GraphicsLogo.png" />
     <CopyFileToFolders Include="SmallLogo.png" />
     <CopyFileToFolders Include="SplashScreen.png" />
     <CopyFileToFolders Include="StoreLogo.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Src\Game.cpp">
-      <Filter>Src</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\Main.cpp">
-      <Filter>Src</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\Rendering\RendererDX12.cpp">
-      <Filter>Src\Rendering</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>

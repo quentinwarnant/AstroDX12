@@ -13,7 +13,7 @@ public:
 
     // IRenderer - BEGIN
     virtual void Init(HWND window, int  width, int height) override;
-    virtual void Render() override;
+    virtual void Render(float deltaTime) override;
     virtual void AddRenderable(IRenderable* renderable) override;
     virtual void FlushRenderQueue() override;
     virtual void Shutdown() override;

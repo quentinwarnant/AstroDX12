@@ -46,14 +46,14 @@ void Game::Initialize(HWND window, int width, int height)
 
 #pragma region Frame Update
 // Executes the basic game loop.
-void Game::Tick()
+void Game::Tick(float deltaTime)
 {
     //m_timer.Tick([&]()
     //{
     //    Update(m_timer);
     //});
 
-    Render();
+    Render(deltaTime);
 }
 
 // Updates the world.
@@ -72,9 +72,9 @@ void Game::Update(/*DX::StepTimer const& timer*/)
 
 #pragma region Frame Render
 // Draws the scene.
-void Game::Render()
+void Game::Render(float deltaTime)
 {
-    m_renderer->Render();
+    m_renderer->Render(deltaTime);
 
 }
 #pragma endregion
