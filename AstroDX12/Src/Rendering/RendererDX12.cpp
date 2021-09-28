@@ -84,6 +84,26 @@ void RendererDX12::Init(HWND window, int width, int height)
 	// Depth/Stencil Buffer
 	CreateDepthStencilBuffer();
 
+	// Create Viewport
+	D3D12_VIEWPORT viewportDesc{};
+	viewportDesc.TopLeftX = 0;
+	viewportDesc.TopLeftY = 0;
+	viewportDesc.Width = static_cast<float>(m_width);
+	viewportDesc.Height = static_cast<float>(m_height);
+	viewportDesc.MinDepth = 0;
+	viewportDesc.MaxDepth = 1;
+	m_commandList->RSSetViewports(1, &viewportDesc);
+
+	// Create Scissor Rect (pixels outside are culled/not rasterised)
+
+	D3D12_RECT scissorRect{};
+	scissorRect.left = 0;
+	scissorRect.top = 0;
+	scissorRect.right = m_width;
+	scissorRect.bottom = m_height;
+	m_commandList->RSSetScissorRects(1, &scissorRect);
+
+
 }
 
 void RendererDX12::CreateCommandObjects()
