@@ -43,6 +43,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     g_game = std::make_unique<Game>();
 
     // Register class and create window
+    HWND hwnd;
     {
         // Register class
         WNDCLASSEXW wcex = {};
@@ -66,7 +67,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 
         AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 
-        HWND hwnd = CreateWindowExW(0, L"AstroDX12WindowClass", g_szAppName, WS_OVERLAPPEDWINDOW,
+        hwnd = CreateWindowExW(0, L"AstroDX12WindowClass", g_szAppName, WS_OVERLAPPEDWINDOW,
             CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, hInstance,
             nullptr);
         // TODO: Change to CreateWindowExW(WS_EX_TOPMOST, L"AstroDX12WindowClass", g_szAppName, WS_POPUP,
@@ -86,7 +87,12 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     }
     g_gameTimer = std::make_unique<GameTimer>();
     g_gameTimer->Reset();
-
+    
+    //FPS timer
+    uint32_t framesInCurrentSecond = 0;
+    uint32_t framesInPrevSecond = 0;
+    float currentSecondFraction = 0.0f;
+    
     // Main message loop
     MSG msg = {};
     while (WM_QUIT != msg.message)
@@ -99,6 +105,22 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         else
         {
             g_gameTimer->Tick();
+         
+            currentSecondFraction += g_gameTimer->DeltaTime();
+            if (currentSecondFraction >= 1.0f)
+            {
+                framesInPrevSecond = framesInCurrentSecond;
+                framesInCurrentSecond = 0;
+                currentSecondFraction = 0.0f;
+            
+                auto fpsStr = std::to_wstring(framesInPrevSecond);
+                auto frameTime = std::to_wstring(1000.0 / framesInPrevSecond);
+                std::wstring fpsText = L"AstroDX12 fps: " + fpsStr + L" frame time: " + frameTime + L"ms";
+                SetWindowText(hwnd, fpsText.c_str());
+            }
+            
+            framesInCurrentSecond++;
+            
             g_game->Tick(g_gameTimer->DeltaTime());
         }
     }
