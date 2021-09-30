@@ -85,25 +85,29 @@ void RendererDX12::Init(HWND window, int width, int height)
 	CreateDepthStencilBuffer();
 
 	// Create Viewport
-	D3D12_VIEWPORT viewportDesc{};
-	viewportDesc.TopLeftX = 0;
-	viewportDesc.TopLeftY = 0;
-	viewportDesc.Width = static_cast<float>(m_width);
-	viewportDesc.Height = static_cast<float>(m_height);
-	viewportDesc.MinDepth = 0;
-	viewportDesc.MaxDepth = 1;
-	m_commandList->RSSetViewports(1, &viewportDesc);
+	m_viewportDesc.TopLeftX = 0;
+	m_viewportDesc.TopLeftY = 0;
+	m_viewportDesc.Width = static_cast<float>(m_width);
+	m_viewportDesc.Height = static_cast<float>(m_height);
+	m_viewportDesc.MinDepth = 0;
+	m_viewportDesc.MaxDepth = 1;
+	m_commandList->RSSetViewports(1, &m_viewportDesc);
 
 	// Create Scissor Rect (pixels outside are culled/not rasterised)
 
-	D3D12_RECT scissorRect{};
-	scissorRect.left = 0;
-	scissorRect.top = 0;
-	scissorRect.right = m_width;
-	scissorRect.bottom = m_height;
-	m_commandList->RSSetScissorRects(1, &scissorRect);
+	m_scissorRect.left = 0;
+	m_scissorRect.top = 0;
+	m_scissorRect.right = m_width;
+	m_scissorRect.bottom = m_height;
+	m_commandList->RSSetScissorRects(1, &m_scissorRect);
 
 
+	// Execute 
+	ThrowIfFailed(m_commandList->Close());
+	ID3D12CommandList* cmdsLists[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+
+	FlushRenderQueue();
 }
 
 void RendererDX12::CreateCommandObjects()
@@ -222,6 +226,11 @@ void RendererDX12::CreateDepthStencilBuffer()
 	);
 }
 
+ComPtr<ID3D12Resource> RendererDX12::GetCurrentBackBuffer() const
+{
+	return m_swapchainBuffers[m_currentBackBuffer];
+}
+
 D3D12_CPU_DESCRIPTOR_HANDLE RendererDX12::GetCurrentBackBufferView() const
 {
 	return CD3DX12_CPU_DESCRIPTOR_HANDLE(
@@ -239,6 +248,62 @@ D3D12_CPU_DESCRIPTOR_HANDLE RendererDX12::GetDepthStencilView() const
 
 void RendererDX12::Render(float deltaTime)
 {
+	// We know at this pointwe've waited for last frame's commands to be executed on the GPU , we can now safely reset the commandlist allocator
+	ThrowIfFailed(m_directCommandListAllocator->Reset());
+
+	// Reset command list so we can re-use it for the next frame worth of commands.
+	// This is safe to do after the commandlist is comitted to the command queue with ExecuteCommandList
+	ThrowIfFailed(m_commandList->Reset(m_directCommandListAllocator.Get(), nullptr));
+
+	// Switch back buffer render target buffer from Presenting to Render Target mode
+	const auto backBufferResourceBarrierPresentToRT = CD3DX12_RESOURCE_BARRIER::Transition(
+		GetCurrentBackBuffer().Get(),
+		D3D12_RESOURCE_STATE_PRESENT,
+		D3D12_RESOURCE_STATE_RENDER_TARGET
+	);
+	m_commandList->ResourceBarrier(
+		1,
+		&backBufferResourceBarrierPresentToRT
+	);
+
+	// Always need to re-set the viewport & scissor rect after resetting the command list
+	m_commandList->RSSetViewports(1, &m_viewportDesc);
+	m_commandList->RSSetScissorRects(1, &m_scissorRect);
+
+	// Clear the Backbuffer & depth buffer
+	constexpr FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	const auto currentBackBufferView = GetCurrentBackBufferView();
+	const auto currentDepthStencilView = GetDepthStencilView();
+	m_commandList->ClearRenderTargetView(currentBackBufferView, ClearColor, 0, nullptr);
+	m_commandList->ClearDepthStencilView(currentDepthStencilView, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+
+	// Set buffer we're rendering to (output merger)
+	m_commandList->OMSetRenderTargets(1, &currentBackBufferView, true, &currentDepthStencilView);
+
+	// Transition backbuffer resource state from render target to present 
+	const auto backBufferResourceBarrierRTToPresent = CD3DX12_RESOURCE_BARRIER::Transition(
+		GetCurrentBackBuffer().Get(),
+		D3D12_RESOURCE_STATE_RENDER_TARGET,
+		D3D12_RESOURCE_STATE_PRESENT
+	);
+	m_commandList->ResourceBarrier(
+		1,
+		&backBufferResourceBarrierRTToPresent
+	);
+
+	ThrowIfFailed(m_commandList->Close());
+	
+	// add command lists on queue
+	ID3D12CommandList* cmdLists[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(cmdLists), cmdLists);
+
+	// Present swaps the back & front buffers
+	ThrowIfFailed(m_swapChain->Present(0, 0));
+	m_currentBackBuffer = (m_currentBackBuffer + 1) % m_swapChainBufferCount;
+
+	//Inneficient but simple for now - Wait until the frame commands are completed
+	FlushRenderQueue();
+
 }
 
 void RendererDX12::AddRenderable(IRenderable* renderable)
@@ -247,6 +312,24 @@ void RendererDX12::AddRenderable(IRenderable* renderable)
 
 void RendererDX12::FlushRenderQueue()
 {
+	// Advance current fence
+	m_currentFence++;
+
+	// Add fence on GPU queue which will get signalled when queue is fully processed
+	ThrowIfFailed(m_commandQueue->Signal(m_fence.Get(), m_currentFence));
+
+	//Wait until the GPU has completed the commands up to this fence point
+	if (m_fence->GetCompletedValue() < m_currentFence)
+	{
+		HANDLE eventHandle = CreateEventW(nullptr, false, false, nullptr);
+
+		//Fire event when GPU hits current fence
+		ThrowIfFailed(m_fence->SetEventOnCompletion(m_currentFence, eventHandle));
+
+		// Wait...
+		WaitForSingleObject(eventHandle, INFINITE);
+		CloseHandle(eventHandle);
+	}
 }
 
 void RendererDX12::Shutdown()

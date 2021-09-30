@@ -24,6 +24,7 @@ private:
     void CreateDescriptorHeaps();
     void CreateDepthStencilBuffer();
 
+    ComPtr<ID3D12Resource> GetCurrentBackBuffer() const;
     D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentBackBufferView() const;
     D3D12_CPU_DESCRIPTOR_HANDLE GetDepthStencilView() const;
 
@@ -32,6 +33,7 @@ private:
     int m_height = 32;
     static const uint8_t m_swapChainBufferCount = 2;
     int m_currentBackBuffer = 0;
+    int m_currentFence = 0;
 
     ComPtr<IDXGIFactory4> m_dxgiFactory;
     ComPtr<ID3D12Device> m_device;
@@ -56,5 +58,9 @@ private:
 
     ComPtr<ID3D12Resource> m_swapchainBuffers[m_swapChainBufferCount];
     ComPtr<ID3D12Resource> m_depthStencilBuffer;
+
+    D3D12_VIEWPORT m_viewportDesc{};
+    D3D12_RECT m_scissorRect{};
+
 };
 
