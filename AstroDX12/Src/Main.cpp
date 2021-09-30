@@ -115,7 +115,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
             
                 auto fpsStr = std::to_wstring(framesInPrevSecond);
                 auto frameTime = std::to_wstring(1000.0 / framesInPrevSecond);
-                std::wstring fpsText = L"AstroDX12 fps: " + fpsStr + L" frame time: " + frameTime + L"ms";
+                std::wstring fpsText = L"AstroDX12 CPU fps: " + fpsStr + L" frame time: " + frameTime + L"ms";
                 SetWindowText(hwnd, fpsText.c_str());
             }
             
@@ -216,13 +216,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_ACTIVATEAPP:
         if (game)
         {
-            if (wParam)
+            if (LOWORD(wParam) == WA_INACTIVE)
             {
-                game->OnActivated();
+                g_gameTimer->Stop();
+                game->OnDeactivated();
             }
             else
             {
-                game->OnDeactivated();
+                g_gameTimer->Start();
+                game->OnActivated();
             }
         }
         break;
