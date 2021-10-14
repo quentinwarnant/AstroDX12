@@ -1,9 +1,10 @@
 #pragma once
 
 #include "../../Common.h"
-#include "Util.h"
+#include "RenderingUtils.h"
 
 using namespace Microsoft::WRL;
+using namespace DX;
 
 template<typename T>
 class UploadBuffer
@@ -18,7 +19,7 @@ public:
 		// at m*256 byte offsets and of n*256 byte lengths. 
 		if (isConstantBuffer)
 		{
-			m_elementByteSize = AstroTools::Util::CalcConstantBufferByteSize(sizeof(T));
+			m_elementByteSize = AstroTools::Rendering::CalcConstantBufferByteSize(sizeof(T));
 		}
 
 		ThrowIfFailed(device->CreateCommittedResource(
@@ -43,7 +44,7 @@ public:
 	}
 
 	UploadBuffer(const UploadBuffer& rhs) = delete;
-	UploadBuffer & = operator(const UploadBuffer & rhs) = delete;
+	UploadBuffer& operator=(const UploadBuffer& rhs) = delete;
 
 	ID3D12Resource* Resource() const
 	{

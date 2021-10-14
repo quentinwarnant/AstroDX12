@@ -13,7 +13,8 @@ public:
 
     // IRenderer - BEGIN
     virtual void Init(HWND window, int  width, int height) override;
-    virtual void Render(float deltaTime) override;
+    virtual void FinaliseInit() override;
+    virtual void Render(float deltaTime, std::vector<IRenderable> renderableObjects) override;
     virtual void AddRenderable(IRenderable* renderable) override;
     virtual void FlushRenderQueue() override;
     virtual void Shutdown() override;

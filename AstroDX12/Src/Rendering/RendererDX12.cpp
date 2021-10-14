@@ -40,7 +40,7 @@ void RendererDX12::Init(HWND window, int width, int height)
 
 	// Fence
 	ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
-	
+
 	// Descriptor Sizes
 	m_descriptorSizeRTV = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	m_descriptorSizeDSV = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
@@ -62,7 +62,7 @@ void RendererDX12::Init(HWND window, int width, int height)
 
 	// Swap Chain
 	CreateSwapChain(window);
-	
+
 	CreateDescriptorHeaps();
 
 	// Backbuffer Render Target
@@ -100,8 +100,10 @@ void RendererDX12::Init(HWND window, int width, int height)
 	m_scissorRect.right = m_width;
 	m_scissorRect.bottom = m_height;
 	m_commandList->RSSetScissorRects(1, &m_scissorRect);
+}
 
-
+void RendererDX12::FinaliseInit()
+{
 	// Execute 
 	ThrowIfFailed(m_commandList->Close());
 	ID3D12CommandList* cmdsLists[] = { m_commandList.Get() };
@@ -246,7 +248,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE RendererDX12::GetDepthStencilView() const
 }
 
 
-void RendererDX12::Render(float deltaTime)
+void RendererDX12::Render(float deltaTime, std::vector<IRenderable> renderableObjects)
 {
 	// We know at this pointwe've waited for last frame's commands to be executed on the GPU , we can now safely reset the commandlist allocator
 	ThrowIfFailed(m_directCommandListAllocator->Reset());

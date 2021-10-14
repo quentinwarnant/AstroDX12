@@ -143,13 +143,17 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Src\AstroGameInstance.h" />
     <ClInclude Include="Src\Common.h" />
     <ClInclude Include="Src\d3dx12.h" />
     <ClInclude Include="Src\Game.h" />
+    <ClInclude Include="Src\Maths\MathUtils.h" />
+    <ClInclude Include="Src\Rendering\Common\RenderingUtils.h" />
     <ClInclude Include="Src\Rendering\Common\UploadBuffer.h" />
-    <ClInclude Include="Src\Rendering\Common\Util.h" />
     <ClInclude Include="Src\Rendering\IRenderable.h" />
     <ClInclude Include="Src\Rendering\IRenderer.h" />
+    <ClInclude Include="Src\Rendering\RenderData\Mesh.h" />
+    <ClInclude Include="Src\Rendering\RenderData\VertexData.h" />
     <ClInclude Include="Src\Rendering\RendererDX12.h" />
     <ClInclude Include="Src\Timing\GameTimer.h" />
   </ItemGroup>
@@ -175,6 +179,7 @@
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\AstroGameInstance.cpp" />
     <ClCompile Include="Src\Game.cpp" />
     <ClCompile Include="Src\Main.cpp" />
     <ClCompile Include="Src\Rendering\RendererDX12.cpp" />

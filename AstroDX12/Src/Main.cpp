@@ -4,7 +4,7 @@
 
 #include "Common.h"
 
-#include "Game.h"
+#include "AstroGameInstance.h"
 #include "Timing/GameTimer.h"
 
 using namespace DirectX;
@@ -40,7 +40,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 
     }
 
-    g_game = std::make_unique<Game>();
+    g_game = std::make_unique<AstroGameInstance>();
 
     // Register class and create window
     HWND hwnd;

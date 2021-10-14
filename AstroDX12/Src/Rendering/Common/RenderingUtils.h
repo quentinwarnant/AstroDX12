@@ -4,7 +4,7 @@
 
 namespace AstroTools
 {
-	class Util
+	namespace Rendering
 	{
 		static UINT CalcConstantBufferByteSize(UINT dataSize)
 		{

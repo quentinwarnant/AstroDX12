@@ -2,16 +2,22 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Src">
-      <UniqueIdentifier>{f5ae81ac-6714-4561-9195-dbef71c0b3f2}</UniqueIdentifier>
+      <UniqueIdentifier>{83e65a2c-6fb9-4d53-9f32-07e7a1edba98}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Timing">
-      <UniqueIdentifier>{094f0741-cf2b-4ee9-9a7a-5d8728966a95}</UniqueIdentifier>
+      <UniqueIdentifier>{14bec1c5-bab7-4a74-a58a-7dff81e2d56d}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Rendering">
-      <UniqueIdentifier>{8a92f715-57ef-4612-9b56-453a09dda30f}</UniqueIdentifier>
+      <UniqueIdentifier>{3236184f-5536-4f12-b46a-47d1fcd15ca9}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Rendering\Common">
-      <UniqueIdentifier>{d9b588be-e658-404b-9d00-b07c8752b3f7}</UniqueIdentifier>
+      <UniqueIdentifier>{9a7ed27d-a3cb-4a83-bb24-989c4cb63a06}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Maths">
+      <UniqueIdentifier>{5a5d5e9e-58c9-4d22-aad0-ef036af295d4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Rendering\RenderData">
+      <UniqueIdentifier>{b512dbef-ccde-45b1-a379-b157ef2fc293}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -19,6 +25,9 @@
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="Src\Main.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\AstroGameInstance.cpp">
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="Src\Timing\GameTimer.cpp">
@@ -38,6 +47,9 @@
     <ClInclude Include="Src\Game.h">
       <Filter>Src</Filter>
     </ClInclude>
+    <ClInclude Include="Src\AstroGameInstance.h">
+      <Filter>Src</Filter>
+    </ClInclude>
     <ClInclude Include="Src\Timing\GameTimer.h">
       <Filter>Src\Timing</Filter>
     </ClInclude>
@@ -53,9 +65,23 @@
     <ClInclude Include="Src\Rendering\Common\UploadBuffer.h">
       <Filter>Src\Rendering\Common</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Rendering\Common\Util.h">
+    <ClInclude Include="Src\Maths\MathUtils.h">
+      <Filter>Src\Maths</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Rendering\Common\RenderingUtils.h">
       <Filter>Src\Rendering\Common</Filter>
     </ClInclude>
+    <ClInclude Include="Src\Rendering\RenderData\VertexData.h">
+      <Filter>Src\Rendering\RenderData</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Rendering\RenderData\Mesh.h">
+      <Filter>Src\Rendering\RenderData</Filter>
+    </ClInclude>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <CopyFileToFolders Include="GraphicsLogo.png" />
+    <CopyFileToFolders Include="SmallLogo.png" />
+    <CopyFileToFolders Include="SplashScreen.png" />
+    <CopyFileToFolders Include="StoreLogo.png" />
+  </ItemGroup>
 </Project>

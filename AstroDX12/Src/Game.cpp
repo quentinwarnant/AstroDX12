@@ -5,6 +5,7 @@
 #include "Game.h"
 #include "Rendering/RendererDX12.h"
 #include "winnt.h"
+#include "Maths/MathUtils.h"
 
 extern void ExitGame() noexcept;
 
@@ -33,6 +34,14 @@ Game::~Game()
 void Game::Initialize(HWND window, int width, int height)
 {
     m_renderer->Init( window, width, height);
+
+    BuildConstantBuffers();
+    BuildRootSignature();
+    BuildShadersAndInputLayout();
+    BuildSceneGeometry();
+    BuildPipelineStateObject();
+
+    m_renderer->FinaliseInit();
 
     //m_deviceResources->SetWindow(window, width, height);
 
@@ -74,7 +83,7 @@ void Game::Update(/*DX::StepTimer const& timer*/)
 // Draws the scene.
 void Game::Render(float deltaTime)
 {
-    m_renderer->Render(deltaTime);
+    m_renderer->Render(deltaTime, m_sceneRenderables);
 
 }
 #pragma endregion
@@ -124,4 +133,9 @@ void Game::GetDefaultSize(int& width, int& height) const noexcept
     width = 2048;
     height = 1080;
 }
+void Game::AddRenderable(IRenderable& renderableObject)
+{
+    m_sceneRenderables.push_back(renderableObject);
+}
+
 #pragma endregion
