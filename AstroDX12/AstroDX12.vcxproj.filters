@@ -2,13 +2,16 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Src">
-      <UniqueIdentifier>{fee4f239-80c6-45e8-bd29-0ae12c2cfcff}</UniqueIdentifier>
+      <UniqueIdentifier>{f5ae81ac-6714-4561-9195-dbef71c0b3f2}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Timing">
-      <UniqueIdentifier>{104cfdff-2ca5-4db4-b817-5e1ecad1cb8d}</UniqueIdentifier>
+      <UniqueIdentifier>{094f0741-cf2b-4ee9-9a7a-5d8728966a95}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Rendering">
-      <UniqueIdentifier>{d4f6f8c9-8ecd-4f36-9ac0-c5ec54e74213}</UniqueIdentifier>
+      <UniqueIdentifier>{8a92f715-57ef-4612-9b56-453a09dda30f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Rendering\Common">
+      <UniqueIdentifier>{d9b588be-e658-404b-9d00-b07c8752b3f7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -47,11 +50,12 @@
     <ClInclude Include="Src\Rendering\RendererDX12.h">
       <Filter>Src\Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="Src\Rendering\Common\UploadBuffer.h">
+      <Filter>Src\Rendering\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Rendering\Common\Util.h">
+      <Filter>Src\Rendering\Common</Filter>
+    </ClInclude>
   </ItemGroup>
-  <ItemGroup>
-    <CopyFileToFolders Include="GraphicsLogo.png" />
-    <CopyFileToFolders Include="SmallLogo.png" />
-    <CopyFileToFolders Include="SplashScreen.png" />
-    <CopyFileToFolders Include="StoreLogo.png" />
-  </ItemGroup>
+  <ItemGroup />
 </Project>

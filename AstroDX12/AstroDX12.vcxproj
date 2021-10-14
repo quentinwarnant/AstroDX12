@@ -146,6 +146,8 @@
     <ClInclude Include="Src\Common.h" />
     <ClInclude Include="Src\d3dx12.h" />
     <ClInclude Include="Src\Game.h" />
+    <ClInclude Include="Src\Rendering\Common\UploadBuffer.h" />
+    <ClInclude Include="Src\Rendering\Common\Util.h" />
     <ClInclude Include="Src\Rendering\IRenderable.h" />
     <ClInclude Include="Src\Rendering\IRenderer.h" />
     <ClInclude Include="Src\Rendering\RendererDX12.h" />
