@@ -9,6 +9,7 @@
 
 
 class IRenderable;
+struct Mesh;
 
 // A basic game implementation that creates a D3D12 device and
 // provides a game loop.
@@ -25,7 +26,7 @@ public:
     Game(Game const&) = delete;
     Game& operator= (Game const&) = delete;
 
-    // Initialization and management
+    // Initialization and resource management
     void Initialize(HWND window, int width, int height);
 
     // Basic game loop
@@ -41,8 +42,9 @@ public:
 
     // Properties
     void GetDefaultSize( int& width, int& height ) const noexcept;
+    inline float GetAspectRatio() const { return (float)m_screenWidth / (float)m_screenHeight;  }
 
-    void AddRenderable(IRenderable& renderableObject);
+    void AddRenderable(std::shared_ptr<IRenderable> renderableObj);
 
     // Scene renderable objects building
     virtual void BuildConstantBuffers() = 0;
@@ -51,11 +53,17 @@ public:
     virtual void BuildSceneGeometry() = 0;
     virtual void BuildPipelineStateObject() = 0;
 
-private:
-
-    void Update(/*Timer*/);
-    void Render(float deltaTime);
+protected:
+    // Triggered after Initialise, meant for initial state configuration 
+    virtual void Setup() = 0;
+    virtual void Update(float deltaTime) = 0;
+    virtual void Render(float deltaTime) = 0;
 
     std::unique_ptr<IRenderer> m_renderer;
-    std::vector<IRenderable> m_sceneRenderables;
+    std::vector < std::shared_ptr< IRenderable >> m_sceneRenderables;
+
+private:
+
+    int m_screenWidth;
+    int m_screenHeight;
 };

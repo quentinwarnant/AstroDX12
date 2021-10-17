@@ -33,6 +33,7 @@ Game::~Game()
 // Initialize the Direct3D resources required to run.
 void Game::Initialize(HWND window, int width, int height)
 {
+    OnWindowSizeChanged(width, height);
     m_renderer->Init( window, width, height);
 
     BuildConstantBuffers();
@@ -51,31 +52,21 @@ void Game::Initialize(HWND window, int width, int height)
     m_timer.SetFixedTimeStep(true);
     m_timer.SetTargetElapsedSeconds(1.0 / 60);
     */
+
+    Setup();
 }
 
 #pragma region Frame Update
 // Executes the basic game loop.
 void Game::Tick(float deltaTime)
 {
-    //m_timer.Tick([&]()
-    //{
-    //    Update(m_timer);
-    //});
-
+    Update(deltaTime);
     Render(deltaTime);
 }
 
 // Updates the world.
-void Game::Update(/*DX::StepTimer const& timer*/)
+void Game::Update(float deltaTime)
 {
-    PIXBeginEvent(PIX_COLOR_DEFAULT, L"Update"); // See pch.h for info
-
-    //float elapsedTime = float(timer.GetElapsedSeconds());
-
-    //// TODO: Add your game logic here.
-    //elapsedTime;
-
-    PIXEndEvent();
 }
 #pragma endregion
 
@@ -83,8 +74,6 @@ void Game::Update(/*DX::StepTimer const& timer*/)
 // Draws the scene.
 void Game::Render(float deltaTime)
 {
-    m_renderer->Render(deltaTime, m_sceneRenderables);
-
 }
 #pragma endregion
 
@@ -118,6 +107,9 @@ void Game::OnWindowMoved()
 
 void Game::OnWindowSizeChanged(int width, int height)
 {
+    m_screenWidth = width;
+    m_screenHeight = height;
+
     //if (!m_deviceResources->WindowSizeChanged(width, height))
     //    return;
 
@@ -133,9 +125,9 @@ void Game::GetDefaultSize(int& width, int& height) const noexcept
     width = 2048;
     height = 1080;
 }
-void Game::AddRenderable(IRenderable& renderableObject)
+void Game::AddRenderable(std::shared_ptr<IRenderable> renderableObj)
 {
-    m_sceneRenderables.push_back(renderableObject);
+    m_sceneRenderables.emplace_back(renderableObj);
 }
 
 #pragma endregion

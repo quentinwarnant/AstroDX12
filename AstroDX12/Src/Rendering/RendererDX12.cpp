@@ -247,15 +247,40 @@ D3D12_CPU_DESCRIPTOR_HANDLE RendererDX12::GetDepthStencilView() const
 	return m_dsvHeap->GetCPUDescriptorHandleForHeapStart();
 }
 
+void RendererDX12::ProcessRenderableObjectsForRendering(
+	ComPtr<ID3D12GraphicsCommandList>& commandList, 
+	std::vector< std::shared_ptr<IRenderable>>& renderableObjects,
+	ComPtr<ID3D12DescriptorHeap>& constBufferViewHeap)
+{
+	for (const auto& renderableObj : renderableObjects)
+	{
+		ID3D12DescriptorHeap* descriptorHeaps[] = { constBufferViewHeap.Get() };
+		commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
-void RendererDX12::Render(float deltaTime, std::vector<IRenderable> renderableObjects)
+		commandList->SetGraphicsRootSignature(renderableObj->GetGraphicsRootSignature().Get());
+		const auto vertexBuffer = renderableObj->GetVertexBufferView();
+		commandList->IASetVertexBuffers(0, 1, &vertexBuffer);
+		const auto indexBuffer = renderableObj->GetIndexBufferView();
+		commandList->IASetIndexBuffer(&indexBuffer);
+		commandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		commandList->SetGraphicsRootDescriptorTable(0, constBufferViewHeap->GetGPUDescriptorHandleForHeapStart());
+
+		commandList->DrawIndexedInstanced(renderableObj->GetIndexCount(), 1, 0, 0, 0);
+	}
+}
+
+void RendererDX12::Render(float deltaTime,
+	std::vector<std::shared_ptr<IRenderable>>& renderableObjects,
+	ComPtr<ID3D12PipelineState>& pipelineStateObj,
+	ComPtr<ID3D12DescriptorHeap>& constBufferViewHeap)
 {
 	// We know at this pointwe've waited for last frame's commands to be executed on the GPU , we can now safely reset the commandlist allocator
 	ThrowIfFailed(m_directCommandListAllocator->Reset());
 
 	// Reset command list so we can re-use it for the next frame worth of commands.
 	// This is safe to do after the commandlist is comitted to the command queue with ExecuteCommandList
-	ThrowIfFailed(m_commandList->Reset(m_directCommandListAllocator.Get(), nullptr));
+	ThrowIfFailed(m_commandList->Reset(m_directCommandListAllocator.Get(), pipelineStateObj.Get()));
 
 	// Switch back buffer render target buffer from Presenting to Render Target mode
 	const auto backBufferResourceBarrierPresentToRT = CD3DX12_RESOURCE_BARRIER::Transition(
@@ -282,6 +307,8 @@ void RendererDX12::Render(float deltaTime, std::vector<IRenderable> renderableOb
 	// Set buffer we're rendering to (output merger)
 	m_commandList->OMSetRenderTargets(1, &currentBackBufferView, true, &currentDepthStencilView);
 
+	ProcessRenderableObjectsForRendering(m_commandList, renderableObjects, constBufferViewHeap);
+
 	// Transition backbuffer resource state from render target to present 
 	const auto backBufferResourceBarrierRTToPresent = CD3DX12_RESOURCE_BARRIER::Transition(
 		GetCurrentBackBuffer().Get(),
@@ -306,10 +333,6 @@ void RendererDX12::Render(float deltaTime, std::vector<IRenderable> renderableOb
 	//Inneficient but simple for now - Wait until the frame commands are completed
 	FlushRenderQueue();
 
-}
-
-void RendererDX12::AddRenderable(IRenderable* renderable)
-{
 }
 
 void RendererDX12::FlushRenderQueue()

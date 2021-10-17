@@ -2,32 +2,32 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Src">
-      <UniqueIdentifier>{83e65a2c-6fb9-4d53-9f32-07e7a1edba98}</UniqueIdentifier>
+      <UniqueIdentifier>{58a72528-6c5d-47ce-a14e-902f788f2019}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Timing">
-      <UniqueIdentifier>{14bec1c5-bab7-4a74-a58a-7dff81e2d56d}</UniqueIdentifier>
+      <UniqueIdentifier>{97631038-cba4-43de-b04a-0baa41f0c423}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Rendering">
-      <UniqueIdentifier>{3236184f-5536-4f12-b46a-47d1fcd15ca9}</UniqueIdentifier>
+      <UniqueIdentifier>{8e55ce6e-ff73-48d7-a9b3-7901a0bbb930}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Rendering\Common">
-      <UniqueIdentifier>{9a7ed27d-a3cb-4a83-bb24-989c4cb63a06}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Src\Maths">
-      <UniqueIdentifier>{5a5d5e9e-58c9-4d22-aad0-ef036af295d4}</UniqueIdentifier>
+      <UniqueIdentifier>{e0204e15-76d9-41d7-9424-7a048b9354ea}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Rendering\RenderData">
-      <UniqueIdentifier>{b512dbef-ccde-45b1-a379-b157ef2fc293}</UniqueIdentifier>
+      <UniqueIdentifier>{66ee574b-4982-47fb-8a34-3d370b13169d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Maths">
+      <UniqueIdentifier>{b43e530b-e9aa-4e6a-8dce-adcd6421ca10}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\AstroGameInstance.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
     <ClCompile Include="Src\Game.cpp">
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="Src\Main.cpp">
-      <Filter>Src</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\AstroGameInstance.cpp">
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="Src\Timing\GameTimer.cpp">
@@ -38,6 +38,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\AstroGameInstance.h">
+      <Filter>Src</Filter>
+    </ClInclude>
     <ClInclude Include="Src\Common.h">
       <Filter>Src</Filter>
     </ClInclude>
@@ -45,9 +48,6 @@
       <Filter>Src</Filter>
     </ClInclude>
     <ClInclude Include="Src\Game.h">
-      <Filter>Src</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\AstroGameInstance.h">
       <Filter>Src</Filter>
     </ClInclude>
     <ClInclude Include="Src\Timing\GameTimer.h">
@@ -62,20 +62,23 @@
     <ClInclude Include="Src\Rendering\RendererDX12.h">
       <Filter>Src\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Rendering\Common\UploadBuffer.h">
-      <Filter>Src\Rendering\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\Maths\MathUtils.h">
-      <Filter>Src\Maths</Filter>
+    <ClInclude Include="Src\Rendering\RenderableStaticObject.h">
+      <Filter>Src\Rendering</Filter>
     </ClInclude>
     <ClInclude Include="Src\Rendering\Common\RenderingUtils.h">
       <Filter>Src\Rendering\Common</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Rendering\RenderData\VertexData.h">
-      <Filter>Src\Rendering\RenderData</Filter>
+    <ClInclude Include="Src\Rendering\Common\UploadBuffer.h">
+      <Filter>Src\Rendering\Common</Filter>
     </ClInclude>
     <ClInclude Include="Src\Rendering\RenderData\Mesh.h">
       <Filter>Src\Rendering\RenderData</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Rendering\RenderData\VertexData.h">
+      <Filter>Src\Rendering\RenderData</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Maths\MathUtils.h">
+      <Filter>Src\Maths</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -28,7 +28,7 @@ struct Mesh
 	UINT IndexBufferByteSize = 0;
 	UINT IndexCount = 0;
 
-	D3D12_VERTEX_BUFFER_VIEW VertexBufferView() const
+	const D3D12_VERTEX_BUFFER_VIEW VertexBufferView() const
 	{
 		D3D12_VERTEX_BUFFER_VIEW vbv;
 		vbv.BufferLocation = VertexBufferGPU->GetGPUVirtualAddress();

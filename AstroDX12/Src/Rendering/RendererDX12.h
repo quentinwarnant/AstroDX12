@@ -14,11 +14,15 @@ public:
     // IRenderer - BEGIN
     virtual void Init(HWND window, int  width, int height) override;
     virtual void FinaliseInit() override;
-    virtual void Render(float deltaTime, std::vector<IRenderable> renderableObjects) override;
-    virtual void AddRenderable(IRenderable* renderable) override;
+    virtual void Render(
+        float deltaTime,
+        std::vector< std::shared_ptr<IRenderable>>& renderableObjects,
+        ComPtr<ID3D12PipelineState>& pipelineStateObj,
+        ComPtr<ID3D12DescriptorHeap>& constBufferViewHeap) override;
     virtual void FlushRenderQueue() override;
     virtual void Shutdown() override;
     // IRenderer - END
+
 private:
     void CreateCommandObjects();
     void CreateSwapChain(HWND window);
@@ -28,6 +32,11 @@ private:
     ComPtr<ID3D12Resource> GetCurrentBackBuffer() const;
     D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentBackBufferView() const;
     D3D12_CPU_DESCRIPTOR_HANDLE GetDepthStencilView() const;
+
+    void ProcessRenderableObjectsForRendering(
+        ComPtr<ID3D12GraphicsCommandList>& commandList,
+        std::vector<std::shared_ptr<IRenderable>>& renderableObjects,
+        ComPtr<ID3D12DescriptorHeap>& constBufferViewHeap);
 
 private:
     int m_width = 32;
