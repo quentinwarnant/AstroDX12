@@ -178,6 +178,13 @@ void RendererDX12::CreateDescriptorHeaps()
 	dsvDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	dsvDescriptorHeapDesc.NodeMask = 0; // device/Adapter index
 	ThrowIfFailed(m_device->CreateDescriptorHeap(&dsvDescriptorHeapDesc, IID_PPV_ARGS(m_dsvHeap.GetAddressOf())));
+
+	D3D12_DESCRIPTOR_HEAP_DESC cbvDescriptorHeapDesc{};
+	cbvDescriptorHeapDesc.NumDescriptors = 1;
+	cbvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	cbvDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	cbvDescriptorHeapDesc.NodeMask = 0; // device/Adapter index
+	ThrowIfFailed(m_device->CreateDescriptorHeap(&cbvDescriptorHeapDesc, IID_PPV_ARGS(m_cbvHeap.GetAddressOf())));
 }
 
 void RendererDX12::CreateDepthStencilBuffer()
@@ -249,12 +256,12 @@ D3D12_CPU_DESCRIPTOR_HANDLE RendererDX12::GetDepthStencilView() const
 
 void RendererDX12::ProcessRenderableObjectsForRendering(
 	ComPtr<ID3D12GraphicsCommandList>& commandList, 
-	std::vector< std::shared_ptr<IRenderable>>& renderableObjects,
-	ComPtr<ID3D12DescriptorHeap>& constBufferViewHeap)
+	std::vector< std::shared_ptr<IRenderable>>& renderableObjects)
 {
+	
 	for (const auto& renderableObj : renderableObjects)
 	{
-		ID3D12DescriptorHeap* descriptorHeaps[] = { constBufferViewHeap.Get() };
+		ID3D12DescriptorHeap* descriptorHeaps[] = { m_cbvHeap.Get() };
 		commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 		commandList->SetGraphicsRootSignature(renderableObj->GetGraphicsRootSignature().Get());
@@ -264,7 +271,7 @@ void RendererDX12::ProcessRenderableObjectsForRendering(
 		commandList->IASetIndexBuffer(&indexBuffer);
 		commandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		commandList->SetGraphicsRootDescriptorTable(0, constBufferViewHeap->GetGPUDescriptorHandleForHeapStart());
+		commandList->SetGraphicsRootDescriptorTable(0, m_cbvHeap->GetGPUDescriptorHandleForHeapStart());
 
 		commandList->DrawIndexedInstanced(renderableObj->GetIndexCount(), 1, 0, 0, 0);
 	}
@@ -272,8 +279,7 @@ void RendererDX12::ProcessRenderableObjectsForRendering(
 
 void RendererDX12::Render(float deltaTime,
 	std::vector<std::shared_ptr<IRenderable>>& renderableObjects,
-	ComPtr<ID3D12PipelineState>& pipelineStateObj,
-	ComPtr<ID3D12DescriptorHeap>& constBufferViewHeap)
+	ComPtr<ID3D12PipelineState>& pipelineStateObj)
 {
 	// We know at this pointwe've waited for last frame's commands to be executed on the GPU , we can now safely reset the commandlist allocator
 	ThrowIfFailed(m_directCommandListAllocator->Reset());
@@ -307,7 +313,7 @@ void RendererDX12::Render(float deltaTime,
 	// Set buffer we're rendering to (output merger)
 	m_commandList->OMSetRenderTargets(1, &currentBackBufferView, true, &currentDepthStencilView);
 
-	ProcessRenderableObjectsForRendering(m_commandList, renderableObjects, constBufferViewHeap);
+	ProcessRenderableObjectsForRendering(m_commandList, renderableObjects);
 
 	// Transition backbuffer resource state from render target to present 
 	const auto backBufferResourceBarrierRTToPresent = CD3DX12_RESOURCE_BARRIER::Transition(
@@ -359,5 +365,11 @@ void RendererDX12::FlushRenderQueue()
 
 void RendererDX12::Shutdown()
 {
+}
+
+
+void RendererDX12::CreateConstantBufferView(D3D12_CONSTANT_BUFFER_VIEW_DESC& cbvDesc)
+{
+	m_device->CreateConstantBufferView(&cbvDesc, m_cbvHeap->GetCPUDescriptorHandleForHeapStart());
 }
 

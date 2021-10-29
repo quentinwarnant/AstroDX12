@@ -22,10 +22,12 @@ public:
 			m_elementByteSize = AstroTools::Rendering::CalcConstantBufferByteSize(sizeof(T));
 		}
 
+		const auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+		const auto bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(m_elementByteSize * elementCount);
 		ThrowIfFailed(device->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			&heapProp,
 			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(m_elementByteSize * elementCount),
+			&bufferDesc,
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
 			IID_PPV_ARGS(&m_uploadBuffer)
@@ -55,6 +57,8 @@ public:
 	{
 		memcpy(&m_mappedData[elementIndex * m_elementByteSize], &data, sizeof(T));
 	}
+
+	UINT GetElementByteSize() { return m_elementByteSize; }
 
 private:
 	bool m_isConstantBuffer;

@@ -7,9 +7,8 @@
 #include "Rendering/IRenderer.h"
 #include "Rendering/IRenderable.h"
 
-
 class IRenderable;
-struct Mesh;
+class Mesh;
 
 // A basic game implementation that creates a D3D12 device and
 // provides a game loop.
@@ -55,7 +54,8 @@ public:
 
 protected:
     // Triggered after Initialise, meant for initial state configuration 
-    virtual void Setup() = 0;
+    virtual void LoadSceneData() = 0;
+    virtual void CreateRenderables() = 0;
     virtual void Update(float deltaTime) = 0;
     virtual void Render(float deltaTime) = 0;
 

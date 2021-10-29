@@ -8,11 +8,7 @@
 #include "Maths/MathUtils.h"
 
 using Microsoft::WRL::ComPtr;
-
-struct RenderableObjectConstantData
-{
-    DirectX::XMFLOAT4X4 WorldViewProj = AstroTools::Maths::Identity4x4();
-};
+class IRenderableDesc;
 
 class AstroGameInstance final :
     public Game 
@@ -27,14 +23,14 @@ public:
 
 private:
     ComPtr<ID3D12RootSignature> m_rootSignature = nullptr;
-    ComPtr<ID3D12DescriptorHeap> m_constantBufferViewHeap;
-    std::unique_ptr<UploadBuffer<RenderableObjectConstantData>> m_renderableObjectConstantBuffer;
 
     ComPtr<ID3DBlob> m_vertexShaderByteCode = nullptr;
     ComPtr<ID3DBlob> m_pixelShaderByteCode = nullptr;
 
     std::vector<D3D12_INPUT_ELEMENT_DESC> m_inputLayout;
     ComPtr<ID3D12PipelineState> m_pipelineStateObject = nullptr;
+
+    std::vector<IRenderableDesc> m_renderablesDesc;
 
     XMFLOAT4X4 m_worldMat = AstroTools::Maths::Identity4x4();
     XMFLOAT4X4 m_viewMat = AstroTools::Maths::Identity4x4();
@@ -44,7 +40,8 @@ private:
     const float m_phi = XM_PIDIV4;
     const float m_radius = 5.0f;
 
-    virtual void Setup() override;
+    virtual void LoadSceneData() override;
+    virtual void CreateRenderables() override;
     virtual void Update(float deltaTime) override;
     virtual void Render(float deltaTime) override;
 };

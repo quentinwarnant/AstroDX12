@@ -36,6 +36,8 @@ void Game::Initialize(HWND window, int width, int height)
     OnWindowSizeChanged(width, height);
     m_renderer->Init( window, width, height);
 
+    LoadSceneData();
+
     BuildConstantBuffers();
     BuildRootSignature();
     BuildShadersAndInputLayout();
@@ -43,6 +45,8 @@ void Game::Initialize(HWND window, int width, int height)
     BuildPipelineStateObject();
 
     m_renderer->FinaliseInit();
+
+    CreateRenderables();
 
     //m_deviceResources->SetWindow(window, width, height);
 
@@ -53,7 +57,6 @@ void Game::Initialize(HWND window, int width, int height)
     m_timer.SetTargetElapsedSeconds(1.0 / 60);
     */
 
-    Setup();
 }
 
 #pragma region Frame Update

@@ -2,14 +2,27 @@
 #include "IRenderable.h"
 #include "RenderData/Mesh.h"
 #include "../Common.h"
+#include "../Maths/MathUtils.h"
+
+struct RenderableObjectConstantData
+{
+public:
+	DirectX::XMFLOAT4X4 WorldViewProj = AstroTools::Maths::Identity4x4();
+};
 
 class RenderableStaticObject : public IRenderable
 {
 public:
-	explicit RenderableStaticObject(Mesh& mesh, ComPtr<ID3D12RootSignature>& rootSignature)
-		: m_mesh(std::make_unique<Mesh>(mesh))
+	explicit RenderableStaticObject(
+		std::unique_ptr<Mesh>& mesh,
+		ComPtr<ID3D12RootSignature>& rootSignature,
+		std::unique_ptr<UploadBuffer<RenderableObjectConstantData>>& constantBuffer
+	)
+		: m_mesh(std::move(mesh))
 		, m_rootSignature( rootSignature )
-	{}
+		, m_constantBuffer(std::move(constantBuffer))
+	{
+	}
 
 	virtual ComPtr<ID3D12RootSignature> GetGraphicsRootSignature() const override
 	{
@@ -25,7 +38,16 @@ public:
 	}
 	virtual UINT GetIndexCount() const override { return m_mesh->IndexCount;  }
 
+	virtual void SetConstantBufferData(const void* data) override
+	{
+		assert(data);
+		auto typedData = static_cast<const RenderableObjectConstantData*>(data);
+		assert(typedData);
+		m_constantBuffer->CopyData(0, *typedData);
+	}
+
 private:
 	ComPtr<ID3D12RootSignature> m_rootSignature;
 	std::unique_ptr<Mesh> m_mesh;
+	std::unique_ptr<UploadBuffer<RenderableObjectConstantData>> m_constantBuffer;
 };

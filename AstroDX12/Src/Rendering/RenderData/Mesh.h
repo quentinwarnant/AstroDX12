@@ -5,8 +5,12 @@
 using Microsoft::WRL::ComPtr;
 
 // Mesh represents a lot of vertices & indices & backing memory needed to render a single mesh object
-struct Mesh
+class Mesh
 {
+public: 
+	Mesh() = default;
+	Mesh(Mesh&& other) = default;
+
 	~Mesh()
 	{
 		DisposeUploaders();

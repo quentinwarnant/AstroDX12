@@ -2,7 +2,19 @@
 
 void AstroGameInstance::BuildConstantBuffers()
 {
+	for (auto& renderableDesc : m_renderablesDesc)
+	{
+		renderableDesc.ConstantBuffer = m_renderer->CreateConstantBuffer<RenderableObjectConstantData>(1);//TODO: make cbuffer defined by scene data we'd load, instead of fixed
 
+		D3D12_GPU_VIRTUAL_ADDRESS cbAddress = renderableDesc.ConstantBuffer->Resource()->GetGPUVirtualAddress();
+
+		D3D12_CONSTANT_BUFFER_VIEW_DESC cbViewDesc;
+		cbViewDesc.BufferLocation = cbAddress;
+		cbViewDesc.SizeInBytes = renderableDesc.ConstantBuffer->GetElementByteSize();
+
+		//Finalise creation of constant buffer view
+		m_renderer->CreateConstantBufferView(cbViewDesc);
+	}
 }
 
 void AstroGameInstance::BuildRootSignature()
@@ -24,16 +36,26 @@ void AstroGameInstance::BuildPipelineStateObject()
 
 }
 
-void AstroGameInstance::Setup()
+void AstroGameInstance::LoadSceneData()
 {
 	XMMATRIX proj = XMMatrixPerspectiveFovLH(0.25f * DirectX::XM_PI, GetAspectRatio(), 1.0f, 1000.0f);
 	XMStoreFloat4x4(&m_projMat, proj);
 
 	// Create Scene objects
-	auto testObjMesh = Mesh();
-	//Mesh& mesh, ComPtr<ID3D12RootSignature>& rootSignature
-	auto testObj = std::make_shared<RenderableStaticObject>(testObjMesh, m_rootSignature);
-	AddRenderable(testObj);
+	m_renderablesDesc.clear();
+	auto mesh = std::make_unique<Mesh>();
+	// TODO : init mesh with vert & indices data
+
+	m_renderablesDesc.emplace_back( std::move(mesh), m_rootSignature );
+}
+
+void AstroGameInstance::CreateRenderables()
+{
+	for (auto& renderableDesc : m_renderablesDesc)
+	{
+		auto renderableObj = std::make_shared<RenderableStaticObject>(renderableDesc.Mesh, renderableDesc.RootSignature, renderableDesc.ConstantBuffer);
+		AddRenderable(renderableObj);
+	}
 }
 
 void AstroGameInstance::Update(float deltaTime)
@@ -57,14 +79,13 @@ void AstroGameInstance::Update(float deltaTime)
 	//Update constant buffer with updated worldViewProj value
 	RenderableObjectConstantData objectConstants;
 	XMStoreFloat4x4(&objectConstants.WorldViewProj, XMMatrixTranspose(worldViewProj));
-	m_renderableObjectConstantBuffer->CopyData(0, objectConstants);
-
+	m_sceneRenderables[0]->SetConstantBufferData(&objectConstants);
 
 	PIXEndEvent();
 }
 
 void AstroGameInstance::Render(float deltaTime)
 {
-	m_renderer->Render(deltaTime, m_sceneRenderables, m_pipelineStateObject, m_constantBufferViewHeap);
+	m_renderer->Render(deltaTime, m_sceneRenderables, m_pipelineStateObject);
 
 }

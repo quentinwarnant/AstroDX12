@@ -17,10 +17,13 @@ public:
     virtual void Render(
         float deltaTime,
         std::vector< std::shared_ptr<IRenderable>>& renderableObjects,
-        ComPtr<ID3D12PipelineState>& pipelineStateObj,
-        ComPtr<ID3D12DescriptorHeap>& constBufferViewHeap) override;
+        ComPtr<ID3D12PipelineState>& pipelineStateObj) override;
     virtual void FlushRenderQueue() override;
     virtual void Shutdown() override;
+protected:
+    virtual ComPtr<ID3D12Device>  GetDevice() const override { return m_device; };
+public:
+    virtual void CreateConstantBufferView(D3D12_CONSTANT_BUFFER_VIEW_DESC& cbvDesc) override;
     // IRenderer - END
 
 private:
@@ -35,8 +38,7 @@ private:
 
     void ProcessRenderableObjectsForRendering(
         ComPtr<ID3D12GraphicsCommandList>& commandList,
-        std::vector<std::shared_ptr<IRenderable>>& renderableObjects,
-        ComPtr<ID3D12DescriptorHeap>& constBufferViewHeap);
+        std::vector<std::shared_ptr<IRenderable>>& renderableObjects);
 
 private:
     int m_width = 32;
@@ -65,6 +67,7 @@ private:
 
     ComPtr<ID3D12DescriptorHeap> m_rtvHeap; // Render Target
     ComPtr<ID3D12DescriptorHeap> m_dsvHeap; // Depth/Stencil 
+    ComPtr<ID3D12DescriptorHeap> m_cbvHeap; // Constant Buffers
 
     ComPtr<ID3D12Resource> m_swapchainBuffers[m_swapChainBufferCount];
     ComPtr<ID3D12Resource> m_depthStencilBuffer;
