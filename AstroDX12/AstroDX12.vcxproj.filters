@@ -19,6 +19,9 @@
     <Filter Include="Src\Maths">
       <UniqueIdentifier>{b43e530b-e9aa-4e6a-8dce-adcd6421ca10}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{3af4f4c5-722a-4123-841e-e20ab47cc11c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Src\AstroGameInstance.cpp">
@@ -86,5 +89,10 @@
     <CopyFileToFolders Include="SmallLogo.png" />
     <CopyFileToFolders Include="SplashScreen.png" />
     <CopyFileToFolders Include="StoreLogo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shaders\color.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

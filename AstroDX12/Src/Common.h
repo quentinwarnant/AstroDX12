@@ -54,6 +54,10 @@
 
 #include <XGameRuntime.h>
 
+#include <crtdbg.h>
+#include <filesystem>
+
+
 namespace DX
 {
     // Helper class for COM exceptions
@@ -80,5 +84,16 @@ namespace DX
         {
             throw com_exception(hr);
         }
+    }
+
+    static std::wstring GetWorkingDirectory()
+    {
+        wchar_t buffer[MAX_PATH];
+        auto appFullPath = GetModuleFileName(NULL, buffer, MAX_PATH);
+        auto pathStr = std::wstring(buffer);
+        std::filesystem::path path = pathStr;
+        auto rootFolder = path.parent_path().parent_path().parent_path();
+
+        return rootFolder.wstring()+L"\\AstroDX12";
     }
 }

@@ -63,7 +63,17 @@ void AstroGameInstance::BuildRootSignature()
 
 void AstroGameInstance::BuildShadersAndInputLayout()
 {
+	const auto rootPath = DX::GetWorkingDirectory();
 
+	// TODO: associate this to a renderable instead of being global - although would be useful to also have a fallback shader available globally for failed compilations
+	m_vertexShaderByteCode = AstroTools::Rendering::CompileShader(rootPath + L"\\Shaders\\color.hlsl", nullptr, "VS", "vs_5_0");
+	m_pixelShaderByteCode = AstroTools::Rendering::CompileShader(rootPath + L"\\Shaders\\color.hlsl", nullptr, "PS", "ps_5_0");
+
+	m_inputLayout =
+	{
+		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{"COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+	};
 }
 
 void AstroGameInstance::BuildSceneGeometry()
