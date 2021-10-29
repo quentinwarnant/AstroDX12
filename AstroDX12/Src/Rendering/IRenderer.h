@@ -19,6 +19,7 @@ public:
 		ComPtr<ID3D12PipelineState>& pipelineStateObj) = 0;
 	virtual void FlushRenderQueue() = 0;
 	virtual void Shutdown() = 0;
+	virtual void CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature, ComPtr<ID3D12RootSignature>& outRootSignature) = 0;
 
 protected:
 	virtual ComPtr<ID3D12Device> GetDevice() const = 0;

@@ -277,6 +277,11 @@ void RendererDX12::ProcessRenderableObjectsForRendering(
 	}
 }
 
+void RendererDX12::CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature, ComPtr<ID3D12RootSignature>& outRootSignature)
+{
+	ThrowIfFailed( m_device->CreateRootSignature(0, serializedRootSignature->GetBufferPointer(), serializedRootSignature->GetBufferSize(), IID_PPV_ARGS(&outRootSignature)) );
+}
+
 void RendererDX12::Render(float deltaTime,
 	std::vector<std::shared_ptr<IRenderable>>& renderableObjects,
 	ComPtr<ID3D12PipelineState>& pipelineStateObj)

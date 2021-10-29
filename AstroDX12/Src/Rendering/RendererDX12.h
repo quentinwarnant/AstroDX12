@@ -20,6 +20,8 @@ public:
         ComPtr<ID3D12PipelineState>& pipelineStateObj) override;
     virtual void FlushRenderQueue() override;
     virtual void Shutdown() override;
+    virtual void CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature, ComPtr<ID3D12RootSignature>& outRootSignature) override;
+
 protected:
     virtual ComPtr<ID3D12Device>  GetDevice() const override { return m_device; };
 public:

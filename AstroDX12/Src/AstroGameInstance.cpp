@@ -1,5 +1,18 @@
 #include "AstroGameInstance.h"
 
+void AstroGameInstance::LoadSceneData()
+{
+	XMMATRIX proj = XMMatrixPerspectiveFovLH(0.25f * DirectX::XM_PI, GetAspectRatio(), 1.0f, 1000.0f);
+	XMStoreFloat4x4(&m_projMat, proj);
+
+	// Create Scene objects
+	m_renderablesDesc.clear();
+	auto mesh = std::make_unique<Mesh>();
+	// TODO : init mesh with vert & indices data
+
+	m_renderablesDesc.emplace_back(std::move(mesh));
+}
+
 void AstroGameInstance::BuildConstantBuffers()
 {
 	for (auto& renderableDesc : m_renderablesDesc)
@@ -12,13 +25,40 @@ void AstroGameInstance::BuildConstantBuffers()
 		cbViewDesc.BufferLocation = cbAddress;
 		cbViewDesc.SizeInBytes = renderableDesc.ConstantBuffer->GetElementByteSize();
 
-		//Finalise creation of constant buffer view
+		// Finalise creation of constant buffer view
 		m_renderer->CreateConstantBufferView(cbViewDesc);
 	}
 }
 
 void AstroGameInstance::BuildRootSignature()
 {
+	for (auto& renderableDesc : m_renderablesDesc)
+	{
+		CD3DX12_ROOT_PARAMETER slotRootParams[1] = {};
+
+		// Descriptor table of 1 CBV 
+		CD3DX12_DESCRIPTOR_RANGE cbvTable;
+		cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+		slotRootParams[0].InitAsDescriptorTable(1, &cbvTable);
+
+		// Root signature is an array of root parameters
+		CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc(1, slotRootParams, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+		// Create the root signature
+		ComPtr<ID3DBlob> serializedRootSignature = nullptr;
+		ComPtr<ID3DBlob> errorBlob = nullptr;
+		HRESULT hr = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, serializedRootSignature.GetAddressOf(), errorBlob.GetAddressOf());
+		if (errorBlob)
+		{
+			::OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+		}
+		ThrowIfFailed(hr);
+
+		ComPtr<ID3D12RootSignature> rootSignature = nullptr;
+		m_renderer->CreateRootSignature(serializedRootSignature, rootSignature);
+
+		renderableDesc.RootSignature = rootSignature;
+	}
 }
 
 void AstroGameInstance::BuildShadersAndInputLayout()
@@ -34,19 +74,6 @@ void AstroGameInstance::BuildSceneGeometry()
 void AstroGameInstance::BuildPipelineStateObject()
 {
 
-}
-
-void AstroGameInstance::LoadSceneData()
-{
-	XMMATRIX proj = XMMatrixPerspectiveFovLH(0.25f * DirectX::XM_PI, GetAspectRatio(), 1.0f, 1000.0f);
-	XMStoreFloat4x4(&m_projMat, proj);
-
-	// Create Scene objects
-	m_renderablesDesc.clear();
-	auto mesh = std::make_unique<Mesh>();
-	// TODO : init mesh with vert & indices data
-
-	m_renderablesDesc.emplace_back( std::move(mesh), m_rootSignature );
 }
 
 void AstroGameInstance::CreateRenderables()

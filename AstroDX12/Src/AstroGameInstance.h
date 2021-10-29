@@ -14,6 +14,7 @@ class AstroGameInstance final :
     public Game 
 {
 public:
+    virtual void LoadSceneData() override;
     // Scene renderable objects building
     virtual void BuildConstantBuffers() override;
     virtual void BuildRootSignature() override;
@@ -22,8 +23,6 @@ public:
     virtual void BuildPipelineStateObject() override;
 
 private:
-    ComPtr<ID3D12RootSignature> m_rootSignature = nullptr;
-
     ComPtr<ID3DBlob> m_vertexShaderByteCode = nullptr;
     ComPtr<ID3DBlob> m_pixelShaderByteCode = nullptr;
 
@@ -40,7 +39,6 @@ private:
     const float m_phi = XM_PIDIV4;
     const float m_radius = 5.0f;
 
-    virtual void LoadSceneData() override;
     virtual void CreateRenderables() override;
     virtual void Update(float deltaTime) override;
     virtual void Render(float deltaTime) override;

@@ -8,9 +8,9 @@ struct RenderableObjectConstantData;
 class IRenderableDesc
 {
 public:
-	explicit IRenderableDesc(std::unique_ptr<Mesh> inMesh, ComPtr<ID3D12RootSignature>& inRootSignature)
+	explicit IRenderableDesc(std::unique_ptr<Mesh> inMesh)
 		: Mesh(std::move(inMesh))
-		, RootSignature(inRootSignature)
+		, RootSignature(nullptr)
 		, ConstantBuffer(nullptr)
 	{
 	}
