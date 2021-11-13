@@ -1,5 +1,6 @@
 #include "RendererDX12.h"
 #include "IRenderable.h"
+#include "RenderData/VertexData.h"
 
 using namespace Microsoft::WRL;
 using namespace DX;
@@ -372,9 +373,68 @@ void RendererDX12::Shutdown()
 {
 }
 
-
 void RendererDX12::CreateConstantBufferView(D3D12_CONSTANT_BUFFER_VIEW_DESC& cbvDesc)
 {
 	m_device->CreateConstantBufferView(&cbvDesc, m_cbvHeap->GetCPUDescriptorHandleForHeapStart());
 }
 
+void RendererDX12::CreateMesh(std::unique_ptr<Mesh>& mesh, const std::vector<VertexData_Short>& verts, const std::vector<std::uint16_t>& indices)
+{
+	const UINT vertexDataByteSize = verts[0].GetDataSize();
+	const UINT vbByteSize = (UINT)verts.size() * vertexDataByteSize;
+	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
+
+	ThrowIfFailed(D3DCreateBlob(vbByteSize, &mesh->VertexBufferCPU));
+	CopyMemory(mesh->VertexBufferCPU->GetBufferPointer(), verts.data(), vbByteSize);
+
+	ThrowIfFailed(D3DCreateBlob(ibByteSize, &mesh->IndexBufferCPU));
+	CopyMemory(mesh->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
+
+	mesh->VertexBufferGPU = AstroTools::Rendering::CreateDefaultBuffer(m_device.Get(), m_commandList.Get(),
+		verts.data(), vbByteSize, mesh->VertexBufferUploader);
+
+	mesh->IndexBufferGPU = AstroTools::Rendering::CreateDefaultBuffer(m_device.Get(), m_commandList.Get(),
+		indices.data(), ibByteSize, mesh->IndexBufferUploader);
+
+	mesh->VertexByteStride = vertexDataByteSize;
+	mesh->VertexBufferByteSize = vbByteSize;
+	mesh->IndexFormat = DXGI_FORMAT_R16_UINT;
+	mesh->IndexBufferByteSize = ibByteSize;
+	mesh->IndexCount = (UINT)indices.size();
+
+}
+
+void RendererDX12::CreateGraphicsPipelineState(
+	ComPtr<ID3D12PipelineState>& pso,
+	ComPtr<ID3D12RootSignature>& rootSignature,
+	std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout,
+	ComPtr<ID3DBlob>& vertexShaderByteCode,
+	ComPtr<ID3DBlob>& pixelShaderByteCode)
+{
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
+	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+	psoDesc.InputLayout = { inputLayout.data(), (UINT)inputLayout.size() };
+	psoDesc.pRootSignature = rootSignature.Get();
+	psoDesc.VS =
+	{
+		reinterpret_cast<BYTE*>(vertexShaderByteCode->GetBufferPointer()),
+		vertexShaderByteCode->GetBufferSize()
+	};
+	psoDesc.PS =
+	{
+		reinterpret_cast<BYTE*>(pixelShaderByteCode->GetBufferPointer()),
+		pixelShaderByteCode->GetBufferSize()
+	};
+	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+	psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+	psoDesc.SampleMask = UINT_MAX;
+	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	psoDesc.NumRenderTargets = 1;
+	psoDesc.RTVFormats[0] =  m_backbufferFormat;
+	psoDesc.SampleDesc.Count = 1;
+	psoDesc.SampleDesc.Quality = 0;
+	psoDesc.DSVFormat = m_depthStencilFormat;
+	ThrowIfFailed(m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pso)));
+
+}

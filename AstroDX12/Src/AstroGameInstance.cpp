@@ -1,5 +1,7 @@
 #include "AstroGameInstance.h"
 
+#include "Rendering/RenderData/VertexData.h"
+
 void AstroGameInstance::LoadSceneData()
 {
 	XMMATRIX proj = XMMatrixPerspectiveFovLH(0.25f * DirectX::XM_PI, GetAspectRatio(), 1.0f, 1000.0f);
@@ -7,10 +9,8 @@ void AstroGameInstance::LoadSceneData()
 
 	// Create Scene objects
 	m_renderablesDesc.clear();
-	auto mesh = std::make_unique<Mesh>();
-	// TODO : init mesh with vert & indices data
 
-	m_renderablesDesc.emplace_back(std::move(mesh));
+	BuildSceneGeometry();
 }
 
 void AstroGameInstance::BuildConstantBuffers()
@@ -78,12 +78,63 @@ void AstroGameInstance::BuildShadersAndInputLayout()
 
 void AstroGameInstance::BuildSceneGeometry()
 {
+	const std::vector< VertexData_Short > verts =
+	{
+		VertexData_Short(DirectX::XMFLOAT3(-1.0f, -1.0f, -1.0f), DirectX::XMFLOAT4(Colors::White)),
+		VertexData_Short(DirectX::XMFLOAT3(-1.0f, +1.0f, -1.0f), DirectX::XMFLOAT4(Colors::Black)),
+		VertexData_Short(DirectX::XMFLOAT3(+1.0f, +1.0f, -1.0f), DirectX::XMFLOAT4(Colors::Red)),
+		VertexData_Short(DirectX::XMFLOAT3(+1.0f, -1.0f, -1.0f), DirectX::XMFLOAT4(Colors::Green)),
+		VertexData_Short(DirectX::XMFLOAT3(-1.0f, -1.0f, +1.0f), DirectX::XMFLOAT4(Colors::Blue)),
+		VertexData_Short(DirectX::XMFLOAT3(-1.0f, +1.0f, +1.0f), DirectX::XMFLOAT4(Colors::Yellow)),
+		VertexData_Short(DirectX::XMFLOAT3(+1.0f, +1.0f, +1.0f), DirectX::XMFLOAT4(Colors::Cyan)),
+		VertexData_Short(DirectX::XMFLOAT3(+1.0f, -1.0f, +1.0f), DirectX::XMFLOAT4(Colors::Magenta))
+	};
 
+	const std::vector<std::uint16_t> indices =
+	{
+		// Front face
+		0, 1, 2,
+		0, 2, 3,
+
+		// Back face
+		4, 6, 5,
+		4, 7, 6,
+
+		// Left face
+		4, 5, 1,
+		4, 1, 0,
+
+		// Right face
+		3, 2, 6, 
+		3, 6, 7,
+
+		// Top face
+		1, 5, 6,
+		1, 6, 2,
+
+		// Bottom face
+		4, 0, 3,
+		4, 3, 7
+	};
+
+	
+	std::unique_ptr<Mesh> boxMesh = std::make_unique<Mesh>();
+	boxMesh->Name = "BoxGeometry";
+
+	m_renderer->CreateMesh(boxMesh, verts, indices);
+
+	m_renderablesDesc.emplace_back(std::move(boxMesh));
 }
 
+//TODO: move part of this to renderer class
 void AstroGameInstance::BuildPipelineStateObject()
 {
-
+	m_renderer->CreateGraphicsPipelineState(
+		m_pipelineStateObject, 
+		m_renderablesDesc[0].RootSignature, /*TODO: TEMP until I figure out if root signatures are compatible across multiple objects*/
+		m_inputLayout,
+		m_vertexShaderByteCode, 
+		m_pixelShaderByteCode);
 }
 
 void AstroGameInstance::CreateRenderables()

@@ -49,7 +49,6 @@ public:
     virtual void BuildConstantBuffers() = 0;
     virtual void BuildRootSignature() = 0;
     virtual void BuildShadersAndInputLayout() = 0;
-    virtual void BuildSceneGeometry() = 0;
     virtual void BuildPipelineStateObject() = 0;
 
 protected:

@@ -21,11 +21,17 @@ public:
     virtual void FlushRenderQueue() override;
     virtual void Shutdown() override;
     virtual void CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature, ComPtr<ID3D12RootSignature>& outRootSignature) override;
-
+    virtual void CreateMesh(std::unique_ptr<Mesh>& mesh, const std::vector<VertexData_Short>& verts, const std::vector<std::uint16_t>& indices) override;
 protected:
     virtual ComPtr<ID3D12Device>  GetDevice() const override { return m_device; };
 public:
     virtual void CreateConstantBufferView(D3D12_CONSTANT_BUFFER_VIEW_DESC& cbvDesc) override;
+    virtual void CreateGraphicsPipelineState(
+        ComPtr<ID3D12PipelineState>& pso,
+        ComPtr<ID3D12RootSignature>& rootSignature,
+        std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout,
+        ComPtr<ID3DBlob>& vertexShaderByteCode,
+        ComPtr<ID3DBlob>& pixelShaderByteCode) override;
     // IRenderer - END
 
 private:
@@ -76,6 +82,5 @@ private:
 
     D3D12_VIEWPORT m_viewportDesc{};
     D3D12_RECT m_scissorRect{};
-
 };
 

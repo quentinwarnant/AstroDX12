@@ -19,10 +19,11 @@ public:
     virtual void BuildConstantBuffers() override;
     virtual void BuildRootSignature() override;
     virtual void BuildShadersAndInputLayout() override;
-    virtual void BuildSceneGeometry() override;
     virtual void BuildPipelineStateObject() override;
 
 private:
+    void BuildSceneGeometry();
+    
     ComPtr<ID3DBlob> m_vertexShaderByteCode = nullptr;
     ComPtr<ID3DBlob> m_pixelShaderByteCode = nullptr;
 

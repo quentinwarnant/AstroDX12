@@ -41,7 +41,6 @@ void Game::Initialize(HWND window, int width, int height)
     BuildConstantBuffers();
     BuildRootSignature();
     BuildShadersAndInputLayout();
-    BuildSceneGeometry();
     BuildPipelineStateObject();
 
     m_renderer->FinaliseInit();

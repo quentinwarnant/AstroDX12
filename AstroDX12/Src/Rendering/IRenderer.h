@@ -6,6 +6,8 @@
 using Microsoft::WRL::ComPtr;
 
 class IRenderable;
+struct VertexData_Short;
+class Mesh;
 
 class IRenderer
 {
@@ -20,7 +22,7 @@ public:
 	virtual void FlushRenderQueue() = 0;
 	virtual void Shutdown() = 0;
 	virtual void CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature, ComPtr<ID3D12RootSignature>& outRootSignature) = 0;
-
+	virtual void CreateMesh(std::unique_ptr<Mesh>& mesh, const std::vector<VertexData_Short>& verts, const std::vector<std::uint16_t>& indices) = 0;
 protected:
 	virtual ComPtr<ID3D12Device> GetDevice() const = 0;
 
@@ -32,4 +34,10 @@ public:
 	}
 
 	virtual void CreateConstantBufferView(D3D12_CONSTANT_BUFFER_VIEW_DESC& cbvDesc) = 0;
+	virtual void CreateGraphicsPipelineState(
+		ComPtr<ID3D12PipelineState>& pso,
+		ComPtr<ID3D12RootSignature>& rootSignature,
+		std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout,
+		ComPtr<ID3DBlob>& vertexShaderByteCode,
+		ComPtr<ID3DBlob>& pixelShaderByteCode) = 0;
 };

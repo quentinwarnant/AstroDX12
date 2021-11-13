@@ -39,6 +39,7 @@
     <ClCompile Include="Src\Rendering\RendererDX12.cpp">
       <Filter>Src\Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Rendering\RenderData\VertexData.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\AstroGameInstance.h">
