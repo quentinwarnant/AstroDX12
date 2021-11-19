@@ -154,7 +154,7 @@ void AstroGameInstance::Update(float deltaTime)
 	//PIXScopedEvent(PIX_COLOR_DEFAULT, L"Update");
 
 	// Convert Spherical to Cartesian coordinates.
-	constexpr float cameraRadius = 15.0f;
+	constexpr float cameraRadius = 35.0f;
 	float x = cameraRadius * sinf(m_cameraPhi) * cosf(m_cameraTheta);
 	float z = cameraRadius * sinf(m_cameraPhi) * sinf(m_cameraTheta);
 	float y = cameraRadius * cosf(m_cameraPhi);

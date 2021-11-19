@@ -24,7 +24,7 @@ struct VertexData_Short : public IVertexDataInterface
 
 	virtual ULONG64 GetDataSize() const override
 	{
-		return sizeof(this);
+		return sizeof(XMFLOAT3) + sizeof(XMFLOAT4);
 	}
 
 };

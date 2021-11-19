@@ -380,7 +380,7 @@ void RendererDX12::CreateConstantBufferView(D3D12_CONSTANT_BUFFER_VIEW_DESC& cbv
 
 void RendererDX12::CreateMesh(std::unique_ptr<Mesh>& mesh, const std::vector<VertexData_Short>& verts, const std::vector<std::uint16_t>& indices)
 {
-	const UINT vertexDataByteSize = sizeof(VertexData_Short);
+	const UINT vertexDataByteSize = verts[0].GetDataSize();
 	const UINT vbByteSize = (UINT)verts.size() * vertexDataByteSize;
 	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
 
