@@ -154,7 +154,7 @@ void AstroGameInstance::Update(float deltaTime)
 	//PIXScopedEvent(PIX_COLOR_DEFAULT, L"Update");
 
 	//Build View Matrix
-	XMVECTOR pos = XMVectorSet(0.0f, 0.0f, -100.0f, 1.0f);
+	XMVECTOR pos = XMVectorSet(0.0f, 0.0f, -10.0f, 1.0f);
 	XMVECTOR target = XMVectorZero();
 	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 	XMMATRIX view = XMMatrixLookAtLH(pos, target, up);

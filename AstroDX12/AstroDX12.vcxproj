@@ -188,7 +188,6 @@
     <ClCompile Include="Src\AstroGameInstance.cpp" />
     <ClCompile Include="Src\Game.cpp" />
     <ClCompile Include="Src\Main.cpp" />
-    <ClCompile Include="Src\Rendering\RenderData\VertexData.cpp" />
     <ClCompile Include="Src\Rendering\RendererDX12.cpp" />
     <ClCompile Include="Src\Timing\GameTimer.cpp" />
   </ItemGroup>
