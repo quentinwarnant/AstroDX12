@@ -38,6 +38,9 @@ public:
     void OnResuming();
     void OnWindowMoved();
     void OnWindowSizeChanged(int width, int height);
+    void OnMouseDown(WPARAM btnState, int x, int y);
+    void OnMouseUp(WPARAM btnState, int x, int y);
+    void OnMouseMove(WPARAM mouseBtnState, int x, int y);
 
     // Properties
     void GetDefaultSize( int& width, int& height ) const noexcept;
@@ -65,4 +68,9 @@ private:
 
     int m_screenWidth;
     int m_screenHeight;
+
+protected:
+    POINT m_lastMousePos;
+    float m_cameraTheta;
+    float m_cameraPhi;
 };

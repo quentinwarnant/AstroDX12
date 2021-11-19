@@ -3,6 +3,7 @@
 //
 
 #include "Common.h"
+#include <windowsx.h>
 
 #include "AstroGameInstance.h"
 #include "Timing/GameTimer.h"
@@ -163,6 +164,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             game->OnWindowMoved();
         }
+        break;
+
+    case WM_LBUTTONDOWN:
+    case WM_MBUTTONDOWN:
+    case WM_RBUTTONDOWN:
+        game->OnMouseDown(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+        SetCapture(hWnd);
+        break;
+    case WM_LBUTTONUP:
+    case WM_MBUTTONUP:
+    case WM_RBUTTONUP:
+        game->OnMouseUp(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+        ReleaseCapture();
+        break;
+    case WM_MOUSEMOVE:
+        game->OnMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
         break;
 
     case WM_SIZE:

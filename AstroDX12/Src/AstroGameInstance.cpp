@@ -153,8 +153,14 @@ void AstroGameInstance::Update(float deltaTime)
 	PIXBeginEvent(PIX_COLOR_DEFAULT, L"Update"); // See pch.h for info
 	//PIXScopedEvent(PIX_COLOR_DEFAULT, L"Update");
 
+	// Convert Spherical to Cartesian coordinates.
+	constexpr float cameraRadius = 15.0f;
+	float x = cameraRadius * sinf(m_cameraPhi) * cosf(m_cameraTheta);
+	float z = cameraRadius * sinf(m_cameraPhi) * sinf(m_cameraTheta);
+	float y = cameraRadius * cosf(m_cameraPhi);
+
 	//Build View Matrix
-	XMVECTOR pos = XMVectorSet(0.0f, 0.0f, -10.0f, 1.0f);
+	XMVECTOR pos = XMVectorSet(x,y,z, 1.0f);
 	XMVECTOR target = XMVectorZero();
 	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 	XMMATRIX view = XMMatrixLookAtLH(pos, target, up);

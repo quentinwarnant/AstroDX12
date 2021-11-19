@@ -14,6 +14,11 @@ using namespace DirectX;
 using Microsoft::WRL::ComPtr;
 
 Game::Game() noexcept(false)
+    : m_screenWidth(350)
+    , m_screenHeight(200)
+    , m_lastMousePos()
+    , m_cameraPhi(XM_PIDIV4)
+    , m_cameraTheta(1.5f * XM_PI)
 {
     //m_deviceResources = std::make_unique<DX::DeviceResources>();
     //m_deviceResources->RegisterDeviceNotify(this);
@@ -118,6 +123,35 @@ void Game::OnWindowSizeChanged(int width, int height)
     //CreateWindowSizeDependentResources();
 
     // TODO: Game window is being resized.
+}
+
+
+void Game::OnMouseDown(WPARAM btnState, int x, int y)
+{
+    m_lastMousePos.x = x;
+    m_lastMousePos.y = y;
+   
+}
+
+void Game::OnMouseUp(WPARAM btnState, int x, int y)
+{
+}
+
+void Game::OnMouseMove(WPARAM mouseBtnState, int x, int y)
+{
+    if ((mouseBtnState & MK_LBUTTON) != 0)
+    {
+        // Make each pixel correspond to a quarter of a degree.
+        float dx = XMConvertToRadians(0.25f * static_cast<float>(x - m_lastMousePos.x));
+        float dy = XMConvertToRadians(0.25f * static_cast<float>(y - m_lastMousePos.y));
+
+        // Update angles based on input to orbit camera around box.
+        m_cameraTheta = dx;
+        m_cameraPhi = dy;
+
+        // Restrict the angle m_cameraPhi.
+        m_cameraPhi = AstroTools::Maths::Clamp(m_cameraPhi, 0.1f, AstroTools::Maths::Pi - 0.1f);
+    }
 }
 
 // Properties
