@@ -2,25 +2,25 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Src">
-      <UniqueIdentifier>{554d86e3-7343-4e46-967a-764a097cec0d}</UniqueIdentifier>
+      <UniqueIdentifier>{0fc700df-56da-4916-9a96-0796a3b903d3}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Timing">
-      <UniqueIdentifier>{0778a22b-9870-4836-914a-8958939f5ceb}</UniqueIdentifier>
+      <UniqueIdentifier>{90b35e6d-48da-46d8-a26f-6d7c5e31e87d}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Rendering">
-      <UniqueIdentifier>{3426bf6d-6dcf-412d-9c2e-0e2ac7b76d35}</UniqueIdentifier>
+      <UniqueIdentifier>{48171a59-3db6-4a6d-afa8-27dcceb89b1e}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Rendering\RenderData">
-      <UniqueIdentifier>{3ff778b1-6d92-4eec-8190-e07b2316c812}</UniqueIdentifier>
+      <UniqueIdentifier>{ca7f859c-b5ea-4f5c-bfc6-7035e67db7ff}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Rendering\Common">
-      <UniqueIdentifier>{a9f260bf-7ca3-4ff2-8fa2-45a1164e3d80}</UniqueIdentifier>
+      <UniqueIdentifier>{42ef63e7-30c7-4733-ad26-253c05462329}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Maths">
-      <UniqueIdentifier>{28089d59-66c4-485f-bdef-8bcab2a48d20}</UniqueIdentifier>
+      <UniqueIdentifier>{7823073c-753b-4e2e-8d1a-fdbefe2d8503}</UniqueIdentifier>
     </Filter>
     <Filter Include="Shaders">
-      <UniqueIdentifier>{12642659-96ed-4c06-a34c-cc8294d8b6a0}</UniqueIdentifier>
+      <UniqueIdentifier>{3e622bf8-c3f6-4d39-a66b-e4ec3009059e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

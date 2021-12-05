@@ -378,20 +378,19 @@ void RendererDX12::CreateConstantBufferView(D3D12_CONSTANT_BUFFER_VIEW_DESC& cbv
 	m_device->CreateConstantBufferView(&cbvDesc, m_cbvHeap->GetCPUDescriptorHandleForHeapStart());
 }
 
-void RendererDX12::CreateMesh(std::unique_ptr<Mesh>& mesh, const std::vector<VertexData_Short>& verts, const std::vector<std::uint16_t>& indices)
+void RendererDX12::CreateMesh(std::unique_ptr<Mesh>& mesh, const void* vertexData, const UINT vertexDataCount, const UINT vertexDataByteSize, const std::vector<std::uint16_t>& indices)
 {
-	const UINT vertexDataByteSize = sizeof(VertexData_Short);
-	const UINT vbByteSize = (UINT)verts.size() * vertexDataByteSize;
+	const UINT vbByteSize = vertexDataCount * vertexDataByteSize;
 	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
 
 	ThrowIfFailed(D3DCreateBlob(vbByteSize, &mesh->VertexBufferCPU));
-	CopyMemory(mesh->VertexBufferCPU->GetBufferPointer(), verts.data(), vbByteSize);
+	CopyMemory(mesh->VertexBufferCPU->GetBufferPointer(), vertexData, vbByteSize);
 
 	ThrowIfFailed(D3DCreateBlob(ibByteSize, &mesh->IndexBufferCPU));
 	CopyMemory(mesh->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
 
 	mesh->VertexBufferGPU = AstroTools::Rendering::CreateDefaultBuffer(m_device.Get(), m_commandList.Get(),
-		verts.data(), vbByteSize, mesh->VertexBufferUploader);
+		vertexData, vbByteSize, mesh->VertexBufferUploader);
 
 	mesh->IndexBufferGPU = AstroTools::Rendering::CreateDefaultBuffer(m_device.Get(), m_commandList.Get(),
 		indices.data(), ibByteSize, mesh->IndexBufferUploader);

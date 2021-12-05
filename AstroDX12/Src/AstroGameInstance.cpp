@@ -1,6 +1,7 @@
 #include "AstroGameInstance.h"
 
 #include "Rendering/RenderData/VertexData.h"
+#include "Rendering/RenderData/VertexDataFactory.h"
 
 void AstroGameInstance::LoadSceneData()
 {
@@ -78,17 +79,15 @@ void AstroGameInstance::BuildShadersAndInputLayout()
 
 void AstroGameInstance::BuildSceneGeometry()
 {
-	const std::vector< VertexData_Short > verts =
-	{
-		VertexData_Short(DirectX::XMFLOAT3(-1.5f, -1.5f, -1.5f), DirectX::XMFLOAT4(Colors::White)),
-		VertexData_Short(DirectX::XMFLOAT3(-1.5f, +1.5f, -1.5f), DirectX::XMFLOAT4(Colors::Black)),
-		VertexData_Short(DirectX::XMFLOAT3(+1.5f, +1.5f, -1.5f), DirectX::XMFLOAT4(Colors::Red)),
-		VertexData_Short(DirectX::XMFLOAT3(+1.5f, -1.5f, -1.5f), DirectX::XMFLOAT4(Colors::Green)),
-		VertexData_Short(DirectX::XMFLOAT3(-1.5f, -1.5f, +1.5f), DirectX::XMFLOAT4(Colors::Blue)),
-		VertexData_Short(DirectX::XMFLOAT3(-1.5f, +1.5f, +1.5f), DirectX::XMFLOAT4(Colors::Yellow)),
-		VertexData_Short(DirectX::XMFLOAT3(+1.5f, +1.5f, +1.5f), DirectX::XMFLOAT4(Colors::Cyan)),
-		VertexData_Short(DirectX::XMFLOAT3(+1.5f, -1.5f, +1.5f), DirectX::XMFLOAT4(Colors::Magenta))
-	};
+	std::vector< std::unique_ptr<VertexData_Short> > verts;
+	verts.emplace_back(std::make_unique<VertexData_Short>(DirectX::XMFLOAT3(-1.5f, -1.5f, -1.5f), DirectX::XMFLOAT4(Colors::White)));
+	verts.emplace_back(std::make_unique<VertexData_Short>(DirectX::XMFLOAT3(-1.5f, +1.5f, -1.5f), DirectX::XMFLOAT4(Colors::Black)));
+	verts.emplace_back(std::make_unique<VertexData_Short>(DirectX::XMFLOAT3(+1.5f, +1.5f, -1.5f), DirectX::XMFLOAT4(Colors::Red)));
+	verts.emplace_back(std::make_unique<VertexData_Short>(DirectX::XMFLOAT3(+1.5f, -1.5f, -1.5f), DirectX::XMFLOAT4(Colors::Green)));
+	verts.emplace_back(std::make_unique<VertexData_Short>(DirectX::XMFLOAT3(-1.5f, -1.5f, +1.5f), DirectX::XMFLOAT4(Colors::Blue)));
+	verts.emplace_back(std::make_unique<VertexData_Short>(DirectX::XMFLOAT3(-1.5f, +1.5f, +1.5f), DirectX::XMFLOAT4(Colors::Yellow)));
+	verts.emplace_back(std::make_unique<VertexData_Short>(DirectX::XMFLOAT3(+1.5f, +1.5f, +1.5f), DirectX::XMFLOAT4(Colors::Cyan)));
+	verts.emplace_back(std::make_unique<VertexData_Short>(DirectX::XMFLOAT3(+1.5f, -1.5f, +1.5f), DirectX::XMFLOAT4(Colors::Magenta)));
 
 	const std::vector<std::uint16_t> indices =
 	{
@@ -120,8 +119,10 @@ void AstroGameInstance::BuildSceneGeometry()
 	
 	std::unique_ptr<Mesh> boxMesh = std::make_unique<Mesh>();
 	boxMesh->Name = "BoxGeometry";
-
-	m_renderer->CreateMesh(boxMesh, verts, indices);
+	
+	const auto vertsPODList = VertexDataFactory::Convert(verts);
+	constexpr auto podDataSize = VertexDataFactory::GetPODTypeSize<VertexData_Short>();
+	m_renderer->CreateMesh(boxMesh, vertsPODList.data(), (UINT)vertsPODList.size(), podDataSize, indices);
 
 	m_renderablesDesc.emplace_back(std::move(boxMesh));
 }

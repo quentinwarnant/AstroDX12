@@ -6,7 +6,7 @@
 using Microsoft::WRL::ComPtr;
 
 class IRenderable;
-struct VertexData_Short;
+class IVertexData;
 class Mesh;
 
 class IRenderer
@@ -22,7 +22,7 @@ public:
 	virtual void FlushRenderQueue() = 0;
 	virtual void Shutdown() = 0;
 	virtual void CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature, ComPtr<ID3D12RootSignature>& outRootSignature) = 0;
-	virtual void CreateMesh(std::unique_ptr<Mesh>& mesh, const std::vector<VertexData_Short>& verts, const std::vector<std::uint16_t>& indices) = 0;
+	virtual void CreateMesh(std::unique_ptr<Mesh>& mesh, const void* vertexData, const UINT vertexDataCount, const UINT vertexDataByteSize, const std::vector<std::uint16_t>& indices) = 0;
 protected:
 	virtual ComPtr<ID3D12Device> GetDevice() const = 0;
 

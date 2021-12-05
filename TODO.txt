@@ -1,12 +1,6 @@
-Check mesh upload buffer is released
-
-check ID3D12CommandList::CopySubresourceRegion is called to copy vertex data from upload buffer to default buffer
-
-check buffer uploader is not null
-
-Check SizeDataByte of vertex data is the right one called
-
 Difference between Pipeline state object & root signature
 -> one per renderable object or ok to be one to many?
 
 psoDesc.SampleMask?
+
+Clean up data that shouldn't live in renderer or game instance to live in iRenderable

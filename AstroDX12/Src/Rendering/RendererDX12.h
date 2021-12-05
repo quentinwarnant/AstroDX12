@@ -21,7 +21,7 @@ public:
     virtual void FlushRenderQueue() override;
     virtual void Shutdown() override;
     virtual void CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature, ComPtr<ID3D12RootSignature>& outRootSignature) override;
-    virtual void CreateMesh(std::unique_ptr<Mesh>& mesh, const std::vector<VertexData_Short>& verts, const std::vector<std::uint16_t>& indices) override;
+    virtual void CreateMesh(std::unique_ptr<Mesh>& mesh, const void* vertexData, const UINT vertexDataCount, const UINT vertexDataByteSize, const std::vector<std::uint16_t>& indices) override;
 protected:
     virtual ComPtr<ID3D12Device>  GetDevice() const override { return m_device; };
 public:
