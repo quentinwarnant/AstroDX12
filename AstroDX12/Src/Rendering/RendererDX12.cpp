@@ -284,15 +284,14 @@ void RendererDX12::CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature
 }
 
 void RendererDX12::Render(float deltaTime,
-	std::vector<std::shared_ptr<IRenderable>>& renderableObjects,
-	ComPtr<ID3D12PipelineState>& pipelineStateObj)
+	std::vector<std::shared_ptr<IRenderable>>& renderableObjects)
 {
 	// We know at this pointwe've waited for last frame's commands to be executed on the GPU , we can now safely reset the commandlist allocator
 	ThrowIfFailed(m_directCommandListAllocator->Reset());
 
 	// Reset command list so we can re-use it for the next frame worth of commands.
 	// This is safe to do after the commandlist is comitted to the command queue with ExecuteCommandList
-	ThrowIfFailed(m_commandList->Reset(m_directCommandListAllocator.Get(), pipelineStateObj.Get()));
+	ThrowIfFailed(m_commandList->Reset(m_directCommandListAllocator.Get(), renderableObjects[0]->GetPipelineStateObject().Get()));
 
 	// Switch back buffer render target buffer from Presenting to Render Target mode
 	const auto backBufferResourceBarrierPresentToRT = CD3DX12_RESOURCE_BARRIER::Transition(

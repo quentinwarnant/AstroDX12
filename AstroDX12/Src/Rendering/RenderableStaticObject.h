@@ -16,11 +16,13 @@ public:
 	explicit RenderableStaticObject(
 		std::unique_ptr<Mesh>& mesh,
 		ComPtr<ID3D12RootSignature>& rootSignature,
-		std::unique_ptr<UploadBuffer<RenderableObjectConstantData>>& constantBuffer
+		std::unique_ptr<UploadBuffer<RenderableObjectConstantData>>& constantBuffer,
+		ComPtr<ID3D12PipelineState>& pipelineStateObject
 	)
 		: m_mesh(std::move(mesh))
 		, m_rootSignature( rootSignature )
 		, m_constantBuffer(std::move(constantBuffer))
+		, m_pipelineStateObject(pipelineStateObject)
 	{
 	}
 
@@ -46,8 +48,15 @@ public:
 		m_constantBuffer->CopyData(0, *typedData);
 	}
 
+	virtual ComPtr<ID3D12PipelineState> GetPipelineStateObject() const override
+	{
+		return m_pipelineStateObject;
+	}
+
 private:
 	ComPtr<ID3D12RootSignature> m_rootSignature;
 	std::unique_ptr<Mesh> m_mesh;
 	std::unique_ptr<UploadBuffer<RenderableObjectConstantData>> m_constantBuffer;
+	ComPtr<ID3D12PipelineState> m_pipelineStateObject;
+
 };

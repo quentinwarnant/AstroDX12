@@ -16,8 +16,7 @@ public:
     virtual void FinaliseInit() override;
     virtual void Render(
         float deltaTime,
-        std::vector< std::shared_ptr<IRenderable>>& renderableObjects,
-        ComPtr<ID3D12PipelineState>& pipelineStateObj) override;
+        std::vector< std::shared_ptr<IRenderable>>& renderableObjects) override;
     virtual void FlushRenderQueue() override;
     virtual void Shutdown() override;
     virtual void CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature, ComPtr<ID3D12RootSignature>& outRootSignature) override;

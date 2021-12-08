@@ -9,6 +9,10 @@
 
 using Microsoft::WRL::ComPtr;
 class IRenderableDesc;
+namespace AstroTools::Rendering
+{
+    class ShaderLibrary;
+}
 
 class AstroGameInstance final :
     public Game 
@@ -18,17 +22,12 @@ public:
     // Scene renderable objects building
     virtual void BuildConstantBuffers() override;
     virtual void BuildRootSignature() override;
-    virtual void BuildShadersAndInputLayout() override;
+    virtual void BuildShadersAndInputLayout(AstroTools::Rendering::ShaderLibrary& shaderLibrary) override;
     virtual void BuildPipelineStateObject() override;
 
 private:
     void BuildSceneGeometry();
     
-    ComPtr<ID3DBlob> m_vertexShaderByteCode = nullptr;
-    ComPtr<ID3DBlob> m_pixelShaderByteCode = nullptr;
-
-    std::vector<D3D12_INPUT_ELEMENT_DESC> m_inputLayout;
-    ComPtr<ID3D12PipelineState> m_pipelineStateObject = nullptr;
 
     std::vector<IRenderableDesc> m_renderablesDesc;
 

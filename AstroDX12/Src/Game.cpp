@@ -4,6 +4,7 @@
 
 #include "Game.h"
 #include "Rendering/RendererDX12.h"
+#include "Rendering/Common/ShaderLibrary.h"
 #include "winnt.h"
 #include "Maths/MathUtils.h"
 
@@ -45,7 +46,8 @@ void Game::Initialize(HWND window, int width, int height)
 
     BuildConstantBuffers();
     BuildRootSignature();
-    BuildShadersAndInputLayout();
+    AstroTools::Rendering::ShaderLibrary shaderLibrary;
+    BuildShadersAndInputLayout(shaderLibrary);
     BuildPipelineStateObject();
 
     m_renderer->FinaliseInit();

@@ -18,6 +18,11 @@ public:
 	std::unique_ptr<Mesh> Mesh;
 	ComPtr<ID3D12RootSignature> RootSignature;
 	std::unique_ptr < UploadBuffer<RenderableObjectConstantData>> ConstantBuffer;
+	ComPtr<ID3DBlob> VS;
+	ComPtr<ID3DBlob> PS;
+	std::vector<D3D12_INPUT_ELEMENT_DESC> InputLayout;
+
+	ComPtr<ID3D12PipelineState> PipelineStateObject;
 };
 
 class IRenderable
@@ -30,4 +35,5 @@ public:
 	virtual D3D12_INDEX_BUFFER_VIEW GetIndexBufferView() const = 0;
 	virtual UINT GetIndexCount() const = 0;
 	virtual void SetConstantBufferData(const void* data) = 0;
+	virtual ComPtr<ID3D12PipelineState> GetPipelineStateObject() const = 0;
 };

@@ -154,7 +154,9 @@
     <ClInclude Include="Src\Game.h" />
     <ClInclude Include="Src\Maths\MathUtils.h" />
     <ClInclude Include="Src\Rendering\Common\RenderingUtils.h" />
+    <ClInclude Include="Src\Rendering\Common\ShaderLibrary.h" />
     <ClInclude Include="Src\Rendering\Common\UploadBuffer.h" />
+    <ClInclude Include="Src\Rendering\Common\VertexDataInputLayoutLibrary.h" />
     <ClInclude Include="Src\Rendering\IRenderable.h" />
     <ClInclude Include="Src\Rendering\IRenderer.h" />
     <ClInclude Include="Src\Rendering\RenderableStaticObject.h" />
@@ -188,6 +190,7 @@
     <ClCompile Include="Src\AstroGameInstance.cpp" />
     <ClCompile Include="Src\Game.cpp" />
     <ClCompile Include="Src\Main.cpp" />
+    <ClCompile Include="Src\Rendering\Common\ShaderLibrary.cpp" />
     <ClCompile Include="Src\Rendering\RendererDX12.cpp" />
     <ClCompile Include="Src\Timing\GameTimer.cpp" />
   </ItemGroup>

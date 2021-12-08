@@ -2,6 +2,8 @@
 
 #include "Rendering/RenderData/VertexData.h"
 #include "Rendering/RenderData/VertexDataFactory.h"
+#include "Rendering/Common/ShaderLibrary.h"
+#include "Rendering/Common/VertexDataInputLayoutLibrary.h"
 
 void AstroGameInstance::LoadSceneData()
 {
@@ -62,19 +64,19 @@ void AstroGameInstance::BuildRootSignature()
 	}
 }
 
-void AstroGameInstance::BuildShadersAndInputLayout()
+void AstroGameInstance::BuildShadersAndInputLayout(AstroTools::Rendering::ShaderLibrary& shaderLibrary)
 {
 	const auto rootPath = DX::GetWorkingDirectory();
 
-	// TODO: associate this to a renderable instead of being global - although would be useful to also have a fallback shader available globally for failed compilations
-	m_vertexShaderByteCode = AstroTools::Rendering::CompileShader(rootPath + L"\\Shaders\\color.hlsl", nullptr, "VS", "vs_5_0");
-	m_pixelShaderByteCode = AstroTools::Rendering::CompileShader(rootPath + L"\\Shaders\\color.hlsl", nullptr, "PS", "ps_5_0");
-
-	m_inputLayout =
+	const auto defaultShaderPath = rootPath + std::string("\\Shaders\\color.hlsl");
+	for (auto& renderableDesc : m_renderablesDesc)
 	{
-		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
-	};
+		
+		renderableDesc.VS = shaderLibrary.GetCompiledShader(defaultShaderPath, "VS", "vs_5_0");
+		renderableDesc.PS = shaderLibrary.GetCompiledShader(defaultShaderPath, "PS", "ps_5_0");
+	
+		renderableDesc.InputLayout = AstroTools::Rendering::InputLayout::IL_Pos_Color;
+	}
 }
 
 void AstroGameInstance::BuildSceneGeometry()
@@ -130,19 +132,27 @@ void AstroGameInstance::BuildSceneGeometry()
 //TODO: move part of this to renderer class
 void AstroGameInstance::BuildPipelineStateObject()
 {
-	m_renderer->CreateGraphicsPipelineState(
-		m_pipelineStateObject, 
-		m_renderablesDesc[0].RootSignature, /*TODO: TEMP until I figure out if root signatures are compatible across multiple objects*/
-		m_inputLayout,
-		m_vertexShaderByteCode, 
-		m_pixelShaderByteCode);
+	for (auto& renderableDesc : m_renderablesDesc)
+	{
+		m_renderer->CreateGraphicsPipelineState(
+			renderableDesc.PipelineStateObject,
+			renderableDesc.RootSignature, 
+			renderableDesc.InputLayout,
+			renderableDesc.VS,
+			renderableDesc.PS);
+	}
 }
 
 void AstroGameInstance::CreateRenderables()
 {
 	for (auto& renderableDesc : m_renderablesDesc)
 	{
-		auto renderableObj = std::make_shared<RenderableStaticObject>(renderableDesc.Mesh, renderableDesc.RootSignature, renderableDesc.ConstantBuffer);
+		auto renderableObj = std::make_shared<RenderableStaticObject>(
+			renderableDesc.Mesh,
+			renderableDesc.RootSignature, 
+			renderableDesc.ConstantBuffer,
+			renderableDesc.PipelineStateObject
+			);
 		AddRenderable(renderableObj);
 	}
 }
@@ -181,6 +191,6 @@ void AstroGameInstance::Update(float deltaTime)
 
 void AstroGameInstance::Render(float deltaTime)
 {
-	m_renderer->Render(deltaTime, m_sceneRenderables, m_pipelineStateObject);
+	m_renderer->Render(deltaTime, m_sceneRenderables);
 
 }

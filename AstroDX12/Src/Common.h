@@ -86,14 +86,27 @@ namespace DX
         }
     }
 
-    static std::wstring GetWorkingDirectory()
+    static std::string GetWorkingDirectory()
     {
         wchar_t buffer[MAX_PATH];
         auto appFullPath = GetModuleFileName(NULL, buffer, MAX_PATH);
-        auto pathStr = std::wstring(buffer);
+        const auto pathStr = std::wstring(buffer);
         std::filesystem::path path = pathStr;
         auto rootFolder = path.parent_path().parent_path().parent_path();
 
-        return rootFolder.wstring()+L"\\AstroDX12";
+        const auto workingDirWStr = rootFolder.wstring()+L"\\AstroDX12";
+        return std::string(workingDirWStr.begin(), workingDirWStr.end());
     }
+}
+
+static std::wstring s2ws(const std::string& s)
+{
+    int len;
+    int slength = (int)s.length() + 1;
+    len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0);
+    wchar_t* buf = new wchar_t[len];
+    MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
+    std::wstring r(buf);
+    delete[] buf;
+    return r;
 }

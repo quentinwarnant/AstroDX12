@@ -39,6 +39,7 @@
     <ClCompile Include="Src\Rendering\RendererDX12.cpp">
       <Filter>Src\Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Rendering\Common\ShaderLibrary.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\AstroGameInstance.h">
@@ -83,11 +84,18 @@
     <ClInclude Include="Src\Maths\MathUtils.h">
       <Filter>Src\Maths</Filter>
     </ClInclude>
+    <ClInclude Include="Src\Rendering\Common\ShaderLibrary.h" />
+    <ClInclude Include="Src\Rendering\Common\VertexDataInputLayoutLibrary.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\color.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <CopyFileToFolders Include="GraphicsLogo.png" />
+    <CopyFileToFolders Include="SmallLogo.png" />
+    <CopyFileToFolders Include="SplashScreen.png" />
+    <CopyFileToFolders Include="StoreLogo.png" />
+  </ItemGroup>
 </Project>

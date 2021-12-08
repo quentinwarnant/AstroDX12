@@ -17,8 +17,7 @@ public:
 	virtual void FinaliseInit() = 0;
 	virtual void Render(
 		float deltaTime,
-		std::vector<std::shared_ptr<IRenderable>>& renderableObjects,
-		ComPtr<ID3D12PipelineState>& pipelineStateObj) = 0;
+		std::vector<std::shared_ptr<IRenderable>>& renderableObjects) = 0;
 	virtual void FlushRenderQueue() = 0;
 	virtual void Shutdown() = 0;
 	virtual void CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature, ComPtr<ID3D12RootSignature>& outRootSignature) = 0;

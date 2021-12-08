@@ -18,7 +18,7 @@ namespace AstroTools
 		}
 
 		static Microsoft::WRL::ComPtr<ID3DBlob> CompileShader(
-			const std::wstring& filename,
+			const std::string& filename,
 			const D3D_SHADER_MACRO* defines,
 			const std::string& entrypoint,
 			const std::string& target)
@@ -31,7 +31,8 @@ namespace AstroTools
 
 			Microsoft::WRL::ComPtr<ID3DBlob> byteCode = nullptr;
 			Microsoft::WRL::ComPtr<ID3DBlob> errors;
-			hr = D3DCompileFromFile(filename.c_str(), defines, D3D_COMPILE_STANDARD_FILE_INCLUDE,
+			auto filenameWStr = s2ws(filename);
+			hr = D3DCompileFromFile(filenameWStr.c_str(), defines, D3D_COMPILE_STANDARD_FILE_INCLUDE,
 				entrypoint.c_str(), target.c_str(), compileFlags, 0, &byteCode, &errors);
 
 			if (errors != nullptr)

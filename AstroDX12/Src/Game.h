@@ -9,6 +9,10 @@
 
 class IRenderable;
 class Mesh;
+namespace AstroTools::Rendering
+{
+    class ShaderLibrary;
+}
 
 // A basic game implementation that creates a D3D12 device and
 // provides a game loop.
@@ -51,7 +55,7 @@ public:
     // Scene renderable objects building
     virtual void BuildConstantBuffers() = 0;
     virtual void BuildRootSignature() = 0;
-    virtual void BuildShadersAndInputLayout() = 0;
+    virtual void BuildShadersAndInputLayout(AstroTools::Rendering::ShaderLibrary& shaderLibrary) = 0;
     virtual void BuildPipelineStateObject() = 0;
 
 protected:
