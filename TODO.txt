@@ -1,6 +1,0 @@
-Difference between Pipeline state object & root signature
--> one per renderable object or ok to be one to many?
-
-psoDesc.SampleMask?
-
-Clean up data that shouldn't live in renderer or game instance to live in iRenderable
