@@ -263,6 +263,7 @@ void RendererDX12::ProcessRenderableObjectsForRendering(
 	for (const auto& renderableObj : renderableObjects)
 	{
 		ID3D12DescriptorHeap* descriptorHeaps[] = { m_cbvHeap.Get() };
+		commandList->SetPipelineState(renderableObj->GetPipelineStateObject().Get());
 		commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 		commandList->SetGraphicsRootSignature(renderableObj->GetGraphicsRootSignature().Get());
@@ -291,7 +292,7 @@ void RendererDX12::Render(float deltaTime,
 
 	// Reset command list so we can re-use it for the next frame worth of commands.
 	// This is safe to do after the commandlist is comitted to the command queue with ExecuteCommandList
-	ThrowIfFailed(m_commandList->Reset(m_directCommandListAllocator.Get(), renderableObjects[0]->GetPipelineStateObject().Get()));
+	ThrowIfFailed(m_commandList->Reset(m_directCommandListAllocator.Get(), nullptr));
 
 	// Switch back buffer render target buffer from Presenting to Render Target mode
 	const auto backBufferResourceBarrierPresentToRT = CD3DX12_RESOURCE_BARRIER::Transition(
