@@ -1,9 +1,9 @@
-#include "AstroGameInstance.h"
+#include <AstroGameInstance.h>
 
-#include "Rendering/RenderData/VertexData.h"
-#include "Rendering/RenderData/VertexDataFactory.h"
-#include "Rendering/Common/ShaderLibrary.h"
-#include "Rendering/Common/VertexDataInputLayoutLibrary.h"
+#include <Rendering/RenderData/VertexData.h>
+#include <Rendering/RenderData/VertexDataFactory.h>
+#include <Rendering/Common/ShaderLibrary.h>
+#include <Rendering/Common/VertexDataInputLayoutLibrary.h>
 
 void AstroGameInstance::LoadSceneData()
 {

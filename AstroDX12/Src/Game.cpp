@@ -2,11 +2,11 @@
 // Game.cpp
 //
 
-#include "Game.h"
-#include "Rendering/RendererDX12.h"
-#include "Rendering/Common/ShaderLibrary.h"
+#include <Game.h>
+#include <Rendering/RendererDX12.h>
+#include <Rendering/Common/ShaderLibrary.h>
+#include <Maths/MathUtils.h>
 #include "winnt.h"
-#include "Maths/MathUtils.h"
 
 extern void ExitGame() noexcept;
 

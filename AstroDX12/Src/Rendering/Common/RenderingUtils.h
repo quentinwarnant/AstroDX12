@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../Common.h"
+#include <Common.h>
 
 #include <D3DCompiler.h>
 #pragma comment(lib,"d3dcompiler.lib")

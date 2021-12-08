@@ -4,7 +4,8 @@
 #include <vector>
 #include <typeindex>
 #include <typeinfo>
-#include "VertexData.h"
+
+#include <Rendering/RenderData/VertexData.h>
 
 class VertexDataFactory
 {

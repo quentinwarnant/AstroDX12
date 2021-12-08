@@ -1,6 +1,7 @@
 #pragma once
-#include "../Common.h"
-#include "RenderData/Mesh.h"
+
+#include <Common.h>
+#include <Rendering/RenderData/Mesh.h>
 
 using Microsoft::WRL::ComPtr;
 struct RenderableObjectConstantData;

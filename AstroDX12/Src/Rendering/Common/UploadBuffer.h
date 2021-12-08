@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../Common.h"
-#include "RenderingUtils.h"
+#include <Common.h>
+#include <Rendering/Common/RenderingUtils.h>
 
 using namespace Microsoft::WRL;
 using namespace DX;

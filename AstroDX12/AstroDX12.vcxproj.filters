@@ -2,25 +2,25 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Src">
-      <UniqueIdentifier>{0fc700df-56da-4916-9a96-0796a3b903d3}</UniqueIdentifier>
+      <UniqueIdentifier>{cf9ca465-f26a-4094-87d0-b2da78098d5d}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Timing">
-      <UniqueIdentifier>{90b35e6d-48da-46d8-a26f-6d7c5e31e87d}</UniqueIdentifier>
+      <UniqueIdentifier>{24b6f3be-e796-448b-b672-4bfefcb6808b}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Rendering">
-      <UniqueIdentifier>{48171a59-3db6-4a6d-afa8-27dcceb89b1e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Src\Rendering\RenderData">
-      <UniqueIdentifier>{ca7f859c-b5ea-4f5c-bfc6-7035e67db7ff}</UniqueIdentifier>
+      <UniqueIdentifier>{44aca563-8fbe-4ce4-bb0f-deda02e81d26}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Rendering\Common">
-      <UniqueIdentifier>{42ef63e7-30c7-4733-ad26-253c05462329}</UniqueIdentifier>
+      <UniqueIdentifier>{e9931a60-aba9-4ea3-94b7-a3375e403301}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Rendering\RenderData">
+      <UniqueIdentifier>{c251b03f-1c6b-487d-a851-6e7cbb0df6e9}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Maths">
-      <UniqueIdentifier>{7823073c-753b-4e2e-8d1a-fdbefe2d8503}</UniqueIdentifier>
+      <UniqueIdentifier>{4fa18b0d-5add-453b-ad38-ac01d18cd9e0}</UniqueIdentifier>
     </Filter>
     <Filter Include="Shaders">
-      <UniqueIdentifier>{3e622bf8-c3f6-4d39-a66b-e4ec3009059e}</UniqueIdentifier>
+      <UniqueIdentifier>{900e35e5-a557-40e5-b4ae-5f4171fe2dc6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -39,7 +39,6 @@
     <ClCompile Include="Src\Rendering\RendererDX12.cpp">
       <Filter>Src\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="Src\Rendering\Common\ShaderLibrary.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\AstroGameInstance.h">
@@ -84,18 +83,17 @@
     <ClInclude Include="Src\Maths\MathUtils.h">
       <Filter>Src\Maths</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Rendering\Common\ShaderLibrary.h" />
-    <ClInclude Include="Src\Rendering\Common\VertexDataInputLayoutLibrary.h" />
+    <ClInclude Include="Src\Rendering\Common\ShaderLibrary.h">
+      <Filter>Src\Rendering\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Rendering\Common\VertexDataInputLayoutLibrary.h">
+      <Filter>Src\Rendering\Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\color.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
-  <ItemGroup>
-    <CopyFileToFolders Include="GraphicsLogo.png" />
-    <CopyFileToFolders Include="SmallLogo.png" />
-    <CopyFileToFolders Include="SplashScreen.png" />
-    <CopyFileToFolders Include="StoreLogo.png" />
-  </ItemGroup>
+  <ItemGroup />
 </Project>

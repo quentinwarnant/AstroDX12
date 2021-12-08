@@ -1,4 +1,4 @@
-#include "GameTimer.h"
+#include <Timing/GameTimer.h>
 
 GameTimer::GameTimer()
 	: m_secondsPerCount(0)

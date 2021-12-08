@@ -3,9 +3,9 @@
 //
 
 #pragma once
-#include "Common.h"
-#include "Rendering/IRenderer.h"
-#include "Rendering/IRenderable.h"
+#include <Common.h>
+#include <Rendering/IRenderer.h>
+#include <Rendering/IRenderable.h>
 
 class IRenderable;
 class Mesh;

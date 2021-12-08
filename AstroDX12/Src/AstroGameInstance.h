@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Game.h"
-#include "Common.h"
-#include "Rendering/Common/UploadBuffer.h"
-#include "Rendering/RenderableStaticObject.h"
-#include "Rendering/RenderData/Mesh.h"
-#include "Maths/MathUtils.h"
+#include <Game.h>
+#include <Common.h>
+#include <Rendering/Common/UploadBuffer.h>
+#include <Rendering/RenderableStaticObject.h>
+#include <Rendering/RenderData/Mesh.h>
+#include <Maths/MathUtils.h>
 
 using Microsoft::WRL::ComPtr;
 class IRenderableDesc;

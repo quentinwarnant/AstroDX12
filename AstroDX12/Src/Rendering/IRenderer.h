@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Common.h"
-#include "Common/UploadBuffer.h"
+#include <Common.h>
+#include <Rendering/Common/UploadBuffer.h>
 
 using Microsoft::WRL::ComPtr;
 

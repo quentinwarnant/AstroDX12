@@ -137,8 +137,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;__WRL_NO_DEFAULT_LIB__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>
-      </AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Dev\Personal\AstroDX12\AstroDX12\Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
@@ -190,7 +189,6 @@
     <ClCompile Include="Src\AstroGameInstance.cpp" />
     <ClCompile Include="Src\Game.cpp" />
     <ClCompile Include="Src\Main.cpp" />
-    <ClCompile Include="Src\Rendering\Common\ShaderLibrary.cpp" />
     <ClCompile Include="Src\Rendering\RendererDX12.cpp" />
     <ClCompile Include="Src\Timing\GameTimer.cpp" />
   </ItemGroup>

@@ -1,6 +1,6 @@
-#include "RendererDX12.h"
-#include "IRenderable.h"
-#include "RenderData/VertexData.h"
+#include <Rendering/RendererDX12.h>
+#include <Rendering/IRenderable.h>
+#include <Rendering/RenderData/VertexData.h>
 
 using namespace Microsoft::WRL;
 using namespace DX;

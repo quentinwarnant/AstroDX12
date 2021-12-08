@@ -2,11 +2,11 @@
 // Main.cpp
 //
 
-#include "Common.h"
+#include <Common.h>
 #include <windowsx.h>
 
-#include "AstroGameInstance.h"
-#include "Timing/GameTimer.h"
+#include <AstroGameInstance.h>
+#include <Timing/GameTimer.h>
 
 using namespace DirectX;
 

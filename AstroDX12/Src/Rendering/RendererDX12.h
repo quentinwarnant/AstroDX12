@@ -1,6 +1,6 @@
 #pragma once
-#include "IRenderer.h"
-#include "../Common.h"
+#include <Rendering/IRenderer.h>
+#include <Common.h>
 
 using namespace Microsoft::WRL;
 

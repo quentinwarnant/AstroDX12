@@ -2,8 +2,9 @@
 
 #include <map>
 #include <string>
-#include "../../Common.h"
-#include "RenderingUtils.h"
+
+#include <Common.h>
+#include <Rendering/Common/RenderingUtils.h>
 
 using namespace Microsoft::WRL;
 namespace AstroTools::Rendering

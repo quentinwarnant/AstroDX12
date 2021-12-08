@@ -1,8 +1,9 @@
 #pragma once
-#include "IRenderable.h"
-#include "RenderData/Mesh.h"
-#include "../Common.h"
-#include "../Maths/MathUtils.h"
+
+#include <Rendering/IRenderable.h>
+#include <Rendering/RenderData/Mesh.h>
+#include <Common.h>
+#include <Maths/MathUtils.h>
 
 struct RenderableObjectConstantData
 {
