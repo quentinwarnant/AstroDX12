@@ -4,7 +4,6 @@
 
 #include <Game.h>
 #include <Rendering/RendererDX12.h>
-#include <Rendering/Common/ShaderLibrary.h>
 #include <Maths/MathUtils.h>
 #include "winnt.h"
 
@@ -17,6 +16,7 @@ using Microsoft::WRL::ComPtr;
 Game::Game() noexcept(false)
     : m_screenWidth(350)
     , m_screenHeight(200)
+    , m_shaderLibrary()
     , m_lastMousePos()
     , m_cameraPhi(XM_PIDIV4)
     , m_cameraTheta(1.5f * XM_PI)
@@ -46,8 +46,7 @@ void Game::Initialize(HWND window, int width, int height)
 
     BuildConstantBuffers();
     BuildRootSignature();
-    AstroTools::Rendering::ShaderLibrary shaderLibrary;
-    BuildShadersAndInputLayout(shaderLibrary);
+    BuildShaders(m_shaderLibrary);
     BuildPipelineStateObject();
 
     m_renderer->FinaliseInit();

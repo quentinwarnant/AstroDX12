@@ -64,18 +64,12 @@ void AstroGameInstance::BuildRootSignature()
 	}
 }
 
-void AstroGameInstance::BuildShadersAndInputLayout(AstroTools::Rendering::ShaderLibrary& shaderLibrary)
+void AstroGameInstance::BuildShaders(AstroTools::Rendering::ShaderLibrary& shaderLibrary)
 {
-	const auto rootPath = DX::GetWorkingDirectory();
-
-	const auto defaultShaderPath = rootPath + std::string("\\Shaders\\color.hlsl");
 	for (auto& renderableDesc : m_renderablesDesc)
 	{
-		
-		renderableDesc.VS = shaderLibrary.GetCompiledShader(defaultShaderPath, "VS", "vs_5_0");
-		renderableDesc.PS = shaderLibrary.GetCompiledShader(defaultShaderPath, "PS", "ps_5_0");
-	
-		renderableDesc.InputLayout = AstroTools::Rendering::InputLayout::IL_Pos_Color;
+		renderableDesc.VS = shaderLibrary.GetCompiledShader(renderableDesc.VertexShaderPath, "VS", "vs_5_0");
+		renderableDesc.PS = shaderLibrary.GetCompiledShader(renderableDesc.PixelShaderPath, "PS", "ps_5_0");
 	}
 }
 
@@ -126,7 +120,14 @@ void AstroGameInstance::BuildSceneGeometry()
 	constexpr auto podDataSize = VertexDataFactory::GetPODTypeSize<VertexData_Short>();
 	m_renderer->CreateMesh(boxMesh, vertsPODList.data(), (UINT)vertsPODList.size(), podDataSize, indices);
 
-	m_renderablesDesc.emplace_back(std::move(boxMesh));
+	const auto rootPath = DX::GetWorkingDirectory();
+	const auto defaultShaderPath = rootPath + std::string("\\Shaders\\color.hlsl");
+
+	m_renderablesDesc.emplace_back(
+		std::move(boxMesh),
+		defaultShaderPath, 
+		defaultShaderPath, 
+		AstroTools::Rendering::InputLayout::IL_Pos_Color);
 }
 
 //TODO: move part of this to renderer class

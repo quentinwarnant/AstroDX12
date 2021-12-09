@@ -22,7 +22,7 @@ public:
     // Scene renderable objects building
     virtual void BuildConstantBuffers() override;
     virtual void BuildRootSignature() override;
-    virtual void BuildShadersAndInputLayout(AstroTools::Rendering::ShaderLibrary& shaderLibrary) override;
+    virtual void BuildShaders(AstroTools::Rendering::ShaderLibrary& shaderLibrary) override;
     virtual void BuildPipelineStateObject() override;
 
 private:

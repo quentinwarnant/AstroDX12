@@ -9,20 +9,29 @@ struct RenderableObjectConstantData;
 class IRenderableDesc
 {
 public:
-	explicit IRenderableDesc(std::unique_ptr<Mesh> inMesh)
+	explicit IRenderableDesc(std::unique_ptr<Mesh> inMesh, const std::string vsPath, std::string psPath , const std::vector<D3D12_INPUT_ELEMENT_DESC>& inInputLayout)
 		: Mesh(std::move(inMesh))
 		, RootSignature(nullptr)
 		, ConstantBuffer(nullptr)
+		, VertexShaderPath( vsPath )
+		, PixelShaderPath( psPath )
+		, VS(nullptr)
+		, PS(nullptr)
+		, InputLayout(inInputLayout)
+		, PipelineStateObject(nullptr)
 	{
 	}
 
 	std::unique_ptr<Mesh> Mesh;
 	ComPtr<ID3D12RootSignature> RootSignature;
 	std::unique_ptr < UploadBuffer<RenderableObjectConstantData>> ConstantBuffer;
+
+	std::string VertexShaderPath;
+	std::string PixelShaderPath;
 	ComPtr<ID3DBlob> VS;
 	ComPtr<ID3DBlob> PS;
-	std::vector<D3D12_INPUT_ELEMENT_DESC> InputLayout;
 
+	std::vector<D3D12_INPUT_ELEMENT_DESC> InputLayout;
 	ComPtr<ID3D12PipelineState> PipelineStateObject;
 };
 
