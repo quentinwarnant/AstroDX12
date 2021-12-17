@@ -1,4 +1,5 @@
 #include <Rendering/RendererDX12.h>
+#include <Rendering/Common/FrameResource.h>
 #include <Rendering/IRenderable.h>
 #include <Rendering/RenderData/VertexData.h>
 
@@ -110,7 +111,7 @@ void RendererDX12::FinaliseInit()
 	ID3D12CommandList* cmdsLists[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
-	FlushRenderQueue();
+	AddNewFence([](int newFenceValue) {});
 }
 
 void RendererDX12::CreateCommandObjects()
@@ -259,7 +260,6 @@ void RendererDX12::ProcessRenderableObjectsForRendering(
 	ComPtr<ID3D12GraphicsCommandList>& commandList, 
 	std::vector< std::shared_ptr<IRenderable>>& renderableObjects)
 {
-	
 	for (const auto& renderableObj : renderableObjects)
 	{
 		ID3D12DescriptorHeap* descriptorHeaps[] = { m_cbvHeap.Get() };
@@ -285,14 +285,16 @@ void RendererDX12::CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature
 }
 
 void RendererDX12::Render(float deltaTime,
-	std::vector<std::shared_ptr<IRenderable>>& renderableObjects)
+	std::vector<std::shared_ptr<IRenderable>>& renderableObjects,
+	FrameResource* currentFrameResources,
+	std::function<void(int)> onNewFenceValue)
 {
-	// We know at this pointwe've waited for last frame's commands to be executed on the GPU , we can now safely reset the commandlist allocator
-	ThrowIfFailed(m_directCommandListAllocator->Reset());
+	// We know at this point we've waited for last frame's commands to be executed on the GPU , we can now safely reset the commandlist allocator
+	ThrowIfFailed(currentFrameResources->CmdListAllocator->Reset());
 
 	// Reset command list so we can re-use it for the next frame worth of commands.
 	// This is safe to do after the commandlist is comitted to the command queue with ExecuteCommandList
-	ThrowIfFailed(m_commandList->Reset(m_directCommandListAllocator.Get(), nullptr));
+	ThrowIfFailed(m_commandList->Reset(currentFrameResources->CmdListAllocator.Get(), nullptr));
 
 	// Switch back buffer render target buffer from Presenting to Render Target mode
 	const auto backBufferResourceBarrierPresentToRT = CD3DX12_RESOURCE_BARRIER::Transition(
@@ -342,31 +344,17 @@ void RendererDX12::Render(float deltaTime,
 	ThrowIfFailed(m_swapChain->Present(0, 0));
 	m_currentBackBuffer = (m_currentBackBuffer + 1) % m_swapChainBufferCount;
 
-	//Inneficient but simple for now - Wait until the frame commands are completed
-	FlushRenderQueue();
-
+	AddNewFence(onNewFenceValue);
 }
 
-void RendererDX12::FlushRenderQueue()
+void RendererDX12::AddNewFence(std::function<void(int)> onNewFenceValue)
 {
 	// Advance current fence
 	m_currentFence++;
+	onNewFenceValue(m_currentFence);
 
 	// Add fence on GPU queue which will get signalled when queue is fully processed
 	ThrowIfFailed(m_commandQueue->Signal(m_fence.Get(), m_currentFence));
-
-	//Wait until the GPU has completed the commands up to this fence point
-	if (m_fence->GetCompletedValue() < m_currentFence)
-	{
-		HANDLE eventHandle = CreateEventW(nullptr, false, false, nullptr);
-
-		//Fire event when GPU hits current fence
-		ThrowIfFailed(m_fence->SetEventOnCompletion(m_currentFence, eventHandle));
-
-		// Wait...
-		WaitForSingleObject(eventHandle, INFINITE);
-		CloseHandle(eventHandle);
-	}
 }
 
 void RendererDX12::Shutdown()
@@ -436,4 +424,29 @@ void RendererDX12::CreateGraphicsPipelineState(
 	psoDesc.DSVFormat = m_depthStencilFormat;
 	ThrowIfFailed(m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pso)));
 
+}
+
+void RendererDX12::BuildFrameResources(std::vector<std::unique_ptr<FrameResource>>& outFrameResourcesList, int frameResourcesCount, int objectCount)
+{
+	for (int i = 0; i < frameResourcesCount; ++i)
+	{
+		outFrameResourcesList.push_back(std::make_unique<FrameResource>(
+			m_device.Get(),
+			1,
+			objectCount
+			));
+	}
+}
+
+UINT64 RendererDX12::GetLastCompletedFence()
+{
+	return m_fence->GetCompletedValue();
+}
+
+void RendererDX12::WaitForFence(UINT64 fenceValue)
+{
+	HANDLE eventHandle = CreateEventW(nullptr, false, false, nullptr);
+	ThrowIfFailed(m_fence->SetEventOnCompletion(fenceValue, eventHandle));
+	WaitForSingleObject(eventHandle, INFINITE);
+	CloseHandle(eventHandle);
 }

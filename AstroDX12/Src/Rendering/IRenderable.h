@@ -24,7 +24,7 @@ public:
 
 	std::unique_ptr<Mesh> Mesh;
 	ComPtr<ID3D12RootSignature> RootSignature;
-	std::unique_ptr < UploadBuffer<RenderableObjectConstantData>> ConstantBuffer;
+	std::unique_ptr<UploadBuffer<RenderableObjectConstantData>> ConstantBuffer;
 
 	std::string VertexShaderPath;
 	std::string PixelShaderPath;

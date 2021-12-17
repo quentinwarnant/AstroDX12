@@ -5,6 +5,23 @@
 #include <Rendering/Common/ShaderLibrary.h>
 #include <Rendering/Common/VertexDataInputLayoutLibrary.h>
 
+namespace
+{
+	namespace
+	{
+		constexpr int NumFrameResources = 3;
+	}
+}
+
+AstroGameInstance::AstroGameInstance()
+	: Game()
+	, m_renderablesDesc()
+	, m_frameResources()
+	, m_currentFrameResource(nullptr)
+	, m_currentFrameResourceIndex(0)
+{
+}
+
 void AstroGameInstance::LoadSceneData()
 {
 	XMMATRIX proj = XMMatrixPerspectiveFovLH(0.25f * DirectX::XM_PI, GetAspectRatio(), 1.0f, 1000.0f);
@@ -130,7 +147,24 @@ void AstroGameInstance::BuildSceneGeometry()
 		AstroTools::Rendering::InputLayout::IL_Pos_Color);
 }
 
-//TODO: move part of this to renderer class
+void AstroGameInstance::BuildFrameResources()
+{
+	m_renderer->BuildFrameResources(m_frameResources, NumFrameResources, (int)m_renderablesDesc.size());
+}
+
+void AstroGameInstance::UpdateFrameResource()
+{
+	// cycle through the Circular buffer
+	m_currentFrameResourceIndex = (m_currentFrameResourceIndex + 1) % NumFrameResources;
+	m_currentFrameResource = m_frameResources[m_currentFrameResourceIndex].get();
+
+	if (m_currentFrameResource->Fence != 0 &&
+		m_renderer->GetLastCompletedFence() < m_currentFrameResource->Fence)
+	{
+		m_renderer->WaitForFence(m_currentFrameResource->Fence);
+	}
+}
+
 void AstroGameInstance::BuildPipelineStateObject()
 {
 	for (auto& renderableDesc : m_renderablesDesc)
@@ -162,7 +196,11 @@ void AstroGameInstance::Update(float deltaTime)
 {
 	Game::Update(deltaTime);
 
-	PIXBeginEvent(PIX_COLOR_DEFAULT, L"Update"); // See pch.h for info
+	PIXBeginEvent(PIX_COLOR_DEFAULT, L"Update Frame Resource"); 
+	UpdateFrameResource();
+	PIXEndEvent();
+
+	PIXBeginEvent(PIX_COLOR_DEFAULT, L"Update Const Data"); // See pch.h for info
 	//PIXScopedEvent(PIX_COLOR_DEFAULT, L"Update");
 
 	// Convert Spherical to Cartesian coordinates.
@@ -192,6 +230,11 @@ void AstroGameInstance::Update(float deltaTime)
 
 void AstroGameInstance::Render(float deltaTime)
 {
-	m_renderer->Render(deltaTime, m_sceneRenderables);
+	PIXBeginEvent(PIX_COLOR_DEFAULT, L"Render");
+	m_renderer->Render(deltaTime, m_sceneRenderables, m_currentFrameResource, 
+		[&](int newFenceValue) {
+			m_currentFrameResource->Fence = newFenceValue;
+		});
+	PIXEndEvent();
 
 }

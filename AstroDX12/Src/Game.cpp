@@ -44,6 +44,7 @@ void Game::Initialize(HWND window, int width, int height)
 
     LoadSceneData();
 
+    BuildFrameResources();
     BuildConstantBuffers();
     BuildRootSignature();
     BuildShaders(m_shaderLibrary);

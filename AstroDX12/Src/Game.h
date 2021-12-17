@@ -50,6 +50,7 @@ public:
     void AddRenderable(std::shared_ptr<IRenderable> renderableObj);
 
     // Scene renderable objects building
+    virtual void BuildFrameResources() = 0;
     virtual void BuildConstantBuffers() = 0;
     virtual void BuildRootSignature() = 0;
     virtual void BuildShaders(AstroTools::Rendering::ShaderLibrary& shaderLibrary) = 0;

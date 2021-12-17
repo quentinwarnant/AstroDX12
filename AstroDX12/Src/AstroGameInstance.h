@@ -3,6 +3,7 @@
 #include <Game.h>
 #include <Common.h>
 #include <Rendering/Common/UploadBuffer.h>
+#include <Rendering/Common/FrameResource.h>
 #include <Rendering/RenderableStaticObject.h>
 #include <Rendering/RenderData/Mesh.h>
 #include <Maths/MathUtils.h>
@@ -18,8 +19,10 @@ class AstroGameInstance final :
     public Game 
 {
 public:
+    AstroGameInstance();
     virtual void LoadSceneData() override;
     // Scene renderable objects building
+    virtual void BuildFrameResources() override;
     virtual void BuildConstantBuffers() override;
     virtual void BuildRootSignature() override;
     virtual void BuildShaders(AstroTools::Rendering::ShaderLibrary& shaderLibrary) override;
@@ -27,7 +30,7 @@ public:
 
 private:
     void BuildSceneGeometry();
-    
+    void UpdateFrameResource();
 
     std::vector<IRenderableDesc> m_renderablesDesc;
 
@@ -38,6 +41,11 @@ private:
     const float m_theta = 1.5f * XM_PI;
     const float m_phi = XM_PIDIV4;
     const float m_radius = 5.0f;
+
+    // Resources
+    std::vector<std::unique_ptr<FrameResource>> m_frameResources;
+    FrameResource* m_currentFrameResource = nullptr;
+    int m_currentFrameResourceIndex = 0;
 
     virtual void CreateRenderables() override;
     virtual void Update(float deltaTime) override;

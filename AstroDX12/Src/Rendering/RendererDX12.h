@@ -5,6 +5,7 @@
 using namespace Microsoft::WRL;
 
 class IRenderable;
+struct FrameResource;
 
 class RendererDX12 : public IRenderer
 {
@@ -16,8 +17,10 @@ public:
     virtual void FinaliseInit() override;
     virtual void Render(
         float deltaTime,
-        std::vector< std::shared_ptr<IRenderable>>& renderableObjects) override;
-    virtual void FlushRenderQueue() override;
+        std::vector< std::shared_ptr<IRenderable>>& renderableObjects,
+        FrameResource* currentFrameResources,
+        std::function<void(int)> onNewFenceValue) override;
+    virtual void AddNewFence(std::function<void(int)> onNewFenceValue) override;
     virtual void Shutdown() override;
     virtual void CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature, ComPtr<ID3D12RootSignature>& outRootSignature) override;
     virtual void CreateMesh(std::unique_ptr<Mesh>& mesh, const void* vertexData, const UINT vertexDataCount, const UINT vertexDataByteSize, const std::vector<std::uint16_t>& indices) override;
@@ -31,6 +34,9 @@ public:
         std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout,
         ComPtr<ID3DBlob>& vertexShaderByteCode,
         ComPtr<ID3DBlob>& pixelShaderByteCode) override;
+    virtual void BuildFrameResources(std::vector<std::unique_ptr<FrameResource>>& outFrameResourcesList, int frameResourcesCount, int objectCount) override;
+    virtual UINT64 GetLastCompletedFence() override;
+    virtual void WaitForFence(UINT64 fenceValue) override;
     // IRenderer - END
 
 private:
@@ -69,7 +75,7 @@ private:
     DXGI_FORMAT m_depthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
     ComPtr<ID3D12CommandQueue> m_commandQueue;
-    ComPtr<ID3D12CommandAllocator> m_directCommandListAllocator;
+    ComPtr<ID3D12CommandAllocator> m_directCommandListAllocator; // Only used during renderer initialisation
     ComPtr<ID3D12GraphicsCommandList> m_commandList;
 
     ComPtr<ID3D12DescriptorHeap> m_rtvHeap; // Render Target

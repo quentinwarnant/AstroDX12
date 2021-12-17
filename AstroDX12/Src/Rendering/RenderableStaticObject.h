@@ -4,12 +4,7 @@
 #include <Rendering/RenderData/Mesh.h>
 #include <Common.h>
 #include <Maths/MathUtils.h>
-
-struct RenderableObjectConstantData
-{
-public:
-	DirectX::XMFLOAT4X4 WorldViewProj = AstroTools::Maths::Identity4x4();
-};
+#include <Rendering/RenderData/RenderConstants.h>
 
 class RenderableStaticObject : public IRenderable
 {

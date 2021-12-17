@@ -2,12 +2,14 @@
 
 #include <Common.h>
 #include <Rendering/Common/UploadBuffer.h>
+#include <functional>
 
 using Microsoft::WRL::ComPtr;
 
 class IRenderable;
 class IVertexData;
 class Mesh;
+struct FrameResource;
 
 class IRenderer
 {
@@ -17,14 +19,15 @@ public:
 	virtual void FinaliseInit() = 0;
 	virtual void Render(
 		float deltaTime,
-		std::vector<std::shared_ptr<IRenderable>>& renderableObjects) = 0;
-	virtual void FlushRenderQueue() = 0;
+		std::vector<std::shared_ptr<IRenderable>>& renderableObjects,
+		FrameResource* currentFrameResources,
+		std::function<void(int)> onNewFenceValue) = 0;
+	virtual void AddNewFence(std::function<void(int)> onNewFenceValue) = 0;
 	virtual void Shutdown() = 0;
 	virtual void CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature, ComPtr<ID3D12RootSignature>& outRootSignature) = 0;
 	virtual void CreateMesh(std::unique_ptr<Mesh>& mesh, const void* vertexData, const UINT vertexDataCount, const UINT vertexDataByteSize, const std::vector<std::uint16_t>& indices) = 0;
 protected:
 	virtual ComPtr<ID3D12Device> GetDevice() const = 0;
-
 public:
 	template<typename T>
 	std::unique_ptr<UploadBuffer<T>> CreateConstantBuffer(UINT elementCount)
@@ -39,4 +42,7 @@ public:
 		std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout,
 		ComPtr<ID3DBlob>& vertexShaderByteCode,
 		ComPtr<ID3DBlob>& pixelShaderByteCode) = 0;
+	virtual void BuildFrameResources(std::vector<std::unique_ptr<FrameResource>>& outFrameResourcesList, int frameResourcesCount, int objectCount) = 0;
+	virtual UINT64 GetLastCompletedFence() = 0;
+	virtual void WaitForFence(UINT64 fenceValue) = 0;
 };
