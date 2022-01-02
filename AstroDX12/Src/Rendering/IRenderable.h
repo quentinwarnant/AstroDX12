@@ -4,13 +4,17 @@
 #include <Rendering/RenderData/Mesh.h>
 
 using Microsoft::WRL::ComPtr;
+using namespace DirectX;
+
 struct RenderableObjectConstantData;
 
 class IRenderableDesc
 {
 public:
-	explicit IRenderableDesc(std::unique_ptr<Mesh> inMesh, const std::string vsPath, std::string psPath , const std::vector<D3D12_INPUT_ELEMENT_DESC>& inInputLayout)
-		: Mesh(std::move(inMesh))
+	explicit IRenderableDesc(std::weak_ptr<Mesh> inMesh, const std::string vsPath, std::string psPath,
+		const std::vector<D3D12_INPUT_ELEMENT_DESC>& inInputLayout,
+		const XMFLOAT4X4& inInitialTransform)
+		: Mesh(inMesh)
 		, RootSignature(nullptr)
 		, ConstantBuffer(nullptr)
 		, VertexShaderPath( vsPath )
@@ -19,10 +23,11 @@ public:
 		, PS(nullptr)
 		, InputLayout(inInputLayout)
 		, PipelineStateObject(nullptr)
+		, InitialTransform(inInitialTransform)
 	{
 	}
 
-	std::unique_ptr<Mesh> Mesh;
+	std::weak_ptr<Mesh> Mesh;
 	ComPtr<ID3D12RootSignature> RootSignature;
 	std::unique_ptr<UploadBuffer<RenderableObjectConstantData>> ConstantBuffer;
 
@@ -33,6 +38,8 @@ public:
 
 	std::vector<D3D12_INPUT_ELEMENT_DESC> InputLayout;
 	ComPtr<ID3D12PipelineState> PipelineStateObject;
+
+	XMFLOAT4X4 InitialTransform;
 };
 
 class IRenderable
@@ -40,6 +47,7 @@ class IRenderable
 public:
 	virtual ~IRenderable() {};
 
+	virtual const DirectX::XMFLOAT4X4& GetWorldTransform() const = 0;
 	virtual ComPtr<ID3D12RootSignature> GetGraphicsRootSignature() const = 0;
 	virtual D3D12_VERTEX_BUFFER_VIEW GetVertexBufferView() const = 0;
 	virtual D3D12_INDEX_BUFFER_VIEW GetIndexBufferView() const = 0;

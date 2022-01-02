@@ -2,6 +2,7 @@
 
 #include <Game.h>
 #include <Common.h>
+#include <Rendering/Common/MeshLibrary.h>
 #include <Rendering/Common/UploadBuffer.h>
 #include <Rendering/Common/FrameResource.h>
 #include <Rendering/RenderableStaticObject.h>
@@ -10,6 +11,7 @@
 
 using Microsoft::WRL::ComPtr;
 class IRenderableDesc;
+
 namespace AstroTools::Rendering
 {
     class ShaderLibrary;
@@ -41,6 +43,8 @@ private:
     const float m_theta = 1.5f * XM_PI;
     const float m_phi = XM_PIDIV4;
     const float m_radius = 5.0f;
+
+    std::unique_ptr<MeshLibrary> m_meshLibrary;
 
     // Resources
     std::vector<std::unique_ptr<FrameResource>> m_frameResources;

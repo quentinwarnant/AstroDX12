@@ -366,11 +366,12 @@ void RendererDX12::CreateConstantBufferView(D3D12_CONSTANT_BUFFER_VIEW_DESC& cbv
 	m_device->CreateConstantBufferView(&cbvDesc, m_cbvHeap->GetCPUDescriptorHandleForHeapStart());
 }
 
-void RendererDX12::CreateMesh(std::unique_ptr<Mesh>& mesh, const void* vertexData, const UINT vertexDataCount, const UINT vertexDataByteSize, const std::vector<std::uint16_t>& indices)
+void RendererDX12::CreateMesh(std::weak_ptr<Mesh>& meshPtr, const void* vertexData, const UINT vertexDataCount, const UINT vertexDataByteSize, const std::vector<std::uint16_t>& indices)
 {
 	const UINT vbByteSize = vertexDataCount * vertexDataByteSize;
 	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
 
+	auto mesh = meshPtr.lock();
 	ThrowIfFailed(D3DCreateBlob(vbByteSize, &mesh->VertexBufferCPU));
 	CopyMemory(mesh->VertexBufferCPU->GetBufferPointer(), vertexData, vbByteSize);
 

@@ -92,6 +92,7 @@
     </ClInclude>
     <ClInclude Include="Src\Rendering\Common\FrameResource.h" />
     <ClInclude Include="Src\Rendering\RenderData\RenderPassConstants.h" />
+    <ClInclude Include="Src\Rendering\Common\MeshLibrary.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\color.hlsl">

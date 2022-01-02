@@ -19,6 +19,7 @@ AstroGameInstance::AstroGameInstance()
 	, m_frameResources()
 	, m_currentFrameResource(nullptr)
 	, m_currentFrameResourceIndex(0)
+	, m_meshLibrary(std::make_unique<MeshLibrary>())
 {
 }
 
@@ -129,9 +130,7 @@ void AstroGameInstance::BuildSceneGeometry()
 		4, 3, 7
 	};
 
-	
-	std::unique_ptr<Mesh> boxMesh = std::make_unique<Mesh>();
-	boxMesh->Name = "BoxGeometry";
+	auto boxMesh = m_meshLibrary->AddMesh("BoxGeometry");
 	
 	const auto vertsPODList = VertexDataFactory::Convert(verts);
 	constexpr auto podDataSize = VertexDataFactory::GetPODTypeSize<VertexData_Short>();
@@ -140,11 +139,31 @@ void AstroGameInstance::BuildSceneGeometry()
 	const auto rootPath = DX::GetWorkingDirectory();
 	const auto defaultShaderPath = rootPath + std::string("\\Shaders\\color.hlsl");
 
+	// Box 1
+	auto transformBox1 = XMFLOAT4X4(
+		1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f);
 	m_renderablesDesc.emplace_back(
-		std::move(boxMesh),
+		boxMesh,
 		defaultShaderPath, 
 		defaultShaderPath, 
-		AstroTools::Rendering::InputLayout::IL_Pos_Color);
+		AstroTools::Rendering::InputLayout::IL_Pos_Color,
+		transformBox1);
+
+	// Box 2
+	auto transformBox2 = XMFLOAT4X4(
+		1.0f, 0.0f, 0.0f, 10.0f,
+		0.0f, 1.0f, 0.0f, 10.0f,
+		0.0f, 0.0f, 1.0f, 10.0f,
+		0.0f, 0.0f, 0.0f, 1.0f);
+	m_renderablesDesc.emplace_back(
+		boxMesh,
+		defaultShaderPath,
+		defaultShaderPath,
+		AstroTools::Rendering::InputLayout::IL_Pos_Color,
+		transformBox2);
 }
 
 void AstroGameInstance::BuildFrameResources()
@@ -186,7 +205,8 @@ void AstroGameInstance::CreateRenderables()
 			renderableDesc.Mesh,
 			renderableDesc.RootSignature, 
 			renderableDesc.ConstantBuffer,
-			renderableDesc.PipelineStateObject
+			renderableDesc.PipelineStateObject,
+			renderableDesc.InitialTransform
 			);
 		AddRenderable(renderableObj);
 	}

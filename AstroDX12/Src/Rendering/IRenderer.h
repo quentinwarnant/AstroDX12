@@ -25,7 +25,7 @@ public:
 	virtual void AddNewFence(std::function<void(int)> onNewFenceValue) = 0;
 	virtual void Shutdown() = 0;
 	virtual void CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature, ComPtr<ID3D12RootSignature>& outRootSignature) = 0;
-	virtual void CreateMesh(std::unique_ptr<Mesh>& mesh, const void* vertexData, const UINT vertexDataCount, const UINT vertexDataByteSize, const std::vector<std::uint16_t>& indices) = 0;
+	virtual void CreateMesh(std::weak_ptr<Mesh>& meshPtr, const void* vertexData, const UINT vertexDataCount, const UINT vertexDataByteSize, const std::vector<std::uint16_t>& indices) = 0;
 protected:
 	virtual ComPtr<ID3D12Device> GetDevice() const = 0;
 public:
