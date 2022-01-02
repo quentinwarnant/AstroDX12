@@ -244,6 +244,7 @@ void AstroGameInstance::Update(float deltaTime)
 	RenderableObjectConstantData objectConstants;
 	XMStoreFloat4x4(&objectConstants.WorldViewProj, XMMatrixTranspose(worldViewProj));
 	m_sceneRenderables[0]->SetConstantBufferData(&objectConstants);
+	m_sceneRenderables[1]->SetConstantBufferData(&objectConstants);
 
 	PIXEndEvent();
 }
