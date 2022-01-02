@@ -55,15 +55,19 @@ void AstroGameInstance::BuildRootSignature()
 {
 	for (auto& renderableDesc : m_renderablesDesc)
 	{
-		CD3DX12_ROOT_PARAMETER slotRootParams[1] = {};
+		CD3DX12_ROOT_PARAMETER slotRootParams[2] = {};
 
-		// Descriptor table of 1 CBV 
-		CD3DX12_DESCRIPTOR_RANGE cbvTable;
-		cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
-		slotRootParams[0].InitAsDescriptorTable(1, &cbvTable);
+		// Descriptor table of 2 CBV - one per pass, one per object
+		CD3DX12_DESCRIPTOR_RANGE cbvTable0;
+		cbvTable0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+		slotRootParams[0].InitAsDescriptorTable(1, &cbvTable0);
+
+		CD3DX12_DESCRIPTOR_RANGE cbvTable1;
+		cbvTable1.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1);
+		slotRootParams[1].InitAsDescriptorTable(1, &cbvTable1);
 
 		// Root signature is an array of root parameters
-		CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc(1, slotRootParams, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+		CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc(2, slotRootParams, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 		// Create the root signature
 		ComPtr<ID3DBlob> serializedRootSignature = nullptr;
@@ -184,6 +188,57 @@ void AstroGameInstance::UpdateFrameResource()
 	}
 }
 
+void AstroGameInstance::UpdateRenderablesConstantBuffers()
+{
+	// re-using the same constant buffer to set all the renderables objects - per object constant data.
+	auto currentFrameObjectCB = m_currentFrameResource->ObjectConstantBuffer.get();
+	for (auto& renderable : m_sceneRenderables)
+	{
+		if (renderable->IsDirty())
+		{
+			XMMATRIX worldTransform = XMLoadFloat4x4(&renderable->GetWorldTransform());
+			RenderableObjectConstantData objectConstants;
+			XMStoreFloat4x4(&objectConstants.WorldTransform, XMMatrixTranspose(worldTransform));
+			currentFrameObjectCB->CopyData(renderable->GetConstantBufferIndex(), objectConstants);
+
+			renderable->ReduceDirtyFrameCount();
+		}
+	}
+}
+
+void AstroGameInstance::UpdateMainRenderPassConstantBuffer(float deltaTime)
+{
+	XMMATRIX view = XMLoadFloat4x4(&m_viewMat);
+	XMMATRIX proj = XMLoadFloat4x4(&m_projMat);
+
+	XMMATRIX viewProj = XMMatrixMultiply(view, proj);
+	auto viewDet = XMMatrixDeterminant(view);
+	XMMATRIX invView = XMMatrixInverse(&viewDet, view);
+	auto projDet = XMMatrixDeterminant(proj);
+	XMMATRIX invProj = XMMatrixInverse(&projDet, proj);
+	auto viewProjDet = XMMatrixDeterminant(viewProj);
+	XMMATRIX invViewProj = XMMatrixInverse(&viewProjDet, viewProj);
+
+	RenderPassConstants renderPassCB;
+	XMStoreFloat4x4(&renderPassCB.View, XMMatrixTranspose(view));
+	XMStoreFloat4x4(&renderPassCB.Proj, XMMatrixTranspose(proj));
+	XMStoreFloat4x4(&renderPassCB.ViewProj, XMMatrixTranspose(viewProj));
+	XMStoreFloat4x4(&renderPassCB.InvView, XMMatrixTranspose(invView));
+	XMStoreFloat4x4(&renderPassCB.InvProj, XMMatrixTranspose(invProj));
+	XMStoreFloat4x4(&renderPassCB.InvViewProj, XMMatrixTranspose(invViewProj));
+
+	renderPassCB.EyePosWorld = m_cameraPos;
+	renderPassCB.RenderTargetSize = XMFLOAT2(GetScreenWidth(), GetScreenHeight());
+	renderPassCB.InvRenderTargetSize = XMFLOAT2(1.0f/GetScreenWidth(), 1.0f / GetScreenHeight());
+	renderPassCB.NearZ = 1.0f;
+	renderPassCB.FarZ = 1000.0f;
+	renderPassCB.TotalTime = GetTotalTime();
+	renderPassCB.DeltaTime = deltaTime;
+
+	auto currentPassCB = m_currentFrameResource->PassConstantBuffer.get();
+	currentPassCB->CopyData(0, renderPassCB);
+}
+
 void AstroGameInstance::BuildPipelineStateObject()
 {
 	for (auto& renderableDesc : m_renderablesDesc)
@@ -199,6 +254,7 @@ void AstroGameInstance::BuildPipelineStateObject()
 
 void AstroGameInstance::CreateRenderables()
 {
+	int32_t index = 0;
 	for (auto& renderableDesc : m_renderablesDesc)
 	{
 		auto renderableObj = std::make_shared<RenderableStaticObject>(
@@ -206,8 +262,10 @@ void AstroGameInstance::CreateRenderables()
 			renderableDesc.RootSignature, 
 			renderableDesc.ConstantBuffer,
 			renderableDesc.PipelineStateObject,
-			renderableDesc.InitialTransform
+			renderableDesc.InitialTransform,
+			index++
 			);
+		renderableObj->MarkDirty(NumFrameResources);
 		AddRenderable(renderableObj);
 	}
 }
@@ -229,23 +287,19 @@ void AstroGameInstance::Update(float deltaTime)
 	float z = cameraRadius * sinf(m_cameraPhi) * sinf(m_cameraTheta);
 	float y = cameraRadius * cosf(m_cameraPhi);
 
-	//Build View Matrix
 	XMVECTOR pos = XMVectorSet(x,y,z, 1.0f);
+	XMStoreFloat3(&m_cameraPos, pos);
+
+	//Build View Matrix
 	XMVECTOR target = XMVectorZero();
 	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 	XMMATRIX view = XMMatrixLookAtLH(pos, target, up);
 	XMStoreFloat4x4(&m_viewMat, view);
+	PIXEndEvent();
 
-	XMMATRIX world = XMLoadFloat4x4(&m_worldMat);
-	XMMATRIX proj = XMLoadFloat4x4(&m_projMat);
-	XMMATRIX worldViewProj = world * view * proj;
-
-	//Update constant buffer with updated worldViewProj value
-	RenderableObjectConstantData objectConstants;
-	XMStoreFloat4x4(&objectConstants.WorldViewProj, XMMatrixTranspose(worldViewProj));
-	m_sceneRenderables[0]->SetConstantBufferData(&objectConstants);
-	m_sceneRenderables[1]->SetConstantBufferData(&objectConstants);
-
+	PIXBeginEvent(PIX_COLOR_DEFAULT, L"Update Constant Buffers Objects & Main Render pass");
+	UpdateRenderablesConstantBuffers();
+	UpdateMainRenderPassConstantBuffer(deltaTime);
 	PIXEndEvent();
 }
 

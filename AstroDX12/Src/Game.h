@@ -16,7 +16,6 @@ class Mesh;
 class Game 
 {
 public:
-
     Game() noexcept(false);
     virtual ~Game();
 
@@ -30,7 +29,7 @@ public:
     void Initialize(HWND window, int width, int height);
 
     // Basic game loop
-    void Tick(float deltaTime);
+    void Tick(float totalTime, float deltaTime);
 
     // Messages
     void OnActivated();
@@ -46,6 +45,9 @@ public:
     // Properties
     void GetDefaultSize( int& width, int& height ) const noexcept;
     inline float GetAspectRatio() const { return (float)m_screenWidth / (float)m_screenHeight;  }
+    inline float GetScreenWidth() const { return (float)m_screenWidth; }
+    inline float GetScreenHeight() const { return (float)m_screenHeight; }
+    inline float GetTotalTime() const { return m_totalTime; }
 
     void AddRenderable(std::shared_ptr<IRenderable> renderableObj);
 
@@ -67,9 +69,9 @@ protected:
     std::vector < std::shared_ptr< IRenderable >> m_sceneRenderables;
 
 private:
-
     int m_screenWidth;
     int m_screenHeight;
+    float m_totalTime;
     AstroTools::Rendering::ShaderLibrary m_shaderLibrary;
 
 protected:

@@ -11,10 +11,13 @@
 using namespace DirectX;
 
 namespace
-{
-    std::unique_ptr<Game> g_game;
-    std::unique_ptr<GameTimer> g_gameTimer;
-};
+{ 
+    namespace
+    {
+        std::unique_ptr<Game> g_game;
+        std::unique_ptr<GameTimer> g_gameTimer;
+    }
+}
 
 LPCWSTR g_szAppName = L"AstroDX12";
 
@@ -122,7 +125,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
             
             framesInCurrentSecond++;
             
-            g_game->Tick(g_gameTimer->DeltaTime());
+            g_game->Tick(g_gameTimer->TotalTime(), g_gameTimer->DeltaTime());
         }
     }
 
@@ -149,7 +152,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_PAINT:
         if (s_in_sizemove && game)
         {
-            game->Tick(g_gameTimer->DeltaTime());
+            game->Tick(g_gameTimer->TotalTime(), g_gameTimer->DeltaTime());
         }
         else
         {

@@ -54,4 +54,8 @@ public:
 	virtual UINT GetIndexCount() const = 0;
 	virtual void SetConstantBufferData(const void* data) = 0;
 	virtual ComPtr<ID3D12PipelineState> GetPipelineStateObject() const = 0;
+	virtual bool IsDirty() const = 0;
+	virtual void MarkDirty(int16_t dirtyFrameCount) = 0;
+	virtual void ReduceDirtyFrameCount() = 0;
+	virtual int16_t GetConstantBufferIndex() const = 0;
 };

@@ -67,8 +67,9 @@ void Game::Initialize(HWND window, int width, int height)
 
 #pragma region Frame Update
 // Executes the basic game loop.
-void Game::Tick(float deltaTime)
+void Game::Tick(float totalTime, float deltaTime)
 {
+    m_totalTime = totalTime;
     Update(deltaTime);
     Render(deltaTime);
 }

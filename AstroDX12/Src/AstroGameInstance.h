@@ -33,10 +33,13 @@ public:
 private:
     void BuildSceneGeometry();
     void UpdateFrameResource();
+    void UpdateRenderablesConstantBuffers();
+    void UpdateMainRenderPassConstantBuffer(float deltaTime);
 
     std::vector<IRenderableDesc> m_renderablesDesc;
 
-    XMFLOAT4X4 m_worldMat = AstroTools::Maths::Identity4x4();
+    XMFLOAT3 m_cameraPos;
+
     XMFLOAT4X4 m_viewMat = AstroTools::Maths::Identity4x4();
     XMFLOAT4X4 m_projMat = AstroTools::Maths::Identity4x4();
 

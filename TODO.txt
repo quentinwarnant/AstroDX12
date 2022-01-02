@@ -2,3 +2,6 @@ Make Const Buffer type not fixed for all renderables (template & generate POD ty
 
 With FrameResources addition, check per object data is in correct location... shouldn't it be in the renderable?
 what about data locality?
+
+Transpose matrix ?
+XMMatrixDeterminant ?

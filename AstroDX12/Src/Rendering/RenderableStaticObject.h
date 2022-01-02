@@ -16,7 +16,8 @@ public:
 		ComPtr<ID3D12RootSignature>& rootSignature,
 		std::unique_ptr<UploadBuffer<RenderableObjectConstantData>>& constantBuffer,
 		ComPtr<ID3D12PipelineState>& pipelineStateObject, 
-		XMFLOAT4X4& initialTransform
+		XMFLOAT4X4& initialTransform,
+		int32_t objectIndex
 	)
 		: m_transform(initialTransform)
 		, m_mesh(mesh)
@@ -24,7 +25,7 @@ public:
 		, m_constantBuffer(std::move(constantBuffer))
 		, m_pipelineStateObject(pipelineStateObject)
 		, m_dirtyFrameCount(0)
-		, m_objectsConstantBufferIndex(-1)
+		, m_objectsConstantBufferIndex(objectIndex)
 	{
 	}
 
@@ -70,6 +71,27 @@ public:
 	virtual ComPtr<ID3D12PipelineState> GetPipelineStateObject() const override
 	{
 		return m_pipelineStateObject;
+	}
+
+	virtual bool IsDirty() const override
+	{
+		return m_dirtyFrameCount > 0;
+	}
+
+	virtual void MarkDirty(int16_t dirtyFrameCount) override
+	{
+		m_dirtyFrameCount = dirtyFrameCount;
+	}
+
+	virtual void ReduceDirtyFrameCount() override
+	{
+		assert(m_dirtyFrameCount > 0);
+		m_dirtyFrameCount--;
+	}
+
+	virtual int16_t GetConstantBufferIndex() const override
+	{
+		return m_objectsConstantBufferIndex;
 	}
 
 private:
