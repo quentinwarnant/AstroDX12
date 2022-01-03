@@ -180,9 +180,15 @@ void RendererDX12::CreateDescriptorHeaps()
 	dsvDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	dsvDescriptorHeapDesc.NodeMask = 0; // device/Adapter index
 	ThrowIfFailed(m_device->CreateDescriptorHeap(&dsvDescriptorHeapDesc, IID_PPV_ARGS(m_dsvHeap.GetAddressOf())));
+}
+
+void RendererDX12::CreateConstantBufferDescriptorHeaps(int16_t frameResourceCount, int32_t renderableObjectCount)
+{
+	// Need a CBV descriptor for each object in each frame resource + one render pass CBV
+	int32_t cbvDescriptorCount = (renderableObjectCount + 1) * frameResourceCount;
 
 	D3D12_DESCRIPTOR_HEAP_DESC cbvDescriptorHeapDesc{};
-	cbvDescriptorHeapDesc.NumDescriptors = 1;
+	cbvDescriptorHeapDesc.NumDescriptors = cbvDescriptorCount;
 	cbvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	cbvDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	cbvDescriptorHeapDesc.NodeMask = 0; // device/Adapter index
@@ -361,9 +367,16 @@ void RendererDX12::Shutdown()
 {
 }
 
-void RendererDX12::CreateConstantBufferView(D3D12_CONSTANT_BUFFER_VIEW_DESC& cbvDesc)
+void RendererDX12::CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize, int32_t handleOffset)
 {
-	m_device->CreateConstantBufferView(&cbvDesc, m_cbvHeap->GetCPUDescriptorHandleForHeapStart());
+	auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(m_cbvHeap->GetCPUDescriptorHandleForHeapStart());
+	handle.Offset(handleOffset, m_descriptorSizeCBV);
+
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbViewDesc;
+	cbViewDesc.BufferLocation = cbvGpuAddress;
+	cbViewDesc.SizeInBytes = cbvByteSize;
+
+	m_device->CreateConstantBufferView(&cbViewDesc, handle);
 }
 
 void RendererDX12::CreateMesh(std::weak_ptr<Mesh>& meshPtr, const void* vertexData, const UINT vertexDataCount, const UINT vertexDataByteSize, const std::vector<std::uint16_t>& indices)

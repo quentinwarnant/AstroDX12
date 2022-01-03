@@ -16,7 +16,6 @@ public:
 		const XMFLOAT4X4& inInitialTransform)
 		: Mesh(inMesh)
 		, RootSignature(nullptr)
-		, ConstantBuffer(nullptr)
 		, VertexShaderPath( vsPath )
 		, PixelShaderPath( psPath )
 		, VS(nullptr)
@@ -29,7 +28,6 @@ public:
 
 	std::weak_ptr<Mesh> Mesh;
 	ComPtr<ID3D12RootSignature> RootSignature;
-	std::unique_ptr<UploadBuffer<RenderableObjectConstantData>> ConstantBuffer;
 
 	std::string VertexShaderPath;
 	std::string PixelShaderPath;
@@ -52,7 +50,6 @@ public:
 	virtual D3D12_VERTEX_BUFFER_VIEW GetVertexBufferView() const = 0;
 	virtual D3D12_INDEX_BUFFER_VIEW GetIndexBufferView() const = 0;
 	virtual UINT GetIndexCount() const = 0;
-	virtual void SetConstantBufferData(const void* data) = 0;
 	virtual ComPtr<ID3D12PipelineState> GetPipelineStateObject() const = 0;
 	virtual bool IsDirty() const = 0;
 	virtual void MarkDirty(int16_t dirtyFrameCount) = 0;

@@ -29,13 +29,15 @@ public:
 protected:
 	virtual ComPtr<ID3D12Device> GetDevice() const = 0;
 public:
+	virtual void CreateConstantBufferDescriptorHeaps(int16_t frameResourceCount, int32_t renderableObjectCount) = 0;
+
 	template<typename T>
 	std::unique_ptr<UploadBuffer<T>> CreateConstantBuffer(UINT elementCount)
 	{
 		return std::make_unique<UploadBuffer<T>>(GetDevice().Get(), elementCount, true);
 	}
 
-	virtual void CreateConstantBufferView(D3D12_CONSTANT_BUFFER_VIEW_DESC& cbvDesc) = 0;
+	virtual void CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize, int32_t handleOffset) = 0;
 	virtual void CreateGraphicsPipelineState(
 		ComPtr<ID3D12PipelineState>& pso,
 		ComPtr<ID3D12RootSignature>& rootSignature,

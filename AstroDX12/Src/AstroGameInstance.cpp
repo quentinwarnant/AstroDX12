@@ -9,7 +9,7 @@ namespace
 {
 	namespace
 	{
-		constexpr int NumFrameResources = 3;
+		constexpr int16_t NumFrameResources = 3;
 	}
 }
 
@@ -36,18 +36,43 @@ void AstroGameInstance::LoadSceneData()
 
 void AstroGameInstance::BuildConstantBuffers()
 {
-	for (auto& renderableDesc : m_renderablesDesc)
+	int32_t renderableObjCount = m_renderablesDesc.size();
+	m_renderer->CreateConstantBufferDescriptorHeaps(NumFrameResources, renderableObjCount);
+
+	// Create CBV descriptors for each object in each frame resource
+	for (int16_t frameIdx = 0; frameIdx < NumFrameResources; ++frameIdx)
 	{
-		renderableDesc.ConstantBuffer = m_renderer->CreateConstantBuffer<RenderableObjectConstantData>(1);//TODO: make cbuffer defined by scene data we'd load, instead of fixed
+		UINT objCBByteSize = m_frameResources[frameIdx]->ObjectConstantBuffer->GetElementByteSize();
+		auto objectCB = m_frameResources[frameIdx]->ObjectConstantBuffer->Resource();
+		for (int32_t renderableObjIdx = 0; renderableObjIdx < renderableObjCount; ++renderableObjIdx)
+		{
+			auto& renderableDesc = m_renderablesDesc[renderableObjIdx];
+			D3D12_GPU_VIRTUAL_ADDRESS cbAddress = objectCB->GetGPUVirtualAddress();
+			// offset address to the i-th object constant buffer in the current frame resource buffer
+			cbAddress += (((UINT)renderableObjIdx) * objCBByteSize);
 
-		D3D12_GPU_VIRTUAL_ADDRESS cbAddress = renderableDesc.ConstantBuffer->Resource()->GetGPUVirtualAddress();
+			// Offset handle in the CBV descriptor heap
+			int32_t heapIdx = (frameIdx * renderableObjCount) + renderableObjIdx;
 
-		D3D12_CONSTANT_BUFFER_VIEW_DESC cbViewDesc;
-		cbViewDesc.BufferLocation = cbAddress;
-		cbViewDesc.SizeInBytes = renderableDesc.ConstantBuffer->GetElementByteSize();
+			// Finalise creation of constant buffer view
+			m_renderer->CreateConstantBufferView(cbAddress, objCBByteSize, heapIdx );
+		}
+	}
+
+	// Create CBV descriptors shared for the whole render pass, in each frame resource
+	for (int16_t frameIdx = 0; frameIdx < NumFrameResources; ++frameIdx)
+	{
+		UINT passCBByteSize = m_frameResources[frameIdx]->PassConstantBuffer->GetElementByteSize();
+		auto passCB = m_frameResources[frameIdx]->PassConstantBuffer->Resource();
+
+		D3D12_GPU_VIRTUAL_ADDRESS cbAddress = passCB->GetGPUVirtualAddress();
+
+		// Offset handle in CBV Descriptor heap
+//TODO: check first one is different than last object one
+		int32_t heapIdx = (renderableObjCount * NumFrameResources) + frameIdx;
 
 		// Finalise creation of constant buffer view
-		m_renderer->CreateConstantBufferView(cbViewDesc);
+		m_renderer->CreateConstantBufferView(cbAddress, passCBByteSize, heapIdx);
 	}
 }
 
@@ -260,7 +285,6 @@ void AstroGameInstance::CreateRenderables()
 		auto renderableObj = std::make_shared<RenderableStaticObject>(
 			renderableDesc.Mesh,
 			renderableDesc.RootSignature, 
-			renderableDesc.ConstantBuffer,
 			renderableDesc.PipelineStateObject,
 			renderableDesc.InitialTransform,
 			index++

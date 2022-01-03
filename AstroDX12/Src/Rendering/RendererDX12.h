@@ -27,7 +27,8 @@ public:
 protected:
     virtual ComPtr<ID3D12Device>  GetDevice() const override { return m_device; };
 public:
-    virtual void CreateConstantBufferView(D3D12_CONSTANT_BUFFER_VIEW_DESC& cbvDesc) override;
+    virtual void CreateConstantBufferDescriptorHeaps(int16_t frameResourceCount, int32_t renderableObjectCount) override;
+    virtual void CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize, int32_t handleOffset) override;
     virtual void CreateGraphicsPipelineState(
         ComPtr<ID3D12PipelineState>& pso,
         ComPtr<ID3D12RootSignature>& rootSignature,

@@ -5,3 +5,6 @@ what about data locality?
 
 Transpose matrix ?
 XMMatrixDeterminant ?
+
+TODO:
+update descriptor heaps & CBV for each needed object + frame resource , for each frame (3)
