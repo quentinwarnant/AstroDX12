@@ -3,7 +3,8 @@
 #include <d3d12.h>
 #include <Rendering/RenderData/RenderConstants.h>
 
-FrameResource::FrameResource(ID3D12Device* device, UINT passCount, UINT objectCount)
+FrameResource::FrameResource(ID3D12Device* device, UINT passCount, UINT objectCount, int16_t frameResourceIndex)
+	: m_frameResourceIndex(frameResourceIndex)
 {
 	ThrowIfFailed(device->CreateCommandAllocator(
 		D3D12_COMMAND_LIST_TYPE_DIRECT,

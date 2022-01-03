@@ -38,6 +38,7 @@ public:
     virtual void BuildFrameResources(std::vector<std::unique_ptr<FrameResource>>& outFrameResourcesList, int frameResourcesCount, int objectCount) override;
     virtual UINT64 GetLastCompletedFence() override;
     virtual void WaitForFence(UINT64 fenceValue) override;
+    virtual void SetPassCBVOffset(int32_t offset) override;
     // IRenderer - END
 
 private:
@@ -52,7 +53,8 @@ private:
 
     void ProcessRenderableObjectsForRendering(
         ComPtr<ID3D12GraphicsCommandList>& commandList,
-        std::vector<std::shared_ptr<IRenderable>>& renderableObjects);
+        std::vector<std::shared_ptr<IRenderable>>& renderableObjects,
+        FrameResource* frameResources);
 
 private:
     int m_width = 32;
@@ -60,6 +62,7 @@ private:
     static const uint8_t m_swapChainBufferCount = 2;
     int m_currentBackBuffer = 0;
     int m_currentFence = 0;
+    int32_t m_renderPassCBVOffset = 0;
 
     ComPtr<IDXGIFactory4> m_dxgiFactory;
     ComPtr<ID3D12Device> m_device;

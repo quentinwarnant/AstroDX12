@@ -68,12 +68,14 @@ void AstroGameInstance::BuildConstantBuffers()
 		D3D12_GPU_VIRTUAL_ADDRESS cbAddress = passCB->GetGPUVirtualAddress();
 
 		// Offset handle in CBV Descriptor heap
-//TODO: check first one is different than last object one
 		int32_t heapIdx = (renderableObjCount * NumFrameResources) + frameIdx;
 
 		// Finalise creation of constant buffer view
 		m_renderer->CreateConstantBufferView(cbAddress, passCBByteSize, heapIdx);
 	}
+
+	m_renderer->SetPassCBVOffset(renderableObjCount * NumFrameResources);
+
 }
 
 void AstroGameInstance::BuildRootSignature()
@@ -183,16 +185,29 @@ void AstroGameInstance::BuildSceneGeometry()
 
 	// Box 2
 	auto transformBox2 = XMFLOAT4X4(
-		1.0f, 0.0f, 0.0f, 10.0f,
-		0.0f, 1.0f, 0.0f, 10.0f,
-		0.0f, 0.0f, 1.0f, 10.0f,
-		0.0f, 0.0f, 0.0f, 1.0f);
+		1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		10.0f, 0.0f, 0.0f, 1.0f);
 	m_renderablesDesc.emplace_back(
 		boxMesh,
 		defaultShaderPath,
 		defaultShaderPath,
 		AstroTools::Rendering::InputLayout::IL_Pos_Color,
 		transformBox2);
+
+	// Box 3
+	auto transformBox3 = XMFLOAT4X4(
+		2.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 2.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 2.0f, 0.0f,
+		0.0f, 10.0f, 10.0f, 1.0f);
+	m_renderablesDesc.emplace_back(
+		boxMesh,
+		defaultShaderPath,
+		defaultShaderPath,
+		AstroTools::Rendering::InputLayout::IL_Pos_Color,
+		transformBox3);
 }
 
 void AstroGameInstance::BuildFrameResources()

@@ -10,10 +10,12 @@ struct RenderPassConstants;
 struct FrameResource
 {
 public: 
-	FrameResource(ID3D12Device* device, UINT passCount, UINT objectCount);
+	FrameResource(ID3D12Device* device, UINT passCount, UINT objectCount, int16_t frameResourceIndex);
 	FrameResource(const FrameResource& other) = delete;
 	FrameResource& operator=(const FrameResource& other) = delete;
 	~FrameResource();
+
+	int16_t GetIndex() { return m_frameResourceIndex; }
 
 	// Command allocators - one for each frame, since we can't reset an allocator whilst commands are being processed
 	ComPtr<ID3D12CommandAllocator> CmdListAllocator;
@@ -24,5 +26,8 @@ public:
 
 	// Fence value, marking commands up to this fence point. This let's us check if GPU has finished using these frame resources
 	UINT64 Fence = 0;
+
+private:
+	int16_t m_frameResourceIndex = -1;
 };
 

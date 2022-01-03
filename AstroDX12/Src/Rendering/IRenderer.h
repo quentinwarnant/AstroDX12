@@ -47,4 +47,5 @@ public:
 	virtual void BuildFrameResources(std::vector<std::unique_ptr<FrameResource>>& outFrameResourcesList, int frameResourcesCount, int objectCount) = 0;
 	virtual UINT64 GetLastCompletedFence() = 0;
 	virtual void WaitForFence(UINT64 fenceValue) = 0;
+	virtual void SetPassCBVOffset(int32_t offset) = 0;
 };

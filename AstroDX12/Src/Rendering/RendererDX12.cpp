@@ -264,13 +264,22 @@ D3D12_CPU_DESCRIPTOR_HANDLE RendererDX12::GetDepthStencilView() const
 
 void RendererDX12::ProcessRenderableObjectsForRendering(
 	ComPtr<ID3D12GraphicsCommandList>& commandList, 
-	std::vector< std::shared_ptr<IRenderable>>& renderableObjects)
+	std::vector< std::shared_ptr<IRenderable>>& renderableObjects,
+	FrameResource* frameResources)
 {
+	auto objectCB = frameResources->ObjectConstantBuffer->Resource();
+	UINT cbByteSize = frameResources->ObjectConstantBuffer->GetElementByteSize();
+	int32_t renderableObjCount = renderableObjects.size();
 	for (const auto& renderableObj : renderableObjects)
 	{
-		ID3D12DescriptorHeap* descriptorHeaps[] = { m_cbvHeap.Get() };
+		//-- calculate cbv index...
+		// Offset the CBV in the descriptor heap for this object & frame resource combination
+		UINT cbvIndex = (frameResources->GetIndex() * renderableObjCount) + renderableObj->GetConstantBufferIndex();
+		auto cbvHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_cbvHeap->GetGPUDescriptorHandleForHeapStart());
+		cbvHandle.Offset(cbvIndex, m_descriptorSizeCBV);
+		commandList->SetGraphicsRootDescriptorTable(0, cbvHandle);
+
 		commandList->SetPipelineState(renderableObj->GetPipelineStateObject().Get());
-		commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 		commandList->SetGraphicsRootSignature(renderableObj->GetGraphicsRootSignature().Get());
 		const auto vertexBuffer = renderableObj->GetVertexBufferView();
@@ -278,8 +287,6 @@ void RendererDX12::ProcessRenderableObjectsForRendering(
 		const auto indexBuffer = renderableObj->GetIndexBufferView();
 		commandList->IASetIndexBuffer(&indexBuffer);
 		commandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-		commandList->SetGraphicsRootDescriptorTable(0, m_cbvHeap->GetGPUDescriptorHandleForHeapStart());
 
 		commandList->DrawIndexedInstanced(renderableObj->GetIndexCount(), 1, 0, 0, 0);
 	}
@@ -292,15 +299,15 @@ void RendererDX12::CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature
 
 void RendererDX12::Render(float deltaTime,
 	std::vector<std::shared_ptr<IRenderable>>& renderableObjects,
-	FrameResource* currentFrameResources,
+	FrameResource* frameResources,
 	std::function<void(int)> onNewFenceValue)
 {
 	// We know at this point we've waited for last frame's commands to be executed on the GPU , we can now safely reset the commandlist allocator
-	ThrowIfFailed(currentFrameResources->CmdListAllocator->Reset());
+	ThrowIfFailed(frameResources->CmdListAllocator->Reset());
 
 	// Reset command list so we can re-use it for the next frame worth of commands.
 	// This is safe to do after the commandlist is comitted to the command queue with ExecuteCommandList
-	ThrowIfFailed(m_commandList->Reset(currentFrameResources->CmdListAllocator.Get(), nullptr));
+	ThrowIfFailed(m_commandList->Reset(frameResources->CmdListAllocator.Get(), nullptr));
 
 	// Switch back buffer render target buffer from Presenting to Render Target mode
 	const auto backBufferResourceBarrierPresentToRT = CD3DX12_RESOURCE_BARRIER::Transition(
@@ -327,7 +334,17 @@ void RendererDX12::Render(float deltaTime,
 	// Set buffer we're rendering to (output merger)
 	m_commandList->OMSetRenderTargets(1, &currentBackBufferView, true, &currentDepthStencilView);
 
-	ProcessRenderableObjectsForRendering(m_commandList, renderableObjects);
+	m_commandList->SetGraphicsRootSignature(renderableObjects[0]->GetGraphicsRootSignature().Get());
+
+	ID3D12DescriptorHeap* descriptorHeaps[] = { m_cbvHeap.Get() };
+	m_commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+	int32_t renderPassCBVIndex = (m_renderPassCBVOffset + frameResources->GetIndex());
+	auto renderPassCBVHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_cbvHeap->GetGPUDescriptorHandleForHeapStart());
+	renderPassCBVHandle.Offset(renderPassCBVIndex, m_descriptorSizeCBV);
+	m_commandList->SetGraphicsRootDescriptorTable(1, renderPassCBVHandle);
+
+	ProcessRenderableObjectsForRendering(m_commandList, renderableObjects, frameResources);
 
 	// Transition backbuffer resource state from render target to present 
 	const auto backBufferResourceBarrierRTToPresent = CD3DX12_RESOURCE_BARRIER::Transition(
@@ -447,7 +464,8 @@ void RendererDX12::BuildFrameResources(std::vector<std::unique_ptr<FrameResource
 		outFrameResourcesList.push_back(std::make_unique<FrameResource>(
 			m_device.Get(),
 			1,
-			objectCount
+			objectCount,
+			i
 			));
 	}
 }
@@ -464,3 +482,9 @@ void RendererDX12::WaitForFence(UINT64 fenceValue)
 	WaitForSingleObject(eventHandle, INFINITE);
 	CloseHandle(eventHandle);
 }
+
+void RendererDX12::SetPassCBVOffset(int32_t offset)
+{
+	m_renderPassCBVOffset = offset;
+}
+

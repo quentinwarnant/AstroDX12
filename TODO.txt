@@ -7,4 +7,4 @@ Transpose matrix ?
 XMMatrixDeterminant ?
 
 TODO:
-update descriptor heaps & CBV for each needed object + frame resource , for each frame (3)
+Update drawing of scene, to offset the CBV for the renderable object being rendered and also binding the render pass constant buffer
