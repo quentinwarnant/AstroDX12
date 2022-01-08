@@ -112,7 +112,7 @@ void RendererDX12::FinaliseInit()
 	ID3D12CommandList* cmdsLists[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
-	AddNewFence([](int newFenceValue) {});
+	AddNewFence([](int) {});
 }
 
 void RendererDX12::CreateCommandObjects()
@@ -183,13 +183,13 @@ void RendererDX12::CreateDescriptorHeaps()
 	ThrowIfFailed(m_device->CreateDescriptorHeap(&dsvDescriptorHeapDesc, IID_PPV_ARGS(m_dsvHeap.GetAddressOf())));
 }
 
-void RendererDX12::CreateConstantBufferDescriptorHeaps(int16_t frameResourceCount, int32_t renderableObjectCount)
+void RendererDX12::CreateConstantBufferDescriptorHeaps(size_t frameResourceCount, size_t renderableObjectCount)
 {
 	// Need a CBV descriptor for each object in each frame resource + one render pass CBV
-	int32_t cbvDescriptorCount = (renderableObjectCount + 1) * frameResourceCount;
+	size_t cbvDescriptorCount = (renderableObjectCount + 1) * frameResourceCount;
 
 	D3D12_DESCRIPTOR_HEAP_DESC cbvDescriptorHeapDesc{};
-	cbvDescriptorHeapDesc.NumDescriptors = cbvDescriptorCount;
+	cbvDescriptorHeapDesc.NumDescriptors = (UINT)cbvDescriptorCount;
 	cbvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	cbvDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	cbvDescriptorHeapDesc.NodeMask = 0; // device/Adapter index
@@ -269,9 +269,6 @@ void RendererDX12::ProcessRenderableObjectsForRendering(
 	uint32_t totalRenderables,
 	FrameResource* frameResources)
 {
-	auto objectCB = frameResources->ObjectConstantBuffer->Resource();
-	UINT cbByteSize = frameResources->ObjectConstantBuffer->GetElementByteSize();
-
 	renderablesGroup->ForEach([&](const std::shared_ptr<IRenderable>& renderableObj)
 	{
 		//-- calculate cbv index...
@@ -307,7 +304,7 @@ void RendererDX12::CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature
 	ThrowIfFailed( m_device->CreateRootSignature(0, serializedRootSignature->GetBufferPointer(), serializedRootSignature->GetBufferSize(), IID_PPV_ARGS(&outRootSignature)) );
 }
 
-void RendererDX12::Render(float deltaTime,
+void RendererDX12::Render(float /*deltaTime*/,
 	RenderableGroupMap& renderableObjectGroups,
 	FrameResource* frameResources,
 	std::function<void(int)> onNewFenceValue)
@@ -347,9 +344,9 @@ void RendererDX12::Render(float deltaTime,
 	ID3D12DescriptorHeap* descriptorHeaps[] = { m_cbvHeap.Get() };
 	m_commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
-	int32_t renderPassCBVIndex = (m_renderPassCBVOffset + frameResources->GetIndex());
+	size_t renderPassCBVIndex = (m_renderPassCBVOffset + frameResources->GetIndex());
 	auto renderPassCBVHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_cbvHeap->GetGPUDescriptorHandleForHeapStart());
-	renderPassCBVHandle.Offset(renderPassCBVIndex, m_descriptorSizeCBV);
+	renderPassCBVHandle.Offset((INT)renderPassCBVIndex, m_descriptorSizeCBV);
 
 	uint32_t totalRenderables = CountTotalRenderables(renderableObjectGroups);
 	for (auto& renderableGroupPair : renderableObjectGroups)
@@ -402,10 +399,10 @@ void RendererDX12::Shutdown()
 {
 }
 
-void RendererDX12::CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize, int32_t handleOffset)
+void RendererDX12::CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize, size_t handleOffset)
 {
 	auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(m_cbvHeap->GetCPUDescriptorHandleForHeapStart());
-	handle.Offset(handleOffset, m_descriptorSizeCBV);
+	handle.Offset((INT)handleOffset, m_descriptorSizeCBV);
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbViewDesc;
 	cbViewDesc.BufferLocation = cbvGpuAddress;
@@ -477,7 +474,7 @@ void RendererDX12::CreateGraphicsPipelineState(
 
 void RendererDX12::BuildFrameResources(std::vector<std::unique_ptr<FrameResource>>& outFrameResourcesList, int frameResourcesCount, int objectCount)
 {
-	for (int i = 0; i < frameResourcesCount; ++i)
+	for (int16_t i = 0; i < frameResourcesCount; ++i)
 	{
 		outFrameResourcesList.push_back(std::make_unique<FrameResource>(
 			m_device.Get(),
@@ -501,7 +498,7 @@ void RendererDX12::WaitForFence(UINT64 fenceValue)
 	CloseHandle(eventHandle);
 }
 
-void RendererDX12::SetPassCBVOffset(int32_t offset)
+void RendererDX12::SetPassCBVOffset(size_t offset)
 {
 	m_renderPassCBVOffset = offset;
 }

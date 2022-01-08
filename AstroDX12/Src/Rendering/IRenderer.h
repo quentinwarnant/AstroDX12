@@ -30,7 +30,7 @@ public:
 protected:
 	virtual ComPtr<ID3D12Device> GetDevice() const = 0;
 public:
-	virtual void CreateConstantBufferDescriptorHeaps(int16_t frameResourceCount, int32_t renderableObjectCount) = 0;
+	virtual void CreateConstantBufferDescriptorHeaps(size_t frameResourceCount, size_t renderableObjectCount) = 0;
 
 	template<typename T>
 	std::unique_ptr<UploadBuffer<T>> CreateConstantBuffer(UINT elementCount)
@@ -38,7 +38,7 @@ public:
 		return std::make_unique<UploadBuffer<T>>(GetDevice().Get(), elementCount, true);
 	}
 
-	virtual void CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize, int32_t handleOffset) = 0;
+	virtual void CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize, size_t handleOffset) = 0;
 	virtual void CreateGraphicsPipelineState(
 		ComPtr<ID3D12PipelineState>& pso,
 		ComPtr<ID3D12RootSignature>& rootSignature,
@@ -48,5 +48,5 @@ public:
 	virtual void BuildFrameResources(std::vector<std::unique_ptr<FrameResource>>& outFrameResourcesList, int frameResourcesCount, int objectCount) = 0;
 	virtual UINT64 GetLastCompletedFence() = 0;
 	virtual void WaitForFence(UINT64 fenceValue) = 0;
-	virtual void SetPassCBVOffset(int32_t offset) = 0;
+	virtual void SetPassCBVOffset(size_t offset) = 0;
 };

@@ -10,7 +10,7 @@ namespace
 {
 	namespace
 	{
-		constexpr int16_t NumFrameResources = 3;
+		constexpr size_t NumFrameResources = 3;
 	}
 }
 
@@ -37,7 +37,7 @@ void AstroGameInstance::LoadSceneData()
 
 void AstroGameInstance::BuildConstantBuffers()
 {
-	int32_t renderableObjCount = m_renderablesDesc.size();
+	size_t renderableObjCount = m_renderablesDesc.size();
 	m_renderer->CreateConstantBufferDescriptorHeaps(NumFrameResources, renderableObjCount);
 
 	// Create CBV descriptors for each object in each frame resource
@@ -45,15 +45,14 @@ void AstroGameInstance::BuildConstantBuffers()
 	{
 		UINT objCBByteSize = m_frameResources[frameIdx]->ObjectConstantBuffer->GetElementByteSize();
 		auto objectCB = m_frameResources[frameIdx]->ObjectConstantBuffer->Resource();
-		for (int32_t renderableObjIdx = 0; renderableObjIdx < renderableObjCount; ++renderableObjIdx)
+		for (size_t renderableObjIdx = 0; renderableObjIdx < renderableObjCount; ++renderableObjIdx)
 		{
-			auto& renderableDesc = m_renderablesDesc[renderableObjIdx];
 			D3D12_GPU_VIRTUAL_ADDRESS cbAddress = objectCB->GetGPUVirtualAddress();
 			// offset address to the i-th object constant buffer in the current frame resource buffer
 			cbAddress += (((UINT)renderableObjIdx) * objCBByteSize);
 
 			// Offset handle in the CBV descriptor heap
-			int32_t heapIdx = (frameIdx * renderableObjCount) + renderableObjIdx;
+			size_t heapIdx = (frameIdx * renderableObjCount) + renderableObjIdx;
 
 			// Finalise creation of constant buffer view
 			m_renderer->CreateConstantBufferView(cbAddress, objCBByteSize, heapIdx );
@@ -69,7 +68,7 @@ void AstroGameInstance::BuildConstantBuffers()
 		D3D12_GPU_VIRTUAL_ADDRESS cbAddress = passCB->GetGPUVirtualAddress();
 
 		// Offset handle in CBV Descriptor heap
-		int32_t heapIdx = (renderableObjCount * NumFrameResources) + frameIdx;
+		size_t heapIdx = (renderableObjCount * NumFrameResources) + frameIdx;
 
 		// Finalise creation of constant buffer view
 		m_renderer->CreateConstantBufferView(cbAddress, passCBByteSize, heapIdx);
@@ -298,7 +297,7 @@ void AstroGameInstance::BuildPipelineStateObject()
 
 void AstroGameInstance::CreateRenderables()
 {
-	int32_t index = 0;
+	size_t index = 0;
 	for (auto& renderableDesc : m_renderablesDesc)
 	{
 		auto renderableObj = std::make_shared<RenderableStaticObject>(

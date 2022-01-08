@@ -89,13 +89,13 @@ namespace DX
     static std::string GetWorkingDirectory()
     {
         wchar_t buffer[MAX_PATH];
-        auto appFullPath = GetModuleFileName(NULL, buffer, MAX_PATH);
+        GetModuleFileName(NULL, buffer, MAX_PATH);
         const auto pathStr = std::wstring(buffer);
         std::filesystem::path path = pathStr;
         auto rootFolder = path.parent_path().parent_path().parent_path();
 
-        const auto workingDirWStr = rootFolder.wstring()+L"\\AstroDX12";
-        return std::string(workingDirWStr.begin(), workingDirWStr.end());
+        const auto workingDirWStr = rootFolder.string()+"\\AstroDX12";
+        return workingDirWStr;
     }
 }
 
