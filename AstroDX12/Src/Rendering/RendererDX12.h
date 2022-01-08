@@ -1,6 +1,7 @@
 #pragma once
 #include <Rendering/IRenderer.h>
 #include <Common.h>
+#include <map>
 
 using namespace Microsoft::WRL;
 
@@ -17,7 +18,7 @@ public:
     virtual void FinaliseInit() override;
     virtual void Render(
         float deltaTime,
-        std::vector< std::shared_ptr<IRenderable>>& renderableObjects,
+        RenderableGroupMap& renderableObjectGroups,
         FrameResource* currentFrameResources,
         std::function<void(int)> onNewFenceValue) override;
     virtual void AddNewFence(std::function<void(int)> onNewFenceValue) override;
@@ -53,8 +54,11 @@ private:
 
     void ProcessRenderableObjectsForRendering(
         ComPtr<ID3D12GraphicsCommandList>& commandList,
-        std::vector<std::shared_ptr<IRenderable>>& renderableObjects,
+        std::unique_ptr<RenderableGroup>& renderablesGroup,
+        uint32_t totalRenderables,
         FrameResource* frameResources);
+
+    uint32_t CountTotalRenderables(RenderableGroupMap& renderablesGroupMap);
 
 private:
     int m_width = 32;

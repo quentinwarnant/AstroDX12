@@ -5,7 +5,7 @@
 #include <Rendering/Common/MeshLibrary.h>
 #include <Rendering/Common/UploadBuffer.h>
 #include <Rendering/Common/FrameResource.h>
-#include <Rendering/RenderableStaticObject.h>
+#include <Rendering/Renderable/RenderableStaticObject.h>
 #include <Rendering/RenderData/Mesh.h>
 #include <Maths/MathUtils.h>
 

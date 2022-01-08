@@ -2,11 +2,12 @@
 
 #include <Common.h>
 #include <Rendering/Common/UploadBuffer.h>
+#include <Rendering/Renderable/RenderableGroup.h>
 #include <functional>
-
+#include <map>
 using Microsoft::WRL::ComPtr;
 
-class IRenderable;
+using RenderableGroupMap = std::map<const ComPtr< ID3D12RootSignature>, std::unique_ptr<RenderableGroup>>;
 class IVertexData;
 class Mesh;
 struct FrameResource;
@@ -19,7 +20,7 @@ public:
 	virtual void FinaliseInit() = 0;
 	virtual void Render(
 		float deltaTime,
-		std::vector<std::shared_ptr<IRenderable>>& renderableObjects,
+		RenderableGroupMap& renderableObjectGroups,
 		FrameResource* currentFrameResources,
 		std::function<void(int)> onNewFenceValue) = 0;
 	virtual void AddNewFence(std::function<void(int)> onNewFenceValue) = 0;

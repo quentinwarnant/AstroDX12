@@ -1,5 +1,6 @@
 #include <AstroGameInstance.h>
 
+#include <Rendering/Renderable/RenderableGroup.h>
 #include <Rendering/RenderData/VertexData.h>
 #include <Rendering/RenderData/VertexDataFactory.h>
 #include <Rendering/Common/ShaderLibrary.h>
@@ -232,17 +233,20 @@ void AstroGameInstance::UpdateRenderablesConstantBuffers()
 {
 	// re-using the same constant buffer to set all the renderables objects - per object constant data.
 	auto currentFrameObjectCB = m_currentFrameResource->ObjectConstantBuffer.get();
-	for (auto& renderable : m_sceneRenderables)
+	for (auto& renderableGroupPair : m_renderableGroups)
 	{
-		if (renderable->IsDirty())
+		renderableGroupPair.second->ForEach([&](std::shared_ptr<IRenderable> renderable)
 		{
-			XMMATRIX worldTransform = XMLoadFloat4x4(&renderable->GetWorldTransform());
-			RenderableObjectConstantData objectConstants;
-			XMStoreFloat4x4(&objectConstants.WorldTransform, XMMatrixTranspose(worldTransform));
-			currentFrameObjectCB->CopyData(renderable->GetConstantBufferIndex(), objectConstants);
+			if (renderable->IsDirty())
+			{
+				XMMATRIX worldTransform = XMLoadFloat4x4(&renderable->GetWorldTransform());
+				RenderableObjectConstantData objectConstants;
+				XMStoreFloat4x4(&objectConstants.WorldTransform, XMMatrixTranspose(worldTransform));
+				currentFrameObjectCB->CopyData(renderable->GetConstantBufferIndex(), objectConstants);
 
-			renderable->ReduceDirtyFrameCount();
-		}
+				renderable->ReduceDirtyFrameCount();
+			}
+		});
 	}
 }
 
@@ -305,7 +309,7 @@ void AstroGameInstance::CreateRenderables()
 			index++
 			);
 		renderableObj->MarkDirty(NumFrameResources);
-		AddRenderable(renderableObj);
+		AddRenderable(std::move(renderableObj));
 	}
 }
 
@@ -345,7 +349,7 @@ void AstroGameInstance::Update(float deltaTime)
 void AstroGameInstance::Render(float deltaTime)
 {
 	PIXBeginEvent(PIX_COLOR_DEFAULT, L"Render");
-	m_renderer->Render(deltaTime, m_sceneRenderables, m_currentFrameResource, 
+	m_renderer->Render(deltaTime, m_renderableGroups, m_currentFrameResource, 
 		[&](int newFenceValue) {
 			m_currentFrameResource->Fence = newFenceValue;
 		});

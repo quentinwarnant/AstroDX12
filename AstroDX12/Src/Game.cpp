@@ -6,6 +6,7 @@
 #include <Rendering/RendererDX12.h>
 #include <Maths/MathUtils.h>
 #include "winnt.h"
+#include <Rendering/Renderable/RenderableGroup.h>
 
 extern void ExitGame() noexcept;
 
@@ -20,6 +21,7 @@ Game::Game() noexcept(false)
     , m_lastMousePos()
     , m_cameraPhi(XM_PIDIV4)
     , m_cameraTheta(1.5f * XM_PI)
+    , m_renderableGroups()
 {
     //m_deviceResources = std::make_unique<DX::DeviceResources>();
     //m_deviceResources->RegisterDeviceNotify(this);
@@ -164,9 +166,20 @@ void Game::GetDefaultSize(int& width, int& height) const noexcept
     width = 2048;
     height = 1080;
 }
+
 void Game::AddRenderable(std::shared_ptr<IRenderable> renderableObj)
 {
-    m_sceneRenderables.emplace_back(renderableObj);
+    const auto& rootSignature = renderableObj->GetGraphicsRootSignature();
+    auto it = m_renderableGroups.find(rootSignature);
+    if (it == m_renderableGroups.end())
+    {
+        auto emplacedItemPair = m_renderableGroups.emplace(rootSignature, std::make_unique<RenderableGroup>(renderableObj->GetPipelineStateObject(), rootSignature));
+        (*emplacedItemPair.first).second->AddRenderable(renderableObj);
+    }
+    else
+    {
+        (*it).second->AddRenderable(renderableObj);
+    }
 }
 
 #pragma endregion

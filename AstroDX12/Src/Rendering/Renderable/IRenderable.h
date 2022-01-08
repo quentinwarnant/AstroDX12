@@ -50,7 +50,7 @@ public:
 	virtual D3D12_VERTEX_BUFFER_VIEW GetVertexBufferView() const = 0;
 	virtual D3D12_INDEX_BUFFER_VIEW GetIndexBufferView() const = 0;
 	virtual UINT GetIndexCount() const = 0;
-	virtual ComPtr<ID3D12PipelineState> GetPipelineStateObject() const = 0;
+	virtual const ComPtr<ID3D12PipelineState>& GetPipelineStateObject() const = 0;
 	virtual bool IsDirty() const = 0;
 	virtual void MarkDirty(int16_t dirtyFrameCount) = 0;
 	virtual void ReduceDirtyFrameCount() = 0;

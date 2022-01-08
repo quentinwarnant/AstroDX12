@@ -158,9 +158,10 @@
     <ClInclude Include="Src\Rendering\Common\ShaderLibrary.h" />
     <ClInclude Include="Src\Rendering\Common\UploadBuffer.h" />
     <ClInclude Include="Src\Rendering\Common\VertexDataInputLayoutLibrary.h" />
-    <ClInclude Include="Src\Rendering\IRenderable.h" />
+    <ClInclude Include="Src\Rendering\Renderable\IRenderable.h" />
     <ClInclude Include="Src\Rendering\IRenderer.h" />
-    <ClInclude Include="Src\Rendering\RenderableStaticObject.h" />
+    <ClInclude Include="Src\Rendering\Renderable\RenderableStaticObject.h" />
+    <ClInclude Include="Src\Rendering\Renderable\RenderableGroup.h" />
     <ClInclude Include="Src\Rendering\RenderData\Mesh.h" />
     <ClInclude Include="Src\Rendering\RenderData\RenderPassConstants.h" />
     <ClInclude Include="Src\Rendering\RenderData\VertexData.h" />

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Rendering/IRenderable.h>
+#include <Rendering/Renderable/IRenderable.h>
 #include <Rendering/RenderData/Mesh.h>
 #include <Common.h>
 #include <Maths/MathUtils.h>
@@ -58,7 +58,7 @@ public:
 	}
 	virtual UINT GetIndexCount() const override { return m_mesh.lock()->IndexCount;  }
 
-	virtual ComPtr<ID3D12PipelineState> GetPipelineStateObject() const override
+	virtual const ComPtr<ID3D12PipelineState>& GetPipelineStateObject() const override
 	{
 		return m_pipelineStateObject;
 	}

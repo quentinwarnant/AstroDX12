@@ -5,11 +5,14 @@
 #pragma once
 #include <Common.h>
 #include <Rendering/IRenderer.h>
-#include <Rendering/IRenderable.h>
+#include <Rendering/Renderable/IRenderable.h>
 #include <Rendering/Common/ShaderLibrary.h>
 
 class IRenderable;
 class Mesh;
+class RenderableGroup;
+using RenderableGroupMap = std::map<const ComPtr< ID3D12RootSignature>, std::unique_ptr<RenderableGroup>>;
+
 
 // A basic game implementation that creates a D3D12 device and
 // provides a game loop.
@@ -66,7 +69,7 @@ protected:
     virtual void Render(float deltaTime) = 0;
 
     std::unique_ptr<IRenderer> m_renderer;
-    std::vector < std::shared_ptr< IRenderable >> m_sceneRenderables;
+    RenderableGroupMap m_renderableGroups;
 
 private:
     int m_screenWidth;
