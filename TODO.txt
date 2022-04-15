@@ -2,9 +2,5 @@ Make Const Buffer type not fixed for all renderables (template & generate POD ty
 
 check data locality?
 
-Transpose matrix ?
-XMMatrixDeterminant ?
-
-
 Constant buffer index offsets will start breaking down when different renderable groups use different sizes of buffers,
 will need to track progressive offset instead of assuming same size for each

@@ -147,6 +147,9 @@
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Header.h" />
+    <ClInclude Include="Src\External\Hash.h" />
+    <ClInclude Include="Src\External\Math\Common.h" />
     <ClInclude Include="Src\Rendering\Common\FrameResource.h" />
     <ClInclude Include="Src\AstroGameInstance.h" />
     <ClInclude Include="Src\Common.h" />
@@ -154,6 +157,7 @@
     <ClInclude Include="Src\Game.h" />
     <ClInclude Include="Src\Maths\MathUtils.h" />
     <ClInclude Include="Src\Rendering\Common\MeshLibrary.h" />
+    <ClInclude Include="Src\Rendering\Common\PipelineStateObjectLibrary.h" />
     <ClInclude Include="Src\Rendering\Common\RenderingUtils.h" />
     <ClInclude Include="Src\Rendering\Common\ShaderLibrary.h" />
     <ClInclude Include="Src\Rendering\Common\UploadBuffer.h" />
