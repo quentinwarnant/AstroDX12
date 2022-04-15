@@ -103,6 +103,9 @@ void RendererDX12::Init(HWND window, int width, int height)
 	m_scissorRect.right = m_width;
 	m_scissorRect.bottom = m_height;
 	m_commandList->RSSetScissorRects(1, &m_scissorRect);
+
+	// Create Pipeline State Object Library for caching
+	PSOLibrary = std::make_unique<AstroTools::Rendering::PipelineStateObjectLibrary>();
 }
 
 void RendererDX12::FinaliseInit()
@@ -468,8 +471,17 @@ void RendererDX12::CreateGraphicsPipelineState(
 	psoDesc.SampleDesc.Count = 1;
 	psoDesc.SampleDesc.Quality = 0;
 	psoDesc.DSVFormat = m_depthStencilFormat;
-	ThrowIfFailed(m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pso)));
 
+	// Either retrieve PSO from cached library if identical one was already produced, or create a new one and cache it now
+	if (auto cachedPSO = PSOLibrary->GetPSO(psoDesc))
+	{
+		pso = cachedPSO;
+	}
+	else
+	{
+		ThrowIfFailed(m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pso)));
+		PSOLibrary->CachePSO(psoDesc, pso);
+	}
 }
 
 void RendererDX12::BuildFrameResources(std::vector<std::unique_ptr<FrameResource>>& outFrameResourcesList, int frameResourcesCount, int objectCount)
