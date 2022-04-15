@@ -3,6 +3,8 @@
 #include <Common.h>
 #include <map>
 
+#include <Rendering/Common/PipelineStateObjectLibrary.h>
+
 using namespace Microsoft::WRL;
 
 class IRenderable;
@@ -95,5 +97,7 @@ private:
 
     D3D12_VIEWPORT m_viewportDesc{};
     D3D12_RECT m_scissorRect{};
+
+    std::unique_ptr<AstroTools::Rendering::PipelineStateObjectLibrary> PSOLibrary;
 };
 
