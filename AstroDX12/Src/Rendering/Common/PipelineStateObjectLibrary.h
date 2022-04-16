@@ -25,7 +25,7 @@ namespace AstroTools::Rendering
 			: m_cachedPSOs{}
 		{}
 
-		ComPtr<ID3D12PipelineState> GetPSO(D3D12_GRAPHICS_PIPELINE_STATE_DESC& PSODesc)
+		ComPtr<ID3D12PipelineState> GetPSO(D3D12_GRAPHICS_PIPELINE_STATE_DESC& PSODesc) const
 		{
 			size_t hash = HashPSODescElements(PSODesc);
 			auto it = m_cachedPSOs.find(hash);
@@ -44,7 +44,7 @@ namespace AstroTools::Rendering
 
 	private:
 
-		size_t HashPSODescElements(D3D12_GRAPHICS_PIPELINE_STATE_DESC& PSODesc)
+		size_t HashPSODescElements(D3D12_GRAPHICS_PIPELINE_STATE_DESC& PSODesc) const
 		{
 			size_t hash = Utility::HashState(&PSODesc.VS);
 			hash = Utility::HashState(&PSODesc.PS,1,hash);
