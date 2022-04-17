@@ -85,13 +85,13 @@ void AstroGameInstance::BuildRootSignature()
 		CD3DX12_ROOT_PARAMETER slotRootParams[2] = {};
 
 		// Descriptor table of 2 CBV - one per pass, one per object
-		CD3DX12_DESCRIPTOR_RANGE cbvTable0;
-		cbvTable0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
-		slotRootParams[0].InitAsDescriptorTable(1, &cbvTable0);
+		CD3DX12_DESCRIPTOR_RANGE cbvDescriptorRange0;
+		cbvDescriptorRange0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+		slotRootParams[0].InitAsDescriptorTable(1, &cbvDescriptorRange0);
 
-		CD3DX12_DESCRIPTOR_RANGE cbvTable1;
-		cbvTable1.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1);
-		slotRootParams[1].InitAsDescriptorTable(1, &cbvTable1);
+		CD3DX12_DESCRIPTOR_RANGE cbvDescriptorRangeTable1;
+		cbvDescriptorRangeTable1.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1);
+		slotRootParams[1].InitAsDescriptorTable(1, &cbvDescriptorRangeTable1);
 
 		// Root signature is an array of root parameters
 		CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc(2, slotRootParams, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
