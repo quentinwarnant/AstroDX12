@@ -7,6 +7,8 @@
 #include <Rendering/IRenderer.h>
 #include <Rendering/Renderable/IRenderable.h>
 #include <Rendering/Common/ShaderLibrary.h>
+#include <Rendering/Compute/ComputeGroup.h>
+
 
 class IRenderable;
 class Mesh;
@@ -56,7 +58,7 @@ public:
 
     // Scene renderable objects building
     virtual void BuildFrameResources() = 0;
-    virtual void BuildConstantBuffers() = 0;
+    virtual void BuildBuffers() = 0;
     virtual void BuildRootSignature() = 0;
     virtual void BuildShaders(AstroTools::Rendering::ShaderLibrary& shaderLibrary) = 0;
     virtual void BuildPipelineStateObject() = 0;
@@ -65,11 +67,13 @@ protected:
     // Triggered after Initialise, meant for initial state configuration 
     virtual void LoadSceneData() = 0;
     virtual void CreateRenderables() = 0;
+    virtual void CreateComputables() = 0;
     virtual void Update(float deltaTime) = 0;
     virtual void Render(float deltaTime) = 0;
 
     std::unique_ptr<IRenderer> m_renderer;
-    RenderableGroupMap m_renderableGroups;
+    RenderableGroupMap m_renderableGroupMap;
+    std::unique_ptr<ComputeGroup> m_computeGroup;
 
 private:
     int m_screenWidth;

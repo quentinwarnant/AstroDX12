@@ -2,6 +2,7 @@
 
 #include <map>
 #include <External/Hash.h>
+#include <type_traits>
 #include <Common.h>
 
 using namespace Microsoft::WRL;
@@ -25,8 +26,10 @@ namespace AstroTools::Rendering
 			: m_cachedPSOs{}
 		{}
 
-		ComPtr<ID3D12PipelineState> GetPSO(D3D12_GRAPHICS_PIPELINE_STATE_DESC& PSODesc) const
+		template<class PSOClassType>
+		ComPtr<ID3D12PipelineState> GetPSO(PSOClassType& PSODesc) const
 		{
+			static_assert(std::is_same<PSOClassType, D3D12_GRAPHICS_PIPELINE_STATE_DESC>::value || std::is_same<PSOClassType, D3D12_COMPUTE_PIPELINE_STATE_DESC>::value);
 			size_t hash = HashPSODescElements(PSODesc);
 			auto it = m_cachedPSOs.find(hash);
 			if (it != m_cachedPSOs.end())
@@ -37,14 +40,25 @@ namespace AstroTools::Rendering
 			return nullptr;
 		}
 
-		void CachePSO(D3D12_GRAPHICS_PIPELINE_STATE_DESC& PSODesc, ComPtr<ID3D12PipelineState>& PSO)
+		template<class PSOClassType>
+		void CachePSO(PSOClassType& PSODesc, ComPtr<ID3D12PipelineState>& PSO)
 		{
+			static_assert(std::is_same<PSOClassType, D3D12_GRAPHICS_PIPELINE_STATE_DESC>::value || std::is_same<PSOClassType, D3D12_COMPUTE_PIPELINE_STATE_DESC>::value);
 			m_cachedPSOs.emplace(HashPSODescElements(PSODesc), PSO);
 		}
 
 	private:
+		
+		size_t HashPSODescElements(const D3D12_COMPUTE_PIPELINE_STATE_DESC& PSODesc) const
+		{
+			size_t hash = Utility::HashState(&PSODesc.CS);
+			hash = Utility::HashState(&PSODesc.Flags, 1, hash);
+			hash = Utility::HashState(&PSODesc.NodeMask, 1, hash);
+			hash = Utility::HashState(&PSODesc.CachedPSO, 1, hash);
+			return hash;
+		}
 
-		size_t HashPSODescElements(D3D12_GRAPHICS_PIPELINE_STATE_DESC& PSODesc) const
+		size_t HashPSODescElements(const D3D12_GRAPHICS_PIPELINE_STATE_DESC& PSODesc) const
 		{
 			size_t hash = Utility::HashState(&PSODesc.VS);
 			hash = Utility::HashState(&PSODesc.PS,1,hash);

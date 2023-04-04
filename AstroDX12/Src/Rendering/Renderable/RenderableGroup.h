@@ -33,7 +33,7 @@ public:
 		return m_pipelineStateObject;
 	}
 
-	void ForEach(std::function<void(std::shared_ptr<IRenderable>&)> renderableIterationFn)
+	void ForEach(std::function<void(const std::shared_ptr<IRenderable>&)> renderableIterationFn) const
 	{
 		for (auto& renderable : m_renderables)
 		{

@@ -150,6 +150,7 @@
     <ClInclude Include="Header.h" />
     <ClInclude Include="Src\External\Hash.h" />
     <ClInclude Include="Src\External\Math\Common.h" />
+    <ClInclude Include="Src\GameContent\Compute\ComputeObjectConstantData.h" />
     <ClInclude Include="Src\Rendering\Common\FrameResource.h" />
     <ClInclude Include="Src\AstroGameInstance.h" />
     <ClInclude Include="Src\Common.h" />
@@ -160,8 +161,12 @@
     <ClInclude Include="Src\Rendering\Common\PipelineStateObjectLibrary.h" />
     <ClInclude Include="Src\Rendering\Common\RenderingUtils.h" />
     <ClInclude Include="Src\Rendering\Common\ShaderLibrary.h" />
+    <ClInclude Include="Src\Rendering\Common\StructuredBuffer.h" />
     <ClInclude Include="Src\Rendering\Common\UploadBuffer.h" />
     <ClInclude Include="Src\Rendering\Common\VertexDataInputLayoutLibrary.h" />
+    <ClInclude Include="Src\Rendering\Compute\ComputableObject.h" />
+    <ClInclude Include="Src\Rendering\Compute\ComputeGroup.h" />
+    <ClInclude Include="Src\Rendering\Compute\IComputable.h" />
     <ClInclude Include="Src\Rendering\Renderable\IRenderable.h" />
     <ClInclude Include="Src\Rendering\IRenderer.h" />
     <ClInclude Include="Src\Rendering\Renderable\RenderableStaticObject.h" />
@@ -170,6 +175,7 @@
     <ClInclude Include="Src\Rendering\RenderData\RenderPassConstants.h" />
     <ClInclude Include="Src\Rendering\RenderData\VertexData.h" />
     <ClInclude Include="Src\Rendering\RendererDX12.h" />
+    <ClInclude Include="Src\Rendering\RendererProcessedObjectType.h" />
     <ClInclude Include="Src\Timing\GameTimer.h" />
   </ItemGroup>
   <ItemGroup>

@@ -2,15 +2,18 @@
 
 #include <Common.h>
 #include <Rendering/Common/UploadBuffer.h>
+#include <Rendering/Common/StructuredBuffer.h>
 
 using Microsoft::WRL::ComPtr;
 struct RenderableObjectConstantData;
 struct RenderPassConstants;
 
+#include <GameContent/Compute/ComputeObjectConstantData.h>
+
 struct FrameResource
 {
 public: 
-	FrameResource(ID3D12Device* device, UINT passCount, UINT objectCount, int16_t frameResourceIndex);
+	FrameResource(ID3D12Device* device, UINT passCount, UINT renderableObjectCount, UINT computableObjectCount, int16_t frameResourceIndex);
 	FrameResource(const FrameResource& other) = delete;
 	FrameResource& operator=(const FrameResource& other) = delete;
 	~FrameResource();
@@ -22,7 +25,10 @@ public:
 
 	// Each frame needs it's own cbuffers, since one can't be modified whilst being used by another frame
 	std::unique_ptr<UploadBuffer<RenderPassConstants>> PassConstantBuffer = nullptr;
-	std::unique_ptr<UploadBuffer<RenderableObjectConstantData>> ObjectConstantBuffer = nullptr;
+	std::unique_ptr<UploadBuffer<RenderableObjectConstantData>> RenderableObjectConstantBuffer = nullptr;
+	
+	// Each compute object has it's own structured buffer, in this array, use their index to access the right buffer.
+	std::vector<std::unique_ptr<StructuredBuffer<ComputeObjectData>>> ComputableObjectStructuredBufferPerObj;
 
 	// Fence value, marking commands up to this fence point. This let's us check if GPU has finished using these frame resources
 	UINT64 Fence = 0;

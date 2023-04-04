@@ -21,7 +21,8 @@ Game::Game() noexcept(false)
     , m_lastMousePos()
     , m_cameraPhi(XM_PIDIV4)
     , m_cameraTheta(1.5f * XM_PI)
-    , m_renderableGroups()
+    , m_renderableGroupMap()
+    , m_computeGroup(std::make_unique<ComputeGroup>())
 {
     //m_deviceResources = std::make_unique<DX::DeviceResources>();
     //m_deviceResources->RegisterDeviceNotify(this);
@@ -47,7 +48,7 @@ void Game::Initialize(HWND window, int width, int height)
     LoadSceneData();
 
     BuildFrameResources();
-    BuildConstantBuffers();
+    BuildBuffers();
     BuildRootSignature();
     BuildShaders(m_shaderLibrary);
     BuildPipelineStateObject();
@@ -55,6 +56,7 @@ void Game::Initialize(HWND window, int width, int height)
     m_renderer->FinaliseInit();
 
     CreateRenderables();
+    CreateComputables();
 
     //m_deviceResources->SetWindow(window, width, height);
 
@@ -170,10 +172,10 @@ void Game::GetDefaultSize(int& width, int& height) const noexcept
 void Game::AddRenderable(std::shared_ptr<IRenderable> renderableObj)
 {
     const auto& rootSignature = renderableObj->GetGraphicsRootSignature();
-    auto it = m_renderableGroups.find(rootSignature);
-    if (it == m_renderableGroups.end())
+    auto it = m_renderableGroupMap.find(rootSignature);
+    if (it == m_renderableGroupMap.end())
     {
-        auto emplacedItemPair = m_renderableGroups.emplace(rootSignature, std::make_unique<RenderableGroup>(renderableObj->GetPipelineStateObject(), rootSignature));
+        auto emplacedItemPair = m_renderableGroupMap.emplace(rootSignature, std::make_unique<RenderableGroup>(renderableObj->GetPipelineStateObject(), rootSignature));
         (*emplacedItemPair.first).second->AddRenderable(renderableObj);
     }
     else

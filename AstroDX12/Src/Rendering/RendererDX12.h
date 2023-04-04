@@ -20,7 +20,8 @@ public:
     virtual void FinaliseInit() override;
     virtual void Render(
         float deltaTime,
-        RenderableGroupMap& renderableObjectGroups,
+        const RenderableGroupMap& renderableObjectGroups,
+        const ComputeGroup& computeObjectGroup,
         FrameResource* currentFrameResources,
         std::function<void(int)> onNewFenceValue) override;
     virtual void AddNewFence(std::function<void(int)> onNewFenceValue) override;
@@ -30,15 +31,22 @@ public:
 protected:
     virtual ComPtr<ID3D12Device>  GetDevice() const override { return m_device; };
 public:
-    virtual void CreateConstantBufferDescriptorHeaps(size_t frameResourceCount, size_t renderableObjectCount) override;
+    virtual void CreateConstantBufferDescriptorHeaps(size_t frameResourceCount, size_t renderableObjectCount, size_t computableObjectCount) override;
     virtual void CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize, size_t handleOffset) override;
+
+    virtual void CreateStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav, size_t handleOffset) override;
     virtual void CreateGraphicsPipelineState(
         ComPtr<ID3D12PipelineState>& pso,
         ComPtr<ID3D12RootSignature>& rootSignature,
         std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout,
         ComPtr<ID3DBlob>& vertexShaderByteCode,
         ComPtr<ID3DBlob>& pixelShaderByteCode) override;
-    virtual void BuildFrameResources(std::vector<std::unique_ptr<FrameResource>>& outFrameResourcesList, int frameResourcesCount, int objectCount) override;
+    virtual void CreateComputePipelineState(
+        ComPtr<ID3D12PipelineState>& pso,
+        ComPtr<ID3D12RootSignature>& rootSignature,
+        std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout,
+        ComPtr<ID3DBlob>& computeShaderByteCode);
+    virtual void BuildFrameResources(std::vector<std::unique_ptr<FrameResource>>& outFrameResourcesList, int frameResourcesCount, int renderableObjectCount, int computableObjectCount) override;
     virtual UINT64 GetLastCompletedFence() override;
     virtual void WaitForFence(UINT64 fenceValue) override;
     virtual void SetPassCBVOffset(size_t offset) override;
@@ -53,14 +61,20 @@ private:
     ComPtr<ID3D12Resource> GetCurrentBackBuffer() const;
     D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentBackBufferView() const;
     D3D12_CPU_DESCRIPTOR_HANDLE GetDepthStencilView() const;
+    D3D12_CPU_DESCRIPTOR_HANDLE GetUAVDescriptorHandleCPU(ERendererProcessedObjectType objectHeapType) const;
 
     void ProcessRenderableObjectsForRendering(
         ComPtr<ID3D12GraphicsCommandList>& commandList,
-        std::unique_ptr<RenderableGroup>& renderablesGroup,
+        const std::unique_ptr<RenderableGroup>& renderablesGroup,
         uint32_t totalRenderables,
         FrameResource* frameResources);
+    uint32_t CountTotalRenderables(const RenderableGroupMap& renderablesGroupMap);
 
-    uint32_t CountTotalRenderables(RenderableGroupMap& renderablesGroupMap);
+    void ProcessComputableObjects(
+        ComPtr<ID3D12GraphicsCommandList>& commandList,
+        const ComputeGroup& computeObjectGroup,
+        uint32_t totalComputables,
+        FrameResource* frameResources);
 
 private:
     int m_width = 32;
@@ -90,7 +104,9 @@ private:
 
     ComPtr<ID3D12DescriptorHeap> m_rtvHeap; // Render Target
     ComPtr<ID3D12DescriptorHeap> m_dsvHeap; // Depth/Stencil 
-    ComPtr<ID3D12DescriptorHeap> m_cbvHeap; // Constant Buffers
+    ComPtr<ID3D12DescriptorHeap> m_renderableObjectCBVHeap; // Constant Buffers heap for renderables
+    ComPtr<ID3D12DescriptorHeap> m_computableObjectSRVUAVHeap; // AUV/SRV/CBV Buffers heap for computables
+
 
     ComPtr<ID3D12Resource> m_swapchainBuffers[m_swapChainBufferCount];
     ComPtr<ID3D12Resource> m_depthStencilBuffer;

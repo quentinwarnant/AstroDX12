@@ -2,34 +2,43 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Src">
-      <UniqueIdentifier>{8a1e120f-0cb2-4fb8-a1b8-639456298e0f}</UniqueIdentifier>
+      <UniqueIdentifier>{73faa9d6-7acf-4af5-a2fa-e24c83b84e22}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Timing">
-      <UniqueIdentifier>{e5fabb10-cd50-490e-8a7d-b1155b9ada66}</UniqueIdentifier>
+      <UniqueIdentifier>{00b61dfd-6569-4248-84ee-733256d4bfc3}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Rendering">
-      <UniqueIdentifier>{79ae6e08-a622-4a84-a47e-3a939af3ab9a}</UniqueIdentifier>
+      <UniqueIdentifier>{7aa7f817-dc5f-4047-90f3-dfdfd776d66f}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Rendering\Common">
-      <UniqueIdentifier>{09342d17-6422-47f9-88f9-6269513ab40c}</UniqueIdentifier>
+      <UniqueIdentifier>{c4279c4a-33eb-424c-88b5-2749c2662a6c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Src\External">
-      <UniqueIdentifier>{c791590c-d9e1-42cc-810c-1b70de11746e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Src\External\Math">
-      <UniqueIdentifier>{cfc2b6a9-f2e8-4bdf-b251-9db99b86d05f}</UniqueIdentifier>
+    <Filter Include="Src\Rendering\Compute">
+      <UniqueIdentifier>{41f24092-dd79-428d-86c4-7f28c7ea5912}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Rendering\Renderable">
-      <UniqueIdentifier>{16a349db-f75f-417b-9543-1e4c87f77e57}</UniqueIdentifier>
+      <UniqueIdentifier>{83d553ee-f471-4f40-8493-2e7c6cc2486b}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Rendering\RenderData">
-      <UniqueIdentifier>{c0b6e566-df72-4895-8bc3-0949179dae9a}</UniqueIdentifier>
+      <UniqueIdentifier>{338c5bc1-f4e0-458a-8d78-f7662a4fbed6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\External">
+      <UniqueIdentifier>{ce4c8929-18a9-46e2-970c-66c3a9330ac6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\External\Math">
+      <UniqueIdentifier>{5106a8c9-b5ef-412a-a30e-823d0fc6b30b}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Maths">
-      <UniqueIdentifier>{6f9f7473-91ec-450a-805e-5c336425207d}</UniqueIdentifier>
+      <UniqueIdentifier>{f156dee0-29f6-4c7c-b055-b1b2343eadfd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\GameContent\Compute">
+      <UniqueIdentifier>{4979ab20-ae09-498a-99e1-4186cc55829c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\GameContent">
+      <UniqueIdentifier>{56830733-f3fd-4e0a-b564-4709e9dd229d}</UniqueIdentifier>
     </Filter>
     <Filter Include="Shaders">
-      <UniqueIdentifier>{fc8cb9eb-398b-470d-8b19-f5788f4ac45e}</UniqueIdentifier>
+      <UniqueIdentifier>{45ae8b7e-8a38-482b-9d77-e8bc5356f974}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -65,12 +74,6 @@
     <ClInclude Include="Src\Game.h">
       <Filter>Src</Filter>
     </ClInclude>
-    <ClInclude Include="Src\External\Hash.h">
-      <Filter>Src\External</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\External\Math\Common.h">
-      <Filter>Src\External\Math</Filter>
-    </ClInclude>
     <ClInclude Include="Src\Timing\GameTimer.h">
       <Filter>Src\Timing</Filter>
     </ClInclude>
@@ -86,6 +89,9 @@
     <ClInclude Include="Src\Rendering\Common\MeshLibrary.h">
       <Filter>Src\Rendering\Common</Filter>
     </ClInclude>
+    <ClInclude Include="Src\Rendering\Common\PipelineStateObjectLibrary.h">
+      <Filter>Src\Rendering\Common</Filter>
+    </ClInclude>
     <ClInclude Include="Src\Rendering\Common\RenderingUtils.h">
       <Filter>Src\Rendering\Common</Filter>
     </ClInclude>
@@ -98,8 +104,11 @@
     <ClInclude Include="Src\Rendering\Common\VertexDataInputLayoutLibrary.h">
       <Filter>Src\Rendering\Common</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Rendering\Common\PipelineStateObjectLibrary.h">
-      <Filter>Src\Rendering\Common</Filter>
+    <ClInclude Include="Src\Rendering\Compute\ComputableObject.h">
+      <Filter>Src\Rendering\Compute</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Rendering\Compute\IComputable.h">
+      <Filter>Src\Rendering\Compute</Filter>
     </ClInclude>
     <ClInclude Include="Src\Rendering\Renderable\IRenderable.h">
       <Filter>Src\Rendering\Renderable</Filter>
@@ -119,8 +128,20 @@
     <ClInclude Include="Src\Rendering\RenderData\VertexData.h">
       <Filter>Src\Rendering\RenderData</Filter>
     </ClInclude>
+    <ClInclude Include="Src\External\Hash.h">
+      <Filter>Src\External</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\External\Math\Common.h">
+      <Filter>Src\External\Math</Filter>
+    </ClInclude>
     <ClInclude Include="Src\Maths\MathUtils.h">
       <Filter>Src\Maths</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\GameContent\Compute\ComputeObjectConstantData.h">
+      <Filter>Src\GameContent\Compute</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Rendering\RendererProcessedObjectType.h">
+      <Filter>Src\Rendering</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

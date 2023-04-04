@@ -50,6 +50,7 @@ namespace AstroTools
 			ID3D12GraphicsCommandList* commandList,
 			const void* initData,
 			UINT64 byteSize,
+			bool enableUAVsupport,
 			Microsoft::WRL::ComPtr<ID3D12Resource>& uploadBuffer
 		)
 		{
@@ -58,6 +59,10 @@ namespace AstroTools
 			// Create default buffer resource
 			auto defaultHeapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 			auto defaultHeapBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(byteSize);
+			if (enableUAVsupport)
+			{
+				defaultHeapBufferDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+			}
 			DX::ThrowIfFailed(device->CreateCommittedResource(
 				&defaultHeapProps,
 				D3D12_HEAP_FLAG_NONE,

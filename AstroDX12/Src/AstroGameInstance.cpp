@@ -1,10 +1,12 @@
 #include <AstroGameInstance.h>
 
 #include <Rendering/Renderable/RenderableGroup.h>
+#include <Rendering/RendererProcessedObjectType.h>
 #include <Rendering/RenderData/VertexData.h>
 #include <Rendering/RenderData/VertexDataFactory.h>
 #include <Rendering/Common/ShaderLibrary.h>
 #include <Rendering/Common/VertexDataInputLayoutLibrary.h>
+#include <Rendering/Compute/ComputableObject.h>
 
 namespace
 {
@@ -33,29 +35,61 @@ void AstroGameInstance::LoadSceneData()
 	m_renderablesDesc.clear();
 
 	BuildSceneGeometry();
+	BuildComputeData();
 }
 
-void AstroGameInstance::BuildConstantBuffers()
+void AstroGameInstance::BuildBuffers()
 {
 	size_t renderableObjCount = m_renderablesDesc.size();
-	m_renderer->CreateConstantBufferDescriptorHeaps(NumFrameResources, renderableObjCount);
+	size_t computableObjCount = m_computableDescs.size();
+	m_renderer->CreateConstantBufferDescriptorHeaps(NumFrameResources, renderableObjCount, computableObjCount);
 
-	// Create CBV descriptors for each object in each frame resource
+	// Create CBV descriptors for each "renderable" & "computable" object in each frame resource
 	for (int16_t frameIdx = 0; frameIdx < NumFrameResources; ++frameIdx)
 	{
-		UINT objCBByteSize = m_frameResources[frameIdx]->ObjectConstantBuffer->GetElementByteSize();
-		auto objectCB = m_frameResources[frameIdx]->ObjectConstantBuffer->Resource();
+		UINT renderableObjCBByteSize = m_frameResources[frameIdx]->RenderableObjectConstantBuffer->GetElementByteSize();
+		auto renderableObjectCB = m_frameResources[frameIdx]->RenderableObjectConstantBuffer->Resource();
 		for (size_t renderableObjIdx = 0; renderableObjIdx < renderableObjCount; ++renderableObjIdx)
 		{
-			D3D12_GPU_VIRTUAL_ADDRESS cbAddress = objectCB->GetGPUVirtualAddress();
+			D3D12_GPU_VIRTUAL_ADDRESS cbAddress = renderableObjectCB->GetGPUVirtualAddress();
 			// offset address to the i-th object constant buffer in the current frame resource buffer
-			cbAddress += (((UINT)renderableObjIdx) * objCBByteSize);
+			cbAddress += (((UINT)renderableObjIdx) * renderableObjCBByteSize);
 
 			// Offset handle in the CBV descriptor heap
-			size_t heapIdx = (frameIdx * renderableObjCount) + renderableObjIdx;
+			size_t heapDescriptorIdx = (frameIdx * renderableObjCount) + renderableObjIdx;
 
 			// Finalise creation of constant buffer view
-			m_renderer->CreateConstantBufferView(cbAddress, objCBByteSize, heapIdx );
+			m_renderer->CreateConstantBufferView(cbAddress, renderableObjCBByteSize, heapDescriptorIdx);
+		}
+	
+		// Computable objects each have their own buffer, instead of one shared buffer (testing different architecture / ease of maintainability until better memory management is implemented)
+		for (size_t computableObjIdx = 0; computableObjIdx < computableObjCount; ++computableObjIdx)
+		{
+			// Offset handle in the CBV descriptor heap
+			size_t heapDescriptorIdx = (frameIdx * computableObjCount * 3) + computableObjIdx;
+
+			m_renderer->CreateStructuredBufferAndViews(
+				m_frameResources[frameIdx]->ComputableObjectStructuredBufferPerObj[computableObjIdx].get(),
+				true,
+				false,
+				heapDescriptorIdx
+			);
+
+			heapDescriptorIdx++;
+			m_renderer->CreateStructuredBufferAndViews(
+				m_frameResources[frameIdx]->ComputableObjectStructuredBufferPerObj[computableObjIdx + 1].get(),
+				true,
+				false,
+				heapDescriptorIdx
+			);
+
+			heapDescriptorIdx++;
+			m_renderer->CreateStructuredBufferAndViews(
+				m_frameResources[frameIdx]->ComputableObjectStructuredBufferPerObj[computableObjIdx + 2].get(),
+				false,
+				true,
+				heapDescriptorIdx
+			);
 		}
 	}
 
@@ -111,6 +145,39 @@ void AstroGameInstance::BuildRootSignature()
 
 		renderableDesc.RootSignature = rootSignature;
 	}
+
+	for (auto& computableDesc : m_computableDescs)
+	{
+		CD3DX12_ROOT_PARAMETER slotRootParams[3] = {};
+		// 2 SRV Structured buffers & 1 UAV Structured buffer
+
+		slotRootParams[0].InitAsShaderResourceView(0);
+		slotRootParams[1].InitAsShaderResourceView(1);
+		slotRootParams[2].InitAsUnorderedAccessView(0);
+
+		// Root signature is an array of root parameters
+		CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc(
+			3,
+			slotRootParams,
+			0,
+			nullptr,
+			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+		// Create the root signature
+		ComPtr<ID3DBlob> serializedRootSignature = nullptr;
+		ComPtr<ID3DBlob> errorBlob = nullptr;
+		HRESULT hr = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, serializedRootSignature.GetAddressOf(), errorBlob.GetAddressOf());
+		if (errorBlob)
+		{
+			::OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+		}
+		ThrowIfFailed(hr);
+
+		ComPtr<ID3D12RootSignature> rootSignature = nullptr;
+		m_renderer->CreateRootSignature(serializedRootSignature, rootSignature);
+
+		computableDesc.RootSignature = rootSignature;
+	}
 }
 
 void AstroGameInstance::BuildShaders(AstroTools::Rendering::ShaderLibrary& shaderLibrary)
@@ -119,6 +186,11 @@ void AstroGameInstance::BuildShaders(AstroTools::Rendering::ShaderLibrary& shade
 	{
 		renderableDesc.VS = shaderLibrary.GetCompiledShader(renderableDesc.VertexShaderPath, "VS", "vs_5_0");
 		renderableDesc.PS = shaderLibrary.GetCompiledShader(renderableDesc.PixelShaderPath, "PS", "ps_5_0");
+	}
+
+	for (auto& computableDesc : m_computableDescs)
+	{
+		computableDesc.CS = shaderLibrary.GetCompiledShader(computableDesc.ComputeShaderPath, "CSMain", "cs_5_0");
 	}
 }
 
@@ -212,7 +284,7 @@ void AstroGameInstance::BuildSceneGeometry()
 
 void AstroGameInstance::BuildFrameResources()
 {
-	m_renderer->BuildFrameResources(m_frameResources, NumFrameResources, (int)m_renderablesDesc.size());
+	m_renderer->BuildFrameResources(m_frameResources, NumFrameResources, (int)m_renderablesDesc.size(), (int)m_computableDescs.size());
 }
 
 void AstroGameInstance::UpdateFrameResource()
@@ -231,8 +303,8 @@ void AstroGameInstance::UpdateFrameResource()
 void AstroGameInstance::UpdateRenderablesConstantBuffers()
 {
 	// re-using the same constant buffer to set all the renderables objects - per object constant data.
-	auto currentFrameObjectCB = m_currentFrameResource->ObjectConstantBuffer.get();
-	for (auto& renderableGroupPair : m_renderableGroups)
+	auto currentFrameObjectCB = m_currentFrameResource->RenderableObjectConstantBuffer.get();
+	for (auto& renderableGroupPair : m_renderableGroupMap)
 	{
 		renderableGroupPair.second->ForEach([&](std::shared_ptr<IRenderable> renderable)
 		{
@@ -282,6 +354,18 @@ void AstroGameInstance::UpdateMainRenderPassConstantBuffer(float deltaTime)
 	currentPassCB->CopyData(0, renderPassCB);
 }
 
+void AstroGameInstance::BuildComputeData()
+{
+	const auto rootPath = DX::GetWorkingDirectory();
+	const auto computeShaderPath = rootPath + std::string("\\Shaders\\computeTest1.hlsl");
+
+	m_computableDescs.emplace_back(
+		computeShaderPath,
+		AstroTools::Rendering::InputLayout::IL_CS_Test1
+	);
+
+}
+
 void AstroGameInstance::BuildPipelineStateObject()
 {
 	for (auto& renderableDesc : m_renderablesDesc)
@@ -293,11 +377,20 @@ void AstroGameInstance::BuildPipelineStateObject()
 			renderableDesc.VS,
 			renderableDesc.PS);
 	}
+
+	for (auto& computableDesc : m_computableDescs)
+	{
+		m_renderer->CreateComputePipelineState(
+			computableDesc.PipelineStateObject,
+			computableDesc.RootSignature,
+			computableDesc.InputLayout,
+			computableDesc.CS);
+	}
 }
 
 void AstroGameInstance::CreateRenderables()
 {
-	size_t index = 0;
+	int16_t index = 0;
 	for (auto& renderableDesc : m_renderablesDesc)
 	{
 		auto renderableObj = std::make_shared<RenderableStaticObject>(
@@ -309,6 +402,19 @@ void AstroGameInstance::CreateRenderables()
 			);
 		renderableObj->MarkDirty(NumFrameResources);
 		AddRenderable(std::move(renderableObj));
+	}
+}
+
+void AstroGameInstance::CreateComputables()
+{
+	int16_t index = 0;
+	for (auto& computableDesc : m_computableDescs)
+	{
+		m_computeGroup->Computables.emplace_back(std::move(std::make_shared<ComputableObject>(
+			computableDesc.RootSignature,
+			computableDesc.PipelineStateObject,
+			index)));
+		index++;
 	}
 }
 
@@ -348,10 +454,18 @@ void AstroGameInstance::Update(float deltaTime)
 void AstroGameInstance::Render(float deltaTime)
 {
 	PIXBeginEvent(PIX_COLOR_DEFAULT, L"Render");
-	m_renderer->Render(deltaTime, m_renderableGroups, m_currentFrameResource, 
+
+	// Default render pass
+	m_renderer->Render(deltaTime, m_renderableGroupMap, *m_computeGroup, m_currentFrameResource,
 		[&](int newFenceValue) {
 			m_currentFrameResource->Fence = newFenceValue;
 		});
+
+	// Blur compute pass
+
+	// Copy blur to backbuffer pass
+	// drawing full screen rect with blur output Render target
+
 	PIXEndEvent();
 
 }

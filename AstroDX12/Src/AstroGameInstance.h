@@ -7,6 +7,7 @@
 #include <Rendering/Common/FrameResource.h>
 #include <Rendering/Renderable/RenderableStaticObject.h>
 #include <Rendering/RenderData/Mesh.h>
+#include <Rendering/Compute/IComputable.h>
 #include <Maths/MathUtils.h>
 
 using Microsoft::WRL::ComPtr;
@@ -25,7 +26,7 @@ public:
     virtual void LoadSceneData() override;
     // Scene renderable objects building
     virtual void BuildFrameResources() override;
-    virtual void BuildConstantBuffers() override;
+    virtual void BuildBuffers() override;
     virtual void BuildRootSignature() override;
     virtual void BuildShaders(AstroTools::Rendering::ShaderLibrary& shaderLibrary) override;
     virtual void BuildPipelineStateObject() override;
@@ -36,7 +37,10 @@ private:
     void UpdateRenderablesConstantBuffers();
     void UpdateMainRenderPassConstantBuffer(float deltaTime);
 
+    void BuildComputeData();
+
     std::vector<IRenderableDesc> m_renderablesDesc;
+    std::vector<ComputableDesc> m_computableDescs;
 
     XMFLOAT3 m_cameraPos;
 
@@ -55,6 +59,7 @@ private:
     int m_currentFrameResourceIndex = 0;
 
     virtual void CreateRenderables() override;
+    virtual void CreateComputables() override;
     virtual void Update(float deltaTime) override;
     virtual void Render(float deltaTime) override;
 };
