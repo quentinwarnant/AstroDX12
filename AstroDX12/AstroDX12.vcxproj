@@ -282,6 +282,7 @@
     <ClInclude Include="Src\External\Hash.h" />
     <ClInclude Include="Src\External\Math\Common.h" />
     <ClInclude Include="Src\GameContent\Compute\ComputeObjectConstantData.h" />
+    <ClInclude Include="Src\GameContent\Scene\SceneLoader.h" />
     <ClInclude Include="Src\Rendering\Common\FrameResource.h" />
     <ClInclude Include="Src\AstroGameInstance.h" />
     <ClInclude Include="Src\Common.h" />
@@ -331,6 +332,7 @@
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\GameContent\Scene\SceneLoader.cpp" />
     <ClCompile Include="Src\Rendering\Common\FrameResource.cpp" />
     <ClCompile Include="Src\AstroGameInstance.cpp" />
     <ClCompile Include="Src\Game.cpp" />
@@ -339,6 +341,7 @@
     <ClCompile Include="Src\Timing\GameTimer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Shaders\basic.hlsl" />
     <FxCompile Include="Shaders\color.hlsl" />
   </ItemGroup>
   <ItemGroup>

@@ -12,6 +12,7 @@
 
 using Microsoft::WRL::ComPtr;
 class IRenderableDesc;
+struct SceneData;
 
 namespace AstroTools::Rendering
 {
@@ -40,6 +41,8 @@ private:
     void UpdateMainRenderPassConstantBuffer(float deltaTime);
 
     void BuildComputeData();
+
+    SceneData LoadSceneGeometry();
 
     std::vector<IRenderableDesc> m_renderablesDesc;
     std::vector<ComputableDesc> m_computableDescs;

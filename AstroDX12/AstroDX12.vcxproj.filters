@@ -60,6 +60,7 @@
     <ClCompile Include="Src\Rendering\Common\FrameResource.cpp">
       <Filter>Src\Rendering\Common</Filter>
     </ClCompile>
+    <ClCompile Include="Src\GameContent\Scene\SceneLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\AstroGameInstance.h">
@@ -146,9 +147,13 @@
     <ClInclude Include="Header.h" />
     <ClInclude Include="Src\Rendering\Common\StructuredBuffer.h" />
     <ClInclude Include="Src\Rendering\Compute\ComputeGroup.h" />
+    <ClInclude Include="Src\GameContent\Scene\SceneLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\color.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\basic.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
