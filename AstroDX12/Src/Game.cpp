@@ -48,7 +48,9 @@ void Game::Initialize(HWND window, int width, int height)
     LoadSceneData();
 
     BuildFrameResources();
-    BuildBuffers();
+    Create_const_uav_srv_BufferDescriptorHeaps();
+    CreateConstantBufferViews();
+    CreateComputableObjectsStructuredBufferViews();
     BuildRootSignature();
     BuildShaders(m_shaderLibrary);
     BuildPipelineStateObject();

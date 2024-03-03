@@ -68,7 +68,8 @@ void RendererDX12::Init(HWND window, int width, int height)
 	// Swap Chain
 	CreateSwapChain(window);
 
-	CreateDescriptorHeaps();
+	CreateRTVDescriptorHeap();
+	CreateDepthStencilDescriptorHeap();
 
 	// Backbuffer Render Target
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart());
@@ -171,43 +172,46 @@ void RendererDX12::CreateSwapChain(HWND window)
 
 }
 
-void RendererDX12::CreateDescriptorHeaps()
+void RendererDX12::CreateRTVDescriptorHeap()
 {
-	D3D12_DESCRIPTOR_HEAP_DESC rtvDescriptorHeapDesc{};
-	rtvDescriptorHeapDesc.NumDescriptors = m_swapChainBufferCount;
-	rtvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	rtvDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	rtvDescriptorHeapDesc.NodeMask = 0; // device/Adapter index
-	ThrowIfFailed(m_device->CreateDescriptorHeap(&rtvDescriptorHeapDesc, IID_PPV_ARGS(m_rtvHeap.GetAddressOf())));
-
-	D3D12_DESCRIPTOR_HEAP_DESC dsvDescriptorHeapDesc{};
-	dsvDescriptorHeapDesc.NumDescriptors = 1;
-	dsvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-	dsvDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	dsvDescriptorHeapDesc.NodeMask = 0; // device/Adapter index
-	ThrowIfFailed(m_device->CreateDescriptorHeap(&dsvDescriptorHeapDesc, IID_PPV_ARGS(m_dsvHeap.GetAddressOf())));
+	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
+	descriptorHeapDesc.NumDescriptors = m_swapChainBufferCount;
+	descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	descriptorHeapDesc.NodeMask = 0; // device/Adapter index
+	ThrowIfFailed(m_device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(m_rtvHeap.GetAddressOf())));
 }
 
-void RendererDX12::CreateConstantBufferDescriptorHeaps(size_t frameResourceCount, size_t renderableObjectCount, size_t computableObjectCount)
+void RendererDX12::CreateDepthStencilDescriptorHeap()
+{
+	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
+	descriptorHeapDesc.NumDescriptors = 1;
+	descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	descriptorHeapDesc.NodeMask = 0; // device/Adapter index
+	ThrowIfFailed(m_device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(m_dsvHeap.GetAddressOf())));
+}
+
+void RendererDX12::Create_const_uav_srv_BufferDescriptorHeaps(size_t frameResourceCount, size_t renderableObjectCount, size_t computableObjectCount)
 {
 	// Renderables
 	// Need a CBV descriptor for each object in each frame resource + one render pass CBV
-	size_t cbvDescriptorCount = (renderableObjectCount + 1) * frameResourceCount;
+	size_t descriptorCount = (renderableObjectCount + 1) * frameResourceCount;
 
-	D3D12_DESCRIPTOR_HEAP_DESC cbvDescriptorHeapDesc{};
-	cbvDescriptorHeapDesc.NumDescriptors = (UINT)cbvDescriptorCount;
-	cbvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	cbvDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	cbvDescriptorHeapDesc.NodeMask = 0; // device/Adapter index
+	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
+	descriptorHeapDesc.NumDescriptors = (UINT)descriptorCount;
+	descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	descriptorHeapDesc.NodeMask = 0; // device/Adapter index
 
-	ThrowIfFailed(m_device->CreateDescriptorHeap(&cbvDescriptorHeapDesc, IID_PPV_ARGS(m_renderableObjectCBVHeap.GetAddressOf())));
+	ThrowIfFailed(m_device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(m_renderableObjectCBVSRVUAVHeap.GetAddressOf())));
 
 	// Computables
 	// Need a 2 SRVs & 1 UAV descriptor for each object in each frame resource
-	cbvDescriptorCount = 3 * computableObjectCount  * frameResourceCount;
-	cbvDescriptorHeapDesc.NumDescriptors = (UINT)cbvDescriptorCount;
+	descriptorCount = 3 * computableObjectCount  * frameResourceCount;
+	descriptorHeapDesc.NumDescriptors = (UINT)descriptorCount;
 
-	ThrowIfFailed(m_device->CreateDescriptorHeap(&cbvDescriptorHeapDesc, IID_PPV_ARGS(m_computableObjectSRVUAVHeap.GetAddressOf())));
+	ThrowIfFailed(m_device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(m_computableObjectSRVUAVHeap.GetAddressOf())));
 }
 
 void RendererDX12::CreateDepthStencilBuffer()
@@ -282,7 +286,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE RendererDX12::GetUAVDescriptorHandleCPU(ERendererPro
 	// UAV & SRV are created on the same heap as CBV since they're the same size
 	if (objectHeapType == ERendererProcessedObjectType::Renderable)
 	{
-		return m_renderableObjectCBVHeap->GetCPUDescriptorHandleForHeapStart();
+		return m_renderableObjectCBVSRVUAVHeap->GetCPUDescriptorHandleForHeapStart();
 	}
 	return m_computableObjectSRVUAVHeap->GetCPUDescriptorHandleForHeapStart();
 }
@@ -298,7 +302,7 @@ void RendererDX12::ProcessRenderableObjectsForRendering(
 		//-- calculate cbv index...
 		// Offset the CBV in the descriptor heap for this object & frame resource combination
 		UINT cbvIndex = (frameResources->GetIndex() * totalRenderables) + renderableObj->GetConstantBufferIndex();
-		auto cbvHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_renderableObjectCBVHeap->GetGPUDescriptorHandleForHeapStart());
+		auto cbvHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_renderableObjectCBVSRVUAVHeap->GetGPUDescriptorHandleForHeapStart());
 		cbvHandle.Offset(cbvIndex, m_descriptorSizeCBV);
 		commandList->SetGraphicsRootDescriptorTable(0, cbvHandle);
 
@@ -404,12 +408,12 @@ void RendererDX12::Render(float /*deltaTime*/,
 	// Begin Compute pass
 	ProcessComputableObjects(m_commandList, computeObjectGroup, computeObjectGroup.Computables.size(), frameResources);
 
-	descriptorHeaps[0] = { m_renderableObjectCBVHeap.Get() };
+	descriptorHeaps[0] = { m_renderableObjectCBVSRVUAVHeap.Get() };
 	m_commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 	// Begin graphics pass
 	size_t renderPassCBVIndex = (m_renderPassCBVOffset + frameResources->GetIndex());
-	auto renderPassCBVHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_renderableObjectCBVHeap->GetGPUDescriptorHandleForHeapStart());
+	auto renderPassCBVHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_renderableObjectCBVSRVUAVHeap->GetGPUDescriptorHandleForHeapStart());
 	renderPassCBVHandle.Offset((INT)renderPassCBVIndex, m_descriptorSizeCBV);
 
 	uint32_t totalRenderables = CountTotalRenderables(renderableObjectGroups);
@@ -465,7 +469,7 @@ void RendererDX12::Shutdown()
 
 void RendererDX12::CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize, size_t handleOffset)
 {
-	auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE( m_renderableObjectCBVHeap->GetCPUDescriptorHandleForHeapStart());
+	auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE( m_renderableObjectCBVSRVUAVHeap->GetCPUDescriptorHandleForHeapStart());
 	handle.Offset((INT)handleOffset, m_descriptorSizeCBV);
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbViewDesc;
@@ -484,7 +488,8 @@ void RendererDX12::CreateStructuredBufferAndViews(IStructuredBuffer* structuredB
 	structuredBuffer->SetHeapDescriptorIndex(handleOffset); // need to track cumulative index if structured buffers are off different sizes?
 }
 
-void RendererDX12::CreateMesh(std::weak_ptr<Mesh>& meshPtr, const void* vertexData, const UINT vertexDataCount, const UINT vertexDataByteSize, const std::vector<std::uint16_t>& indices)
+// Allocate GPU Buffers for vertex and index data of mesh & setup meta data
+void RendererDX12::AllocateMeshBackingBuffers(std::weak_ptr<Mesh>& meshPtr, const void* vertexData, const UINT vertexDataCount, const UINT vertexDataByteSize, const std::vector<std::uint16_t>& indices)
 {
 	const UINT vbByteSize = vertexDataCount * vertexDataByteSize;
 	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);

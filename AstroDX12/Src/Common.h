@@ -52,7 +52,7 @@
 // then add the NuGet package WinPixEventRuntime to the project.
 #include <pix.h>
 
-#include <XGameRuntime.h>
+#pragma comment(lib,"d3d12.lib")
 
 #include <crtdbg.h>
 #include <filesystem>

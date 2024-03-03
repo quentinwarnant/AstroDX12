@@ -27,11 +27,11 @@ public:
     virtual void AddNewFence(std::function<void(int)> onNewFenceValue) override;
     virtual void Shutdown() override;
     virtual void CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature, ComPtr<ID3D12RootSignature>& outRootSignature) override;
-    virtual void CreateMesh(std::weak_ptr<Mesh>& meshPtr, const void* vertexData, const UINT vertexDataCount, const UINT vertexDataByteSize, const std::vector<std::uint16_t>& indices) override;
+    virtual void AllocateMeshBackingBuffers(std::weak_ptr<Mesh>& meshPtr, const void* vertexData, const UINT vertexDataCount, const UINT vertexDataByteSize, const std::vector<std::uint16_t>& indices) override;
 protected:
     virtual ComPtr<ID3D12Device>  GetDevice() const override { return m_device; };
 public:
-    virtual void CreateConstantBufferDescriptorHeaps(size_t frameResourceCount, size_t renderableObjectCount, size_t computableObjectCount) override;
+    virtual void Create_const_uav_srv_BufferDescriptorHeaps(size_t frameResourceCount, size_t renderableObjectCount, size_t computableObjectCount) override;
     virtual void CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize, size_t handleOffset) override;
 
     virtual void CreateStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav, size_t handleOffset) override;
@@ -55,7 +55,8 @@ public:
 private:
     void CreateCommandObjects();
     void CreateSwapChain(HWND window);
-    void CreateDescriptorHeaps();
+    void CreateRTVDescriptorHeap();
+    void CreateDepthStencilDescriptorHeap();
     void CreateDepthStencilBuffer();
 
     ComPtr<ID3D12Resource> GetCurrentBackBuffer() const;
@@ -104,7 +105,7 @@ private:
 
     ComPtr<ID3D12DescriptorHeap> m_rtvHeap; // Render Target
     ComPtr<ID3D12DescriptorHeap> m_dsvHeap; // Depth/Stencil 
-    ComPtr<ID3D12DescriptorHeap> m_renderableObjectCBVHeap; // Constant Buffers heap for renderables
+    ComPtr<ID3D12DescriptorHeap> m_renderableObjectCBVSRVUAVHeap; // Constant Buffers heap for renderables
     ComPtr<ID3D12DescriptorHeap> m_computableObjectSRVUAVHeap; // AUV/SRV/CBV Buffers heap for computables
 
 

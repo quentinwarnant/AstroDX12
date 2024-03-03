@@ -143,11 +143,30 @@
     <ClInclude Include="Src\Rendering\RendererProcessedObjectType.h">
       <Filter>Src\Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="Header.h" />
+    <ClInclude Include="Src\Rendering\Common\StructuredBuffer.h" />
+    <ClInclude Include="Src\Rendering\Compute\ComputeGroup.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\color.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <CopyFileToFolders Include="GraphicsLogo.png" />
+    <CopyFileToFolders Include="SmallLogo.png" />
+    <CopyFileToFolders Include="SplashScreen.png" />
+    <CopyFileToFolders Include="StoreLogo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="..\packages\Microsoft.Direct3D.D3D12.1.611.0\build\native\bin\x64\D3D12Core.dll" />
+    <None Include="..\packages\Microsoft.Direct3D.D3D12.1.611.0\build\native\bin\x64\d3d12SDKLayers.dll" />
+    <None Include="..\..\..\..\Windows\System32\DXGIDebug.dll" />
+    <None Include="..\..\..\..\Windows\System32\dxgi.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="..\..\..\..\Program Files (x86)\Windows Kits\10\Lib\10.0.19041.0\um\x64\dxguid.lib" />
+    <Library Include="..\..\..\..\Program Files (x86)\Windows Kits\10\Lib\10.0.19041.0\um\x64\dxgi.lib" />
+  </ItemGroup>
 </Project>

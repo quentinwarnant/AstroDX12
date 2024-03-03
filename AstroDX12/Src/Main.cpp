@@ -32,17 +32,6 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     if (!XMVerifyCPUSupport())
         return 1;
 
-    // Initialize the GameRuntime
-    HRESULT hr = XGameRuntimeInitialize();
-    if (FAILED(hr))
-    {
-        if (hr == E_GAMERUNTIME_DLL_NOT_FOUND || hr == E_GAMERUNTIME_VERSION_MISMATCH)
-        {
-            (void)MessageBoxW(nullptr, L"Game Runtime is not installed on this system or needs updating.", g_szAppName, MB_ICONERROR | MB_OK);
-        }
-        return 1;
-
-    }
 
     g_game = std::make_unique<AstroGameInstance>();
 
@@ -129,7 +118,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         }
     }
 
-    XGameRuntimeUninitialize();
+    //XGameRuntimeUninitialize();
 
     g_game.reset();
 

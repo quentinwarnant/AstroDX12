@@ -26,7 +26,9 @@ public:
     virtual void LoadSceneData() override;
     // Scene renderable objects building
     virtual void BuildFrameResources() override;
-    virtual void BuildBuffers() override;
+    virtual void Create_const_uav_srv_BufferDescriptorHeaps() override;
+    virtual void CreateConstantBufferViews() override;
+    virtual void CreateComputableObjectsStructuredBufferViews() override;
     virtual void BuildRootSignature() override;
     virtual void BuildShaders(AstroTools::Rendering::ShaderLibrary& shaderLibrary) override;
     virtual void BuildPipelineStateObject() override;

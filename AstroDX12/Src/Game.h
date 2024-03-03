@@ -58,7 +58,9 @@ public:
 
     // Scene renderable objects building
     virtual void BuildFrameResources() = 0;
-    virtual void BuildBuffers() = 0;
+    virtual void Create_const_uav_srv_BufferDescriptorHeaps() = 0;
+    virtual void CreateConstantBufferViews() = 0;
+    virtual void CreateComputableObjectsStructuredBufferViews() = 0;
     virtual void BuildRootSignature() = 0;
     virtual void BuildShaders(AstroTools::Rendering::ShaderLibrary& shaderLibrary) = 0;
     virtual void BuildPipelineStateObject() = 0;

@@ -38,11 +38,17 @@ void AstroGameInstance::LoadSceneData()
 	BuildComputeData();
 }
 
-void AstroGameInstance::BuildBuffers()
+void AstroGameInstance::Create_const_uav_srv_BufferDescriptorHeaps()
 {
 	size_t renderableObjCount = m_renderablesDesc.size();
 	size_t computableObjCount = m_computableDescs.size();
-	m_renderer->CreateConstantBufferDescriptorHeaps(NumFrameResources, renderableObjCount, computableObjCount);
+	m_renderer->Create_const_uav_srv_BufferDescriptorHeaps(NumFrameResources, renderableObjCount, computableObjCount);
+
+}
+
+void AstroGameInstance::CreateConstantBufferViews()
+{
+	size_t renderableObjCount = m_renderablesDesc.size();
 
 	// Create CBV descriptors for each "renderable" & "computable" object in each frame resource
 	for (int16_t frameIdx = 0; frameIdx < NumFrameResources; ++frameIdx)
@@ -61,7 +67,37 @@ void AstroGameInstance::BuildBuffers()
 			// Finalise creation of constant buffer view
 			m_renderer->CreateConstantBufferView(cbAddress, renderableObjCBByteSize, heapDescriptorIdx);
 		}
-	
+	}
+
+	// TODO: longterm I should probably move these view to be allocated in a different heap - it's not clear here (hidden behind the CreateConstantBufferView call),
+	// but it's usin gthe renderable object heap.
+	// This doesn't necessarily make that much sense from a logical pov. although idk if it has a perf impact to be like this.
+	// 
+	// Create CBV descriptors shared for the whole render pass, in each frame resource, after all the renderable objects in the renderable object heap
+	for (int16_t frameIdx = 0; frameIdx < NumFrameResources; ++frameIdx)
+	{
+		UINT passCBByteSize = m_frameResources[frameIdx]->PassConstantBuffer->GetElementByteSize();
+		auto passCB = m_frameResources[frameIdx]->PassConstantBuffer->Resource();
+
+		D3D12_GPU_VIRTUAL_ADDRESS cbAddress = passCB->GetGPUVirtualAddress();
+
+		// Offset handle in CBV Descriptor heap
+		size_t heapIdx = (renderableObjCount * NumFrameResources) + frameIdx;
+
+		// Finalise creation of constant buffer view
+		m_renderer->CreateConstantBufferView(cbAddress, passCBByteSize, heapIdx);
+	}
+
+	m_renderer->SetPassCBVOffset(renderableObjCount * NumFrameResources);
+}
+
+void AstroGameInstance::CreateComputableObjectsStructuredBufferViews()
+{
+	size_t computableObjCount = m_computableDescs.size();
+
+	// Create CBV descriptors for each "renderable" & "computable" object in each frame resource
+	for (int16_t frameIdx = 0; frameIdx < NumFrameResources; ++frameIdx)
+	{
 		// Computable objects each have their own buffer, instead of one shared buffer (testing different architecture / ease of maintainability until better memory management is implemented)
 		for (size_t computableObjIdx = 0; computableObjIdx < computableObjCount; ++computableObjIdx)
 		{
@@ -92,24 +128,6 @@ void AstroGameInstance::BuildBuffers()
 			);
 		}
 	}
-
-	// Create CBV descriptors shared for the whole render pass, in each frame resource
-	for (int16_t frameIdx = 0; frameIdx < NumFrameResources; ++frameIdx)
-	{
-		UINT passCBByteSize = m_frameResources[frameIdx]->PassConstantBuffer->GetElementByteSize();
-		auto passCB = m_frameResources[frameIdx]->PassConstantBuffer->Resource();
-
-		D3D12_GPU_VIRTUAL_ADDRESS cbAddress = passCB->GetGPUVirtualAddress();
-
-		// Offset handle in CBV Descriptor heap
-		size_t heapIdx = (renderableObjCount * NumFrameResources) + frameIdx;
-
-		// Finalise creation of constant buffer view
-		m_renderer->CreateConstantBufferView(cbAddress, passCBByteSize, heapIdx);
-	}
-
-	m_renderer->SetPassCBVOffset(renderableObjCount * NumFrameResources);
-
 }
 
 void AstroGameInstance::BuildRootSignature()
@@ -237,7 +255,7 @@ void AstroGameInstance::BuildSceneGeometry()
 	
 	const auto vertsPODList = VertexDataFactory::Convert(verts);
 	constexpr auto podDataSize = VertexDataFactory::GetPODTypeSize<VertexData_Short>();
-	m_renderer->CreateMesh(boxMesh, vertsPODList.data(), (UINT)vertsPODList.size(), podDataSize, indices);
+	m_renderer->AllocateMeshBackingBuffers(boxMesh, vertsPODList.data(), (UINT)vertsPODList.size(), podDataSize, indices);
 
 	const auto rootPath = DX::GetWorkingDirectory();
 	const auto defaultShaderPath = rootPath + std::string("\\Shaders\\color.hlsl");
