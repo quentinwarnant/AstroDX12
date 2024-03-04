@@ -8,7 +8,8 @@
 #include <map>
 using Microsoft::WRL::ComPtr;
 
-using RenderableGroupMap = std::map<const ComPtr< ID3D12RootSignature>, std::unique_ptr<RenderableGroup>>;
+using RootSignaturePSOPair = std::pair< const ComPtr< ID3D12RootSignature>, const ComPtr<ID3D12PipelineState>>;
+using RenderableGroupMap = std::map<RootSignaturePSOPair, std::unique_ptr<RenderableGroup>>;
 class IVertexData;
 class Mesh;
 struct FrameResource;

@@ -422,7 +422,7 @@ void RendererDX12::Render(float /*deltaTime*/,
 		auto& renderableGroupRootSignature = renderableGroupPair.first;
 		auto& renderableGroup = renderableGroupPair.second;
 	
-		m_commandList->SetGraphicsRootSignature(renderableGroupRootSignature.Get());
+		m_commandList->SetGraphicsRootSignature(renderableGroupRootSignature.first.Get());
 		m_commandList->SetGraphicsRootDescriptorTable(1, renderPassCBVHandle);
 		m_commandList->SetPipelineState(renderableGroup->GetPSO().Get());
 

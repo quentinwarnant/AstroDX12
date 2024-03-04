@@ -174,10 +174,13 @@ void Game::GetDefaultSize(int& width, int& height) const noexcept
 void Game::AddRenderable(std::shared_ptr<IRenderable> renderableObj)
 {
     const auto& rootSignature = renderableObj->GetGraphicsRootSignature();
-    auto it = m_renderableGroupMap.find(rootSignature);
+    const auto& pso = renderableObj->GetPipelineStateObject();
+    RootSignaturePSOPair keyPair = { rootSignature, pso };
+
+    auto it = m_renderableGroupMap.find(keyPair);
     if (it == m_renderableGroupMap.end())
     {
-        auto emplacedItemPair = m_renderableGroupMap.emplace(rootSignature, std::make_unique<RenderableGroup>(renderableObj->GetPipelineStateObject(), rootSignature));
+        auto emplacedItemPair = m_renderableGroupMap.emplace(keyPair, std::make_unique<RenderableGroup>(renderableObj->GetPipelineStateObject(), rootSignature));
         (*emplacedItemPair.first).second->AddRenderable(renderableObj);
     }
     else

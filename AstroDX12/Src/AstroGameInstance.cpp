@@ -310,10 +310,10 @@ void AstroGameInstance::BuildSceneGeometry()
 	{
 		//TODO load mesh obj transform from scene file (doesn't exist yet)
 		const auto transformMeshObj = XMFLOAT4X4(
-			2.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 2.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 2.0f, 0.0f,
-			0.0f, 10.0f, 10.0f, 1.0f);
+			1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			0.0f, 5.0f, 1.0f, 1.5f);
 
 		auto newMesh = m_meshLibrary->AddMesh(SceneMeshObj.meshName);
 		const auto newMeshvertsPODList = VertexDataFactory::Convert(SceneMeshObj.verts);

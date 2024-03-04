@@ -50,8 +50,7 @@ SceneData SceneLoader::LoadScene(std::uint8_t SceneIdx)
 SceneData SceneLoader::LoadScene1()
 {
 	objl::Loader loader;
-	//const auto rootPath = DX::GetWorkingDirectory();
-	assert(loader.LoadFile("Content/Meshes/armadillo.obj") && "Failed to load obj file");
+	assert(loader.LoadFile("Content/Meshes/teapot.obj") && "Failed to load obj file");
 	
 	SceneData sd;
 	sd.SceneMeshObjects_VD_Pos = SceneLoaderHelpers::ConvertMeshData(loader.LoadedMeshes);

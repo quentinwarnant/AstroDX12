@@ -13,7 +13,7 @@
 class IRenderable;
 class Mesh;
 class RenderableGroup;
-using RenderableGroupMap = std::map<const ComPtr< ID3D12RootSignature>, std::unique_ptr<RenderableGroup>>;
+using RenderableGroupMap = std::map<RootSignaturePSOPair, std::unique_ptr<RenderableGroup>>;
 
 
 // A basic game implementation that creates a D3D12 device and
