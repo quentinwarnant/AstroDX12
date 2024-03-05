@@ -33,6 +33,25 @@ struct VertexData_Short_POD
 	XMFLOAT4 Color;
 };
 
+struct VertexData_Position_Normal_UV_POD
+{
+	VertexData_Position_Normal_UV_POD()
+		: Position(0, 0, 0)
+		, Normal(0, 0, 0)
+		, UV( 0, 0)
+	{}
+
+	VertexData_Position_Normal_UV_POD(const XMFLOAT3& inPos, const XMFLOAT3& inNormal, const XMFLOAT2& inUV)
+		: Position(inPos)
+		, Normal(inNormal)
+		, UV(inUV)
+	{}
+
+	XMFLOAT3 Position;
+	XMFLOAT3 Normal;
+	XMFLOAT2 UV;
+
+};
 
 struct VertexData_Long_POD
 {
@@ -93,3 +112,27 @@ private:
 	std::shared_ptr<VertexData_Short_POD> POD;
 };
 
+class VertexData_Pos_Normal_UV : public IVertexData
+{
+public:
+	/*VertexData_Pos_Normal_UV_Pos()
+		: POD{ std::make_shared<VertexData_Position_Normal_UV_POD>() }
+	{
+	}*/
+
+	VertexData_Pos_Normal_UV(XMFLOAT3 pos, XMFLOAT3 normal, XMFLOAT2 uv)
+		: POD{ std::make_shared<VertexData_Position_Normal_UV_POD>(pos, normal, uv) }
+	{
+	}
+
+	virtual ~VertexData_Pos_Normal_UV() = default;
+
+	virtual std::shared_ptr<void> GetData() override
+	{
+		return POD;
+	}
+
+private:
+	std::shared_ptr<VertexData_Position_Normal_UV_POD> POD;
+
+};

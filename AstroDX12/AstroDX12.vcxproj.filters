@@ -148,12 +148,16 @@
     <ClInclude Include="Src\Rendering\Common\StructuredBuffer.h" />
     <ClInclude Include="Src\Rendering\Compute\ComputeGroup.h" />
     <ClInclude Include="Src\GameContent\Scene\SceneLoader.h" />
+    <ClInclude Include="Src\Input\KeyboardInput.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\color.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\basic.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\simpleNormalUVLighting.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

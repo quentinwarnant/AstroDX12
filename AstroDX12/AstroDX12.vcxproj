@@ -283,6 +283,7 @@
     <ClInclude Include="Src\External\Math\Common.h" />
     <ClInclude Include="Src\GameContent\Compute\ComputeObjectConstantData.h" />
     <ClInclude Include="Src\GameContent\Scene\SceneLoader.h" />
+    <ClInclude Include="Src\Input\KeyboardInput.h" />
     <ClInclude Include="Src\Rendering\Common\FrameResource.h" />
     <ClInclude Include="Src\AstroGameInstance.h" />
     <ClInclude Include="Src\Common.h" />
@@ -343,6 +344,7 @@
   <ItemGroup>
     <FxCompile Include="Shaders\basic.hlsl" />
     <FxCompile Include="Shaders\color.hlsl" />
+    <FxCompile Include="Shaders\simpleNormalUVLighting.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\Windows\System32\dxgi.dll" />

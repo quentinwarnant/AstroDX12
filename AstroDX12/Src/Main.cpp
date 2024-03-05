@@ -7,6 +7,7 @@
 
 #include <AstroGameInstance.h>
 #include <Timing/GameTimer.h>
+#include <Input/KeyboardInput.h>
 
 using namespace DirectX;
 
@@ -293,6 +294,28 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             s_fullscreen = !s_fullscreen;
         }
         break;
+    case WM_CHAR:
+        switch (wParam)
+        {
+        case 0x7a:   // Forward
+            game->OnKeyboardKey(KeyboardKey::Forward);
+            break;
+        case 0x71:   // Left
+            game->OnKeyboardKey(KeyboardKey::Left);
+            break;
+        case 0x64:   // Right
+            game->OnKeyboardKey(KeyboardKey::Right);
+            break;
+        case 0x73:   // Back
+            game->OnKeyboardKey(KeyboardKey::Back);
+            break;
+        case 0x61:   // Down
+            game->OnKeyboardKey(KeyboardKey::Down);
+            break;
+        case 0x65:   // Up
+            game->OnKeyboardKey(KeyboardKey::Up);
+            break;
+        }
 
     case WM_MENUCHAR:
         // A menu is active and the user presses a key that does not correspond

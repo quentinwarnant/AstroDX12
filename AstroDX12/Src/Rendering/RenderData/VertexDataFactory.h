@@ -37,6 +37,12 @@ public:
 			return sizeof(VertexData_Short_POD);
 		}
 
+		if (std::is_same<Type, VertexData_Pos_Normal_UV>())
+		{
+			return sizeof(VertexData_Position_Normal_UV_POD);
+		}
+
+		assert(false && "VertexData type not supported, add entry to GetPODTypeSize");
 		return 0;
 	}
 	
@@ -48,5 +54,10 @@ public:
 	[[nodiscard]] static const std::vector<VertexData_Short_POD> Convert( const std::vector<VertexData_Short>& inData)
 	{
 		return Convert<VertexData_Short, VertexData_Short_POD >(inData);
+	}
+
+	[[nodiscard]] static const std::vector<VertexData_Position_Normal_UV_POD> Convert(const std::vector<VertexData_Pos_Normal_UV>& inData)
+	{
+		return Convert<VertexData_Pos_Normal_UV, VertexData_Position_Normal_UV_POD >(inData);
 	}
 };

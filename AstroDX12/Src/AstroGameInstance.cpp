@@ -262,6 +262,7 @@ void AstroGameInstance::BuildSceneGeometry()
 	const auto rootPath = DX::GetWorkingDirectory();
 	const auto basicShaderPath = rootPath + std::string("\\Shaders\\basic.hlsl");
 	const auto vertexColorShaderPath = rootPath + std::string("\\Shaders\\color.hlsl");
+	const auto simpleNormalUVAndLightingShaderPath = rootPath + std::string("\\Shaders\\simpleNormalUVLighting.hlsl");
 
 	// Box 1
 	auto transformBox1 = XMFLOAT4X4(
@@ -305,8 +306,8 @@ void AstroGameInstance::BuildSceneGeometry()
 
 	// .Obj load
 	const auto SceneData = LoadSceneGeometry();
-	constexpr auto vdPosPodDataSize = VertexDataFactory::GetPODTypeSize<VertexData_Pos>();
-	for (const auto& SceneMeshObj : SceneData.SceneMeshObjects_VD_Pos)
+	constexpr auto vdPosNormUvPodDataSize = VertexDataFactory::GetPODTypeSize<VertexData_Pos_Normal_UV>();
+	for (const auto& SceneMeshObj : SceneData.SceneMeshObjects_VD_PosNormUV)
 	{
 		//TODO load mesh obj transform from scene file (doesn't exist yet)
 		const auto transformMeshObj = XMFLOAT4X4(
@@ -318,13 +319,13 @@ void AstroGameInstance::BuildSceneGeometry()
 		auto newMesh = m_meshLibrary->AddMesh(SceneMeshObj.meshName);
 		const auto newMeshvertsPODList = VertexDataFactory::Convert(SceneMeshObj.verts);
 		m_renderer->AllocateMeshBackingBuffers(newMesh, newMeshvertsPODList.data(), (UINT)newMeshvertsPODList.size(),
-			vdPosPodDataSize, SceneMeshObj.indices);
+			vdPosNormUvPodDataSize, SceneMeshObj.indices);
 
 		m_renderablesDesc.emplace_back(
 			newMesh,
-			basicShaderPath,
-			basicShaderPath,
-			AstroTools::Rendering::InputLayout::IL_Pos,
+			simpleNormalUVAndLightingShaderPath,
+			simpleNormalUVAndLightingShaderPath,
+			AstroTools::Rendering::InputLayout::IL_Pos_Normal_UV,
 			transformMeshObj);
 	}
 
@@ -483,15 +484,23 @@ void AstroGameInstance::Update(float deltaTime)
 
 	// Convert Spherical to Cartesian coordinates.
 	constexpr float cameraRadius = 35.0f;
-	float x = cameraRadius * sinf(m_cameraPhi) * cosf(m_cameraTheta);
-	float z = cameraRadius * sinf(m_cameraPhi) * sinf(m_cameraTheta);
-	float y = cameraRadius * cosf(m_cameraPhi);
 
-	XMVECTOR pos = XMVectorSet(x,y,z, 1.0f);
+	float LookAtDirX = cosf(m_cameraTheta);
+	float LookAtDirY = sinf(m_cameraPhi);
+	float LookAtDirZ = sinf(m_cameraTheta) * cosf(m_cameraPhi);
+	m_lookDir = XMVector3Normalize(XMVectorSet(LookAtDirX, LookAtDirY, LookAtDirZ, 0.f));
+	float posX = XMVectorGetX(m_cameraOriginPos);
+	float posY = XMVectorGetY(m_cameraOriginPos);
+	float posZ = XMVectorGetZ(m_cameraOriginPos);
+	float LookAtX = posX + LookAtDirX * cameraRadius;
+	float LookAtY = posY + LookAtDirY * cameraRadius;
+	float LookAtZ = posZ + LookAtDirZ * cameraRadius;
+
+	XMVECTOR pos = XMVectorSet(posX, posY, posZ, 1.0f);
 	XMStoreFloat3(&m_cameraPos, pos);
 
 	//Build View Matrix
-	XMVECTOR target = XMVectorZero();
+	XMVECTOR target = XMVectorSet(LookAtX, LookAtY, LookAtZ, 0.f);
 	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 	XMMATRIX view = XMMatrixLookAtLH(pos, target, up);
 	XMStoreFloat4x4(&m_viewMat, view);

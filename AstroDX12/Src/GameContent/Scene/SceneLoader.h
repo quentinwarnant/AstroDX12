@@ -28,6 +28,7 @@ struct SceneData
 {
 	std::vector<SceneMeshData<VertexData_Pos>> SceneMeshObjects_VD_Pos;
 	std::vector<SceneMeshData<VertexData_Short>> SceneMeshObjects_VD_Short;
+	std::vector<SceneMeshData<VertexData_Pos_Normal_UV>> SceneMeshObjects_VD_PosNormUV;
 	//...
 };
 

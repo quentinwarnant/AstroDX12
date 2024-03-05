@@ -3,10 +3,10 @@
 //
 
 #include <Game.h>
-#include <Rendering/RendererDX12.h>
 #include <Maths/MathUtils.h>
-#include "winnt.h"
+#include <Rendering/RendererDX12.h>
 #include <Rendering/Renderable/RenderableGroup.h>
+#include "winnt.h"
 
 extern void ExitGame() noexcept;
 
@@ -21,6 +21,8 @@ Game::Game() noexcept(false)
     , m_lastMousePos()
     , m_cameraPhi(XM_PIDIV4)
     , m_cameraTheta(1.5f * XM_PI)
+    , m_cameraOriginPos(XMVectorSet(0,0,-10, 1))
+    , m_lookDir( XMVectorSet(0,0,1,0) )
     , m_renderableGroupMap()
     , m_computeGroup(std::make_unique<ComputeGroup>())
 {
@@ -155,11 +157,43 @@ void Game::OnMouseMove(WPARAM mouseBtnState, int x, int y)
         float dy = XMConvertToRadians(0.25f * static_cast<float>(y - m_lastMousePos.y));
 
         // Update angles based on input to orbit camera around box.
-        m_cameraTheta = dx;
-        m_cameraPhi = dy;
+        m_cameraTheta += dx;
+        m_cameraPhi += dy;
 
         // Restrict the angle m_cameraPhi.
-        m_cameraPhi = AstroTools::Maths::Clamp(m_cameraPhi, 0.1f, AstroTools::Maths::Pi - 0.1f);
+        m_cameraPhi = AstroTools::Maths::Clamp(m_cameraPhi, -AstroTools::Maths::Pi-0.1f, AstroTools::Maths::Pi - 0.1f);
+
+        m_lastMousePos.x = x;
+        m_lastMousePos.y = y;
+    }
+}
+
+void Game::OnKeyboardKey(KeyboardKey key)
+{
+    XMVECTOR Up = XMVectorSet(0, 1, 0, 0);
+    XMVECTOR RightDir = XMVector3Cross(Up, m_lookDir);
+    switch (key)
+    {
+    case KeyboardKey::Forward:
+        m_cameraOriginPos = XMVectorAdd(m_cameraOriginPos, m_lookDir * 5);
+        break;
+    case KeyboardKey::Left:
+        m_cameraOriginPos = XMVectorSubtract(m_cameraOriginPos, RightDir * 5);
+        break;
+    case KeyboardKey::Right:
+        m_cameraOriginPos = XMVectorAdd(m_cameraOriginPos, RightDir * 5);
+        break;
+    case KeyboardKey::Back:
+        m_cameraOriginPos = XMVectorSubtract(m_cameraOriginPos, m_lookDir * 5);
+        break;
+    case KeyboardKey::Down:
+        m_cameraOriginPos = XMVectorSubtract(m_cameraOriginPos, Up * 5);
+        break;
+    case KeyboardKey::Up:
+        m_cameraOriginPos = XMVectorAdd(m_cameraOriginPos, Up * 5);
+        break;
+    default:
+        assert(false && "Key not handled");
     }
 }
 

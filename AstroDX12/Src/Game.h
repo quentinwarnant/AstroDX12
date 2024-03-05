@@ -4,6 +4,7 @@
 
 #pragma once
 #include <Common.h>
+#include <Input/KeyboardInput.h>
 #include <Rendering/IRenderer.h>
 #include <Rendering/Renderable/IRenderable.h>
 #include <Rendering/Common/ShaderLibrary.h>
@@ -14,7 +15,6 @@ class IRenderable;
 class Mesh;
 class RenderableGroup;
 using RenderableGroupMap = std::map<RootSignaturePSOPair, std::unique_ptr<RenderableGroup>>;
-
 
 // A basic game implementation that creates a D3D12 device and
 // provides a game loop.
@@ -46,6 +46,7 @@ public:
     void OnMouseDown(WPARAM btnState, int x, int y);
     void OnMouseUp(WPARAM btnState, int x, int y);
     void OnMouseMove(WPARAM mouseBtnState, int x, int y);
+    void OnKeyboardKey(KeyboardKey key);
 
     // Properties
     void GetDefaultSize( int& width, int& height ) const noexcept;
@@ -87,4 +88,6 @@ protected:
     POINT m_lastMousePos;
     float m_cameraTheta;
     float m_cameraPhi;
+    XMVECTOR m_cameraOriginPos;
+    XMVECTOR m_lookDir;
 };
