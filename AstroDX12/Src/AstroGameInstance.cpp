@@ -309,12 +309,16 @@ void AstroGameInstance::BuildSceneGeometry()
 	constexpr auto vdPosNormUvPodDataSize = VertexDataFactory::GetPODTypeSize<VertexData_Pos_Normal_UV>();
 	for (const auto& SceneMeshObj : SceneData.SceneMeshObjects_VD_PosNormUV)
 	{
+		// TEMP: Test world normals by adding a rotation
+		float rotAngle = 15.f;
+		float c = cosf(rotAngle);
+		float s = sinf(rotAngle);
 		//TODO load mesh obj transform from scene file (doesn't exist yet)
 		const auto transformMeshObj = XMFLOAT4X4(
 			1.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f, 5.0f, 1.0f, 1.5f);
+			0.0f, c, -s, 0.0f,
+			0.0f, s, c, 0.0f,
+			0.0f, 15.0f, 1.0f, 1.5f);
 
 		auto newMesh = m_meshLibrary->AddMesh(SceneMeshObj.meshName);
 		const auto newMeshvertsPODList = VertexDataFactory::Convert(SceneMeshObj.verts);
@@ -507,6 +511,7 @@ void AstroGameInstance::Update(float deltaTime)
 	PIXEndEvent();
 
 	PIXBeginEvent(PIX_COLOR_DEFAULT, L"Update Constant Buffers Objects & Main Render pass");
+	
 	UpdateRenderablesConstantBuffers();
 	UpdateMainRenderPassConstantBuffer(deltaTime);
 	PIXEndEvent();

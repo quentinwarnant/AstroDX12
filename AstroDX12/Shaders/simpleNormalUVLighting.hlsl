@@ -43,7 +43,7 @@ PSInput VS(VSInput i)
 	// Transform to homogeneous clip space.
     float4 posW = mul(float4(i.PosL, 1.0f), gWorld);
     o.PosH = mul(posW, gViewProj);
-    o.Normal = i.Normal; // TODO transform normal from obj space to world
+    o.Normal = mul(i.Normal, gWorld); // TODO transform normal from obj space to world
     o.UV = i.UV;
 
     return o;
