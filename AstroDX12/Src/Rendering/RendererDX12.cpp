@@ -17,9 +17,10 @@ RendererDX12::~RendererDX12()
 void RendererDX12::Init(HWND window, int width, int height)
 {
 #if _DEBUG
-	ComPtr<ID3D12Debug> debugController;
+	ComPtr<ID3D12Debug1> debugController;
 	ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)));
 	debugController->EnableDebugLayer();
+	debugController->SetEnableGPUBasedValidation(TRUE);
 #endif
 
 	m_width = width;
