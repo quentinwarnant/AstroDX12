@@ -1,69 +1,81 @@
 #include "SceneLoader.h"
-#include <External/OBJ-Loader/Source/OBJ_Loader.h>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
 
 namespace SceneLoaderHelpers
 {
-	[[nodiscard]] static std::vector<SceneMeshData<VertexData_Pos>> ConvertMeshData_Pos(std::vector<objl::Mesh> meshes)
+	[[nodiscard]] static std::vector<uint16_t> GetMeshIndices(aiMesh* mesh)
 	{
-		std::vector<SceneMeshData<VertexData_Pos>> meshObjects_VD_Pos;
-		meshObjects_VD_Pos.reserve(meshes.size());
-		for (const auto& mesh : meshes)
+		assert(mesh->HasFaces() && "Mesh has no face data, cannot access vert indices");
+		std::vector<std::uint16_t> indicesConverted;
+		indicesConverted.reserve(mesh->mNumFaces * 3); // Only supporting triangle faces atm
+		for (uint64_t faceIdx = 0; faceIdx < mesh->mNumFaces; ++faceIdx)
 		{
-			// Vert data
-			std::vector<VertexData_Pos> vertsConverted;
-			vertsConverted.reserve(mesh.Vertices.size());
-			for (const auto& vert : mesh.Vertices)
-			{
-				// Only read Position
-				vertsConverted.push_back(XMFLOAT3(vert.Position.X, vert.Position.Y, vert.Position.Z));
-			}
-
-			// Indices
-			std::vector<std::uint16_t> indicesConverted;
-			indicesConverted.reserve(mesh.Indices.size());
-			std::transform(mesh.Indices.begin(), mesh.Indices.end(),
-				std::back_inserter(indicesConverted), [](const unsigned int value)
-				{
-					return static_cast<uint16_t>(value);
-				});
-
-			std::string meshName = mesh.MeshName.length() > 0 ? mesh.MeshName : "unnamed Mesh";
-			meshObjects_VD_Pos.emplace_back(vertsConverted, indicesConverted, meshName);
+			assert(mesh->mFaces[faceIdx].mNumIndices == 3 && "Mesh face has a non 3 index count face, unsupported!");
+			indicesConverted.push_back(static_cast<uint16_t>(mesh->mFaces[faceIdx].mIndices[0]));
+			indicesConverted.push_back(static_cast<uint16_t>(mesh->mFaces[faceIdx].mIndices[1]));
+			indicesConverted.push_back(static_cast<uint16_t>(mesh->mFaces[faceIdx].mIndices[2]));
 		}
+		return indicesConverted;
+	}
+
+	[[nodiscard]] static std::string GetMeshName(aiMesh* mesh)
+	{
+		return mesh->mName.length > 0 ? mesh->mName.C_Str() : "unnamed Mesh";
+	}
+
+	[[nodiscard]] static SceneMeshData<VertexData_Pos> ConvertMeshData_Pos(aiMesh* mesh)
+	{
+		// Vert data
+		std::vector<VertexData_Pos> vertsConverted;
+		assert(mesh->mNumVertices > 0 && "No vertices in mesh");
+		vertsConverted.reserve(mesh->mNumVertices);
+		for (uint64_t vertIdx = 0; vertIdx < mesh->mNumVertices; ++vertIdx)
+		{
+			// Only read Position
+			const auto vert = mesh->mVertices[vertIdx];
+			vertsConverted.push_back(XMFLOAT3(vert.x, vert.y, vert.z));
+		}
+
+		// Indices
+		std::vector<std::uint16_t> indicesConverted = SceneLoaderHelpers::GetMeshIndices(mesh);
+
+		// Name 
+		std::string meshName = SceneLoaderHelpers::GetMeshName(mesh);
+		SceneMeshData<VertexData_Pos> meshObjects_VD_Pos = { vertsConverted, indicesConverted, meshName };
 		return meshObjects_VD_Pos;
 	}
 
-	[[nodiscard]] static std::vector<SceneMeshData<VertexData_Pos_Normal_UV>> ConvertMeshData_PosNormUV(std::vector<objl::Mesh> meshes)
+	[[nodiscard]] static SceneMeshData<VertexData_Pos_Normal_UV> ConvertMeshData_PosNormUV(aiMesh* mesh)
 	{
-		std::vector<SceneMeshData<VertexData_Pos_Normal_UV>> meshObjects_VD_PosNormUV;
-		meshObjects_VD_PosNormUV.reserve(meshes.size());
-		for (const auto& mesh : meshes)
-		{
 			// Vert data
+			assert(mesh->mNumVertices > 0 && "No vertices in mesh");
 			std::vector<VertexData_Pos_Normal_UV> vertsConverted;
-			vertsConverted.reserve(mesh.Vertices.size());
-			for (const auto& vert : mesh.Vertices)
+			vertsConverted.reserve(mesh->mNumVertices);
+			for (uint64_t vertIdx = 0; vertIdx < mesh->mNumVertices; ++vertIdx)
 			{
+				const auto vert = mesh->mVertices[vertIdx];
+				assert(mesh->HasNormals() && "Mesh has no normals but we expect to load some");
+				const auto normal = mesh->mNormals[vertIdx];
+				constexpr uint16_t UVIndex = 0;
+				const bool hasUVs = mesh->HasTextureCoords(UVIndex);
+				const auto uvs = hasUVs ? mesh->mTextureCoords[UVIndex][vertIdx] : aiVector3D(0,0,0);
+
 				vertsConverted.emplace_back(
-					XMFLOAT3(vert.Position.X, vert.Position.Y, vert.Position.Z),
-					XMFLOAT3(vert.Normal.X, vert.Normal.Y, vert.Normal.Z),
-					XMFLOAT2(vert.TextureCoordinate.X, vert.TextureCoordinate.Y)
+					XMFLOAT3(vert.x, vert.y, vert.z),
+					XMFLOAT3(normal.x, normal.y, normal.z),
+					XMFLOAT2(uvs.x, uvs.y)
 				);
 			}
 
 			// Indices
-			std::vector<std::uint16_t> indicesConverted;
-			indicesConverted.reserve(mesh.Indices.size());
-			std::transform(mesh.Indices.begin(), mesh.Indices.end(),
-				std::back_inserter(indicesConverted), [](const unsigned int value)
-				{
-					return static_cast<uint16_t>(value);
-				});
+			std::vector<std::uint16_t> indicesConverted = SceneLoaderHelpers::GetMeshIndices(mesh);
+			
+			// Name
+			std::string meshName = SceneLoaderHelpers::GetMeshName(mesh);
 
-			std::string meshName = mesh.MeshName.length() > 0 ? mesh.MeshName : "unnamed Mesh";
-			meshObjects_VD_PosNormUV.emplace_back(vertsConverted, indicesConverted, meshName);
-		}
-		return meshObjects_VD_PosNormUV;
+			SceneMeshData<VertexData_Pos_Normal_UV> meshObject_VD_PosNormUV = { vertsConverted, indicesConverted, meshName};
+			return meshObject_VD_PosNormUV;
 	}
 }
 
@@ -82,10 +94,49 @@ SceneData SceneLoader::LoadScene(std::uint8_t SceneIdx)
 
 SceneData SceneLoader::LoadScene1()
 {
-	objl::Loader loader;
-	assert(loader.LoadFile("Content/Meshes/teapot.obj") && "Failed to load obj file");
-	
+	const std::vector< std::string > meshPathsToLoad =
+	{
+		{"Content/Meshes/spider.fbx"},
+		{"Content/Meshes/box.fbx"}
+	};
+
+	float rotAngle = 15.f;
+	float c = cosf(rotAngle);
+	float s = sinf(rotAngle);
+
+	const std::vector< XMFLOAT4X4> transforms =
+	{
+		{ 
+			XMFLOAT4X4(
+			1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, c, -s, 0.0f,
+			0.0f, s, c, 0.0f,
+			100.0f, 100.5f, 0.5f, 0.5f)
+		},
+
+		{
+			XMFLOAT4X4(
+			0.2f, 0.2f, 0.2f, 0.0f,
+			0.0f, c, -s, 0.0f,
+			0.0f, s, c, 0.0f,
+			0.0f, 0.5f, 0.5f, 0.5f)
+		}
+	};
+
 	SceneData sd;
-	sd.SceneMeshObjects_VD_PosNormUV = SceneLoaderHelpers::ConvertMeshData_PosNormUV(loader.LoadedMeshes);
+	Assimp::Importer importer;
+	std::vector<aiMesh*> sceneMeshes;
+	for (int16_t idx = 0; idx <meshPathsToLoad.size(); ++idx)
+	{
+		const aiScene* meshScene = importer.ReadFile(meshPathsToLoad[idx], 0);
+		assert(meshScene && importer.GetErrorString() );
+		for (int64_t meshIdx = 0; meshIdx < meshScene->mNumMeshes; ++meshIdx)
+		{
+			auto convertedMesh = SceneLoaderHelpers::ConvertMeshData_PosNormUV(meshScene->mMeshes[meshIdx]);
+			convertedMesh.transform = transforms[idx];
+			sd.SceneMeshObjects_VD_PosNormUV.push_back(convertedMesh);
+		}
+	}
+
 	return sd;
 }

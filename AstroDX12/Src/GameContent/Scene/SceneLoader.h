@@ -21,7 +21,9 @@ struct SceneMeshData
 
 	std::vector<VertexData_Type> verts;
 	std::vector<std::uint16_t> indices;
+	XMFLOAT4X4 transform;
 	std::string meshName;
+	
 };
 
 struct SceneData

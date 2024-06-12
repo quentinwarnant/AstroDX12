@@ -309,28 +309,23 @@ void AstroGameInstance::BuildSceneGeometry()
 	constexpr auto vdPosNormUvPodDataSize = VertexDataFactory::GetPODTypeSize<VertexData_Pos_Normal_UV>();
 	for (const auto& SceneMeshObj : SceneData.SceneMeshObjects_VD_PosNormUV)
 	{
-		// TEMP: Test world normals by adding a rotation
-		float rotAngle = 15.f;
-		float c = cosf(rotAngle);
-		float s = sinf(rotAngle);
-		//TODO load mesh obj transform from scene file (doesn't exist yet)
-		const auto transformMeshObj = XMFLOAT4X4(
-			1.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, c, -s, 0.0f,
-			0.0f, s, c, 0.0f,
-			0.0f, 15.0f, 1.0f, 1.5f);
+		std::weak_ptr<Mesh> mesh;
+		// Either find an existing mesh with the unique name or add a new one to the library
+		if (!m_meshLibrary->GetMesh(SceneMeshObj.meshName, mesh) )
+		{
+			mesh = m_meshLibrary->AddMesh(SceneMeshObj.meshName);
+		}
 
-		auto newMesh = m_meshLibrary->AddMesh(SceneMeshObj.meshName);
 		const auto newMeshvertsPODList = VertexDataFactory::Convert(SceneMeshObj.verts);
-		m_renderer->AllocateMeshBackingBuffers(newMesh, newMeshvertsPODList.data(), (UINT)newMeshvertsPODList.size(),
+		m_renderer->AllocateMeshBackingBuffers(mesh, newMeshvertsPODList.data(), (UINT)newMeshvertsPODList.size(),
 			vdPosNormUvPodDataSize, SceneMeshObj.indices);
 
 		m_renderablesDesc.emplace_back(
-			newMesh,
+			mesh,
 			simpleNormalUVAndLightingShaderPath,
 			simpleNormalUVAndLightingShaderPath,
 			AstroTools::Rendering::InputLayout::IL_Pos_Normal_UV,
-			transformMeshObj);
+			SceneMeshObj.transform);
 	}
 
 }

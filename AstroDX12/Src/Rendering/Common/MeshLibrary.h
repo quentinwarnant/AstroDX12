@@ -28,12 +28,15 @@ public:
 		Meshes.emplace(meshName, std::move(meshPtr));
 	}
 
-	std::weak_ptr<Mesh> GetMesh(const std::string& meshName) const
+	bool GetMesh(const std::string& meshName, std::weak_ptr<Mesh>& OutMesh) const
 	{
 		auto it = Meshes.find(meshName);
-		assert(it != Meshes.end()); // mesh not found
-
-		return std::weak_ptr<Mesh>((*it).second);
+		if (it == Meshes.end())
+		{
+			return false;
+		}
+		OutMesh = std::weak_ptr<Mesh>((*it).second);
+		return true;
 	}
 private:
 	std::map<std::string,std::shared_ptr<Mesh>> Meshes;

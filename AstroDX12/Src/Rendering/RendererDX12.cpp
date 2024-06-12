@@ -490,7 +490,12 @@ void RendererDX12::CreateStructuredBufferAndViews(IStructuredBuffer* structuredB
 }
 
 // Allocate GPU Buffers for vertex and index data of mesh & setup meta data
-void RendererDX12::AllocateMeshBackingBuffers(std::weak_ptr<Mesh>& meshPtr, const void* vertexData, const UINT vertexDataCount, const UINT vertexDataByteSize, const std::vector<std::uint16_t>& indices)
+void RendererDX12::AllocateMeshBackingBuffers(
+	std::weak_ptr<Mesh>& meshPtr,
+	const void* vertexData, 
+	const UINT vertexDataCount, 
+	const UINT vertexDataByteSize, 
+	const std::vector<std::uint16_t>& indices)
 {
 	const UINT vbByteSize = vertexDataCount * vertexDataByteSize;
 	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
