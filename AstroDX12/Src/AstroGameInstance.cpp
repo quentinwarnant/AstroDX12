@@ -52,7 +52,7 @@ void AstroGameInstance::CreateConstantBufferViews()
 {
 	size_t renderableObjCount = m_renderablesDesc.size();
 
-	// Create CBV descriptors for each "renderable" & "computable" object in each frame resource
+	// Create CBV descriptors for each "renderable" object in each frame resource
 	for (int16_t frameIdx = 0; frameIdx < NumFrameResources; ++frameIdx)
 	{
 		UINT renderableObjCBByteSize = m_frameResources[frameIdx]->RenderableObjectConstantBuffer->GetElementByteSize();
@@ -72,7 +72,7 @@ void AstroGameInstance::CreateConstantBufferViews()
 	}
 
 	// TODO: longterm I should probably move these view to be allocated in a different heap - it's not clear here (hidden behind the CreateConstantBufferView call),
-	// but it's usin gthe renderable object heap.
+	// but it's using the renderable object heap.
 	// This doesn't necessarily make that much sense from a logical pov. although idk if it has a perf impact to be like this.
 	// 
 	// Create CBV descriptors shared for the whole render pass, in each frame resource, after all the renderable objects in the renderable object heap
@@ -132,23 +132,38 @@ void AstroGameInstance::CreateComputableObjectsStructuredBufferViews()
 	}
 }
 
+////TODO: MOVE
+//#define BINDLESS_TEXTURE2D_TABLE_SIZE 10
+//#define TEXTURE2D_DESCRIPTOR_SPACE 0
+//// End TODO
+
 void AstroGameInstance::BuildRootSignature()
 {
 	for (auto& renderableDesc : m_renderablesDesc)
 	{
-		CD3DX12_ROOT_PARAMETER slotRootParams[2] = {};
+		std::vector<CD3DX12_ROOT_PARAMETER> slotRootParams;
 
 		// Descriptor table of 2 CBV - one per pass, one per object
 		CD3DX12_DESCRIPTOR_RANGE cbvDescriptorRange0;
 		cbvDescriptorRange0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
-		slotRootParams[0].InitAsDescriptorTable(1, &cbvDescriptorRange0);
+		slotRootParams.push_back(CD3DX12_ROOT_PARAMETER());
+		slotRootParams[slotRootParams.size()-1].InitAsDescriptorTable(1, &cbvDescriptorRange0);
 
 		CD3DX12_DESCRIPTOR_RANGE cbvDescriptorRangeTable1;
 		cbvDescriptorRangeTable1.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1);
-		slotRootParams[1].InitAsDescriptorTable(1, &cbvDescriptorRangeTable1);
+		slotRootParams.push_back(CD3DX12_ROOT_PARAMETER());
+		slotRootParams[slotRootParams.size() - 1].InitAsDescriptorTable(1, &cbvDescriptorRangeTable1);
+
+		//if (renderableDesc.GetSupportsTextures())
+		//{
+		//	CD3DX12_DESCRIPTOR_RANGE textureDescriptorRangeTable0;
+		//	textureDescriptorRangeTable0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, BINDLESS_TEXTURE2D_TABLE_SIZE, 0, TEXTURE2D_DESCRIPTOR_SPACE);
+		//	slotRootParams.push_back(CD3DX12_ROOT_PARAMETER());
+		//	slotRootParams[slotRootParams.size() - 1].InitAsDescriptorTable(1, & textureDescriptorRangeTable0, D3D12_SHADER_VISIBILITY_ALL);
+		//}
 
 		// Root signature is an array of root parameters
-		CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc(2, slotRootParams, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+		CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc(slotRootParams.size(), slotRootParams.data(), 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 		// Create the root signature
 		ComPtr<ID3DBlob> serializedRootSignature = nullptr;
@@ -263,6 +278,7 @@ void AstroGameInstance::BuildSceneGeometry()
 	const auto basicShaderPath = rootPath + std::string("\\Shaders\\basic.hlsl");
 	const auto vertexColorShaderPath = rootPath + std::string("\\Shaders\\color.hlsl");
 	const auto simpleNormalUVAndLightingShaderPath = rootPath + std::string("\\Shaders\\simpleNormalUVLighting.hlsl");
+	const auto texturedShaderPath = rootPath + std::string("\\Shaders\\Textured.hlsl");
 
 	// Box 1
 	auto transformBox1 = XMFLOAT4X4(
@@ -275,7 +291,8 @@ void AstroGameInstance::BuildSceneGeometry()
 		vertexColorShaderPath, 
 		vertexColorShaderPath, 
 		AstroTools::Rendering::InputLayout::IL_Pos_Color,
-		transformBox1);
+		transformBox1,
+		false);
 
 	// Box 2
 	auto transformBox2 = XMFLOAT4X4(
@@ -288,7 +305,8 @@ void AstroGameInstance::BuildSceneGeometry()
 		vertexColorShaderPath,
 		vertexColorShaderPath,
 		AstroTools::Rendering::InputLayout::IL_Pos_Color,
-		transformBox2);
+		transformBox2,
+		false);
 
 	// Box 3
 	auto transformBox3 = XMFLOAT4X4(
@@ -301,7 +319,8 @@ void AstroGameInstance::BuildSceneGeometry()
 		vertexColorShaderPath,
 		vertexColorShaderPath,
 		AstroTools::Rendering::InputLayout::IL_Pos_Color,
-		transformBox3);
+		transformBox3,
+		false);
 
 
 	// .Obj load
@@ -325,7 +344,8 @@ void AstroGameInstance::BuildSceneGeometry()
 			simpleNormalUVAndLightingShaderPath,
 			simpleNormalUVAndLightingShaderPath,
 			AstroTools::Rendering::InputLayout::IL_Pos_Normal_UV,
-			SceneMeshObj.transform);
+			SceneMeshObj.transform,
+			false);
 	}
 
 }
@@ -446,10 +466,7 @@ void AstroGameInstance::CreateRenderables()
 	for (auto& renderableDesc : m_renderablesDesc)
 	{
 		auto renderableObj = std::make_shared<RenderableStaticObject>(
-			renderableDesc.Mesh,
-			renderableDesc.RootSignature, 
-			renderableDesc.PipelineStateObject,
-			renderableDesc.InitialTransform,
+			renderableDesc,			
 			index++
 			);
 		renderableObj->MarkDirty(NumFrameResources);

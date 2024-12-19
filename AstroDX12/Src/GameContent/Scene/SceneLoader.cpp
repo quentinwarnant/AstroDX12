@@ -104,24 +104,24 @@ SceneData SceneLoader::LoadScene1()
 	float c = cosf(rotAngle);
 	float s = sinf(rotAngle);
 
-	const std::vector< XMFLOAT4X4> transforms =
+	const std::vector<XMFLOAT3> translation =
 	{
-		{ 
-			XMFLOAT4X4(
-			1.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, c, -s, 0.0f,
-			0.0f, s, c, 0.0f,
-			100.0f, 100.5f, 0.5f, 0.5f)
-		},
-
-		{
-			XMFLOAT4X4(
-			0.2f, 0.2f, 0.2f, 0.0f,
-			0.0f, c, -s, 0.0f,
-			0.0f, s, c, 0.0f,
-			0.0f, 0.5f, 0.5f, 0.5f)
-		}
+		{0.f,0.f,0.f},
+		{10.f,0.f,0.f}
 	};
+
+	const std::vector<float> rotationXAxis =
+	{
+		{0.f},
+		{30.f}
+	};
+
+	const std::vector<XMFLOAT3> scale =
+	{
+		{1.f,0.f,0.f},
+		{0.02f,0.f,0.f}
+	};
+
 
 	SceneData sd;
 	Assimp::Importer importer;
@@ -130,10 +130,18 @@ SceneData SceneLoader::LoadScene1()
 	{
 		const aiScene* meshScene = importer.ReadFile(meshPathsToLoad[idx], 0);
 		assert(meshScene && importer.GetErrorString() );
+
+		XMFLOAT4X4 transform = XMFLOAT4X4(
+			scale[idx].x, 0.0f, 0.0f, translation[idx].x,
+			0.0f, scale[idx].y + cosf(rotationXAxis[idx]), -sinf(rotationXAxis[idx]), translation[idx].y,
+			0.0f, sinf(rotationXAxis[idx]), scale[idx].z + cosf(rotationXAxis[idx]), translation[idx].z,
+			0.0f, 0.0f, 0.0f, 1.f);
+
+
 		for (int64_t meshIdx = 0; meshIdx < meshScene->mNumMeshes; ++meshIdx)
 		{
 			auto convertedMesh = SceneLoaderHelpers::ConvertMeshData_PosNormUV(meshScene->mMeshes[meshIdx]);
-			convertedMesh.transform = transforms[idx];
+			convertedMesh.transform = transform;
 			sd.SceneMeshObjects_VD_PosNormUV.push_back(convertedMesh);
 		}
 	}

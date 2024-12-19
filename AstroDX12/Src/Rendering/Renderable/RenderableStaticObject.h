@@ -12,18 +12,16 @@ class RenderableStaticObject : public IRenderable
 {
 public:
 	explicit RenderableStaticObject(
-		std::weak_ptr<Mesh>& mesh,
-		ComPtr<ID3D12RootSignature>& rootSignature,
-		ComPtr<ID3D12PipelineState>& pipelineStateObject, 
-		XMFLOAT4X4& initialTransform,
+		const IRenderableDesc& InRenderableDesc,
 		int16_t objectIndex
 	)
-		: m_transform(initialTransform)
-		, m_mesh(mesh)
-		, m_rootSignature( rootSignature )
-		, m_pipelineStateObject(pipelineStateObject)
+		: m_transform( InRenderableDesc.InitialTransform)
+		, m_mesh(InRenderableDesc.Mesh)
+		, m_rootSignature(InRenderableDesc.RootSignature)
+		, m_pipelineStateObject(InRenderableDesc.PipelineStateObject)
 		, m_dirtyFrameCount(0)
 		, m_objectsConstantBufferIndex(objectIndex)
+		, m_supportsTextures(InRenderableDesc.SupportsTextures)
 	{
 	}
 
@@ -84,6 +82,11 @@ public:
 		return m_objectsConstantBufferIndex;
 	}
 
+	virtual bool GetSupportsTextures() const override
+	{
+		return m_supportsTextures;
+	}
+
 private:
 	XMFLOAT4X4 m_transform;
 	ComPtr<ID3D12RootSignature> m_rootSignature;
@@ -95,4 +98,6 @@ private:
 
 	// Index into which object constant buffer this object corresponds to
 	int16_t m_objectsConstantBufferIndex;
+
+	bool m_supportsTextures;
 };

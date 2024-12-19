@@ -13,7 +13,7 @@ class IRenderableDesc
 public:
 	explicit IRenderableDesc(std::weak_ptr<Mesh> inMesh, const std::string vsPath, std::string psPath,
 		const std::vector<D3D12_INPUT_ELEMENT_DESC>& inInputLayout,
-		const XMFLOAT4X4& inInitialTransform)
+		const XMFLOAT4X4& inInitialTransform, bool inSupportsTextures)
 		: Mesh(inMesh)
 		, RootSignature(nullptr)
 		, VertexShaderPath( vsPath )
@@ -23,7 +23,13 @@ public:
 		, InputLayout(inInputLayout)
 		, PipelineStateObject(nullptr)
 		, InitialTransform(inInitialTransform)
+		, SupportsTextures(inSupportsTextures)
 	{
+	}
+
+	bool GetSupportsTextures()
+	{
+		return SupportsTextures;
 	}
 
 	std::weak_ptr<Mesh> Mesh;
@@ -38,6 +44,7 @@ public:
 	ComPtr<ID3D12PipelineState> PipelineStateObject;
 
 	XMFLOAT4X4 InitialTransform;
+	bool SupportsTextures;
 };
 
 class IRenderable
@@ -55,4 +62,6 @@ public:
 	virtual void MarkDirty(int16_t dirtyFrameCount) = 0;
 	virtual void ReduceDirtyFrameCount() = 0;
 	virtual int16_t GetConstantBufferIndex() const = 0;
+
+	virtual bool GetSupportsTextures() const = 0;
 };

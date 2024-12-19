@@ -292,6 +292,11 @@ D3D12_CPU_DESCRIPTOR_HANDLE RendererDX12::GetUAVDescriptorHandleCPU(ERendererPro
 	return m_computableObjectSRVUAVHeap->GetCPUDescriptorHandleForHeapStart();
 }
 
+////TODO: MOVE
+//#define BINDLESS_TEXTURE2D_TABLE_SIZE 10
+//#define TEXTURE2D_DESCRIPTOR_SPACE 0
+//// End TODO
+
 void RendererDX12::ProcessRenderableObjectsForRendering(
 	ComPtr<ID3D12GraphicsCommandList>& commandList, 
 	const std::unique_ptr<RenderableGroup>& renderablesGroup,
@@ -306,6 +311,17 @@ void RendererDX12::ProcessRenderableObjectsForRendering(
 		auto cbvHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_renderableObjectCBVSRVUAVHeap->GetGPUDescriptorHandleForHeapStart());
 		cbvHandle.Offset(cbvIndex, m_descriptorSizeCBV);
 		commandList->SetGraphicsRootDescriptorTable(0, cbvHandle);
+
+
+		//if (renderableObj->GetSupportsTextures())
+		//{
+		//	auto srvHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_renderableObjectCBVSRVUAVHeap->GetGPUDescriptorHandleForHeapStart());
+		//	//TEST - really need to move this to the front of the CBV descriptor, ahead of dynamic stuff
+		//	UINT srvIndex = /*amount of frame resources*/ (3 * totalRenderables) + 0;
+		//	srvHandle.Offset(srvIndex, m_descriptorSizeCBV);
+		//	commandList->SetGraphicsRootDescriptorTable(2, srvHandle);
+		//}
+
 
 		const auto vertexBuffer = renderableObj->GetVertexBufferView();
 		commandList->IASetVertexBuffers(0, 1, &vertexBuffer);

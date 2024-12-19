@@ -151,31 +151,35 @@
     <ClInclude Include="Src\Input\KeyboardInput.h" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shaders\color.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\basic.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\simpleNormalUVLighting.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-  </ItemGroup>
-  <ItemGroup>
     <CopyFileToFolders Include="GraphicsLogo.png" />
     <CopyFileToFolders Include="SmallLogo.png" />
     <CopyFileToFolders Include="SplashScreen.png" />
     <CopyFileToFolders Include="StoreLogo.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="..\packages\Microsoft.Direct3D.D3D12.1.611.0\build\native\bin\x64\D3D12Core.dll" />
     <None Include="..\packages\Microsoft.Direct3D.D3D12.1.611.0\build\native\bin\x64\d3d12SDKLayers.dll" />
     <None Include="..\..\..\..\Windows\System32\DXGIDebug.dll" />
     <None Include="..\..\..\..\Windows\System32\dxgi.dll" />
+    <None Include="packages.config" />
+    <None Include="Libs\assimp-vc143-mtd.dll" />
+    <None Include="Libs\assimp-vc143-mtd.pdb" />
+    <None Include="Shaders\color.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\simpleNormalUVLighting.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\Textured.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\..\..\Program Files (x86)\Windows Kits\10\Lib\10.0.19041.0\um\x64\dxguid.lib" />
     <Library Include="..\..\..\..\Program Files (x86)\Windows Kits\10\Lib\10.0.19041.0\um\x64\dxgi.lib" />
+    <Library Include="Libs\assimp-vc143-mtd.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Shaders\basic.hlsl">
+      <Filter>Shaders</Filter>
+    </Text>
   </ItemGroup>
 </Project>

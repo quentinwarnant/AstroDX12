@@ -14,6 +14,7 @@ struct SceneMeshData
 		std::string inMeshName)
 		: verts(std::move(inVerts))
 		, indices(std::move(inIndices))
+		, transform()
 		, meshName(std::move(inMeshName))
 	{}
 

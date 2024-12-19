@@ -1,17 +1,33 @@
-0. clean errors on shutdown
-1. populate data in buffers
+1. Load scene from file
+2. Add ImGUI library and use it to load scenes
+3. Implement Work Graph (Using Warp driver if needed)
+4. Implement bindless resources
+	Plan:
+		- each frame has a FrameResources, which is a container for:
+			- a command list allocator (needed to register & execute commands during render)
 
-Make Const Buffer type not fixed for all renderables (template & generate POD type data when uploading)
+	consider CHANGE: we want the buffers to be 1:1 to objects in the scene, instead of duplicated across frame resources
+		- can't we have different descriptor view to the same buffer, for each frameResource.
+		- and handle read/write to buffers, through fencing?
+			Frame 1: we write to buffer Ping with a UAV -> Fence -> Frame 2 wait for fence -> read buffer Ping with SRV, and write to Pong with UAV
 
-check data locality?
 
+5. clean errors on shutdown
+6. populate data in buffers
+
+
+> check data locality?
+
+> Make Const Buffer type not fixed for all renderables (template & generate POD type data when uploading)
 Constant buffer index offsets will start breaking down when different renderable groups use different sizes of buffers,
 will need to track progressive offset instead of assuming same size for each
 
-remove duplication of PSO & Root signature between renderable object & renderable object groups
+> remove duplication of PSO & Root signature between renderable object & renderable object groups
 should only be stored once in the group
 
-do a pass on what needs to be size_t / int16_t / int32_t
+> do a pass on what needs to be size_t / int16_t / int32_t
+
+> Switch to bindless resources!
 
 Resources:
 1. create buffer (has a gpu address)
@@ -27,3 +43,7 @@ Resources:
 
 Questions :
 -can we have multiple structured buffers in one buffer & have multiple views over them???
+
+----------------------------
+- swap model loader to assimp & test armadillo model.
+- test draw instanced using actual instances instead of individual calls
