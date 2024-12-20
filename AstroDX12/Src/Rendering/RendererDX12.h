@@ -72,7 +72,6 @@ private:
     void ProcessRenderableObjectsForRendering(
         ComPtr<ID3D12GraphicsCommandList>& commandList,
         const std::unique_ptr<RenderableGroup>& renderablesGroup,
-        uint32_t totalRenderables,
         FrameResource* frameResources);
     uint32_t CountTotalRenderables(const RenderableGroupMap& renderablesGroupMap);
 

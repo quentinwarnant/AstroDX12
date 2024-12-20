@@ -33,6 +33,8 @@ public:
 	// Fence value, marking commands up to this fence point. This let's us check if GPU has finished using these frame resources
 	UINT64 Fence = 0;
 
+	D3D12_GPU_VIRTUAL_ADDRESS GetRenderableObjectCbvGpuAddress(size_t ObjectIndex) const;
+
 private:
 	int16_t m_frameResourceIndex = -1;
 };

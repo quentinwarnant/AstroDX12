@@ -300,18 +300,12 @@ D3D12_CPU_DESCRIPTOR_HANDLE RendererDX12::GetUAVDescriptorHandleCPU(ERendererPro
 void RendererDX12::ProcessRenderableObjectsForRendering(
 	ComPtr<ID3D12GraphicsCommandList>& commandList, 
 	const std::unique_ptr<RenderableGroup>& renderablesGroup,
-	uint32_t totalRenderables,
 	FrameResource* frameResources)
 {
-	renderablesGroup->ForEach([&](const std::shared_ptr<IRenderable>& renderableObj)
+	renderablesGroup->ForEach([&](const std::shared_ptr<IRenderable>& renderableObj, size_t ObjectIndex)
 	{
-		//-- calculate cbv index...
-		// Offset the CBV in the descriptor heap for this object & frame resource combination
-		UINT cbvIndex = (frameResources->GetIndex() * totalRenderables) + renderableObj->GetConstantBufferIndex();
-		auto cbvHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_renderableObjectCBVSRVUAVHeap->GetGPUDescriptorHandleForHeapStart());
-		cbvHandle.Offset(cbvIndex, m_descriptorSizeCBV);
-		commandList->SetGraphicsRootDescriptorTable(0, cbvHandle);
-
+		const auto renderableCBVBufferGPUAddress = frameResources->GetRenderableObjectCbvGpuAddress(ObjectIndex);
+		m_commandList->SetGraphicsRootConstantBufferView(0, renderableCBVBufferGPUAddress);
 
 		//if (renderableObj->GetSupportsTextures())
 		//{
@@ -321,7 +315,6 @@ void RendererDX12::ProcessRenderableObjectsForRendering(
 		//	srvHandle.Offset(srvIndex, m_descriptorSizeCBV);
 		//	commandList->SetGraphicsRootDescriptorTable(2, srvHandle);
 		//}
-
 
 		const auto vertexBuffer = renderableObj->GetVertexBufferView();
 		commandList->IASetVertexBuffers(0, 1, &vertexBuffer);
@@ -429,21 +422,16 @@ void RendererDX12::Render(float /*deltaTime*/,
 	m_commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 	// Begin graphics pass
-	size_t renderPassCBVIndex = (m_renderPassCBVOffset + frameResources->GetIndex());
-	auto renderPassCBVHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_renderableObjectCBVSRVUAVHeap->GetGPUDescriptorHandleForHeapStart());
-	renderPassCBVHandle.Offset((INT)renderPassCBVIndex, m_descriptorSizeCBV);
-
-	uint32_t totalRenderables = CountTotalRenderables(renderableObjectGroups);
-	for (const auto& renderableGroupPair : renderableObjectGroups)
+	const auto frameResourceCBVBufferGPUAddress = frameResources->PassConstantBuffer->Resource()->GetGPUVirtualAddress();
+	for (const auto& [groupRootSignaturePsoPair, renderableGroup] : renderableObjectGroups)
 	{
-		auto& renderableGroupRootSignature = renderableGroupPair.first;
-		auto& renderableGroup = renderableGroupPair.second;
+		auto& renderableGroupRootSignature = groupRootSignaturePsoPair.first;
 	
-		m_commandList->SetGraphicsRootSignature(renderableGroupRootSignature.first.Get());
-		m_commandList->SetGraphicsRootDescriptorTable(1, renderPassCBVHandle);
+		m_commandList->SetGraphicsRootSignature(renderableGroupRootSignature.Get());
+		m_commandList->SetGraphicsRootConstantBufferView(1, frameResourceCBVBufferGPUAddress);
 		m_commandList->SetPipelineState(renderableGroup->GetPSO().Get());
 
-		ProcessRenderableObjectsForRendering(m_commandList, renderableGroup, totalRenderables, frameResources);
+		ProcessRenderableObjectsForRendering(m_commandList, renderableGroup, frameResources);
 	}
 
 	// Transition backbuffer resource state from render target to present 

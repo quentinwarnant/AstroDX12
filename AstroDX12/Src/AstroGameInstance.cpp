@@ -50,7 +50,7 @@ void AstroGameInstance::Create_const_uav_srv_BufferDescriptorHeaps()
 
 void AstroGameInstance::CreateConstantBufferViews()
 {
-	size_t renderableObjCount = m_renderablesDesc.size();
+	const size_t renderableObjCount = m_renderablesDesc.size();
 
 	// Create CBV descriptors for each "renderable" object in each frame resource
 	for (int16_t frameIdx = 0; frameIdx < NumFrameResources; ++frameIdx)
@@ -141,18 +141,38 @@ void AstroGameInstance::BuildRootSignature()
 {
 	for (auto& renderableDesc : m_renderablesDesc)
 	{
-		std::vector<CD3DX12_ROOT_PARAMETER> slotRootParams;
+		std::vector<D3D12_ROOT_PARAMETER1> slotRootParams;
 
 		// Descriptor table of 2 CBV - one per pass, one per object
-		CD3DX12_DESCRIPTOR_RANGE cbvDescriptorRange0;
-		cbvDescriptorRange0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
-		slotRootParams.push_back(CD3DX12_ROOT_PARAMETER());
-		slotRootParams[slotRootParams.size()-1].InitAsDescriptorTable(1, &cbvDescriptorRange0);
+		//CD3DX12_DESCRIPTOR_RANGE cbvDescriptorRange0;
+		//cbvDescriptorRange0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+	
+		const D3D12_ROOT_PARAMETER1 rootParamCBVPerPass
+		{
+			.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV,
+			.Descriptor
+			{
+				.ShaderRegister = 0,
+				.RegisterSpace = 0,
+				.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC
+			}
+		};
+		slotRootParams.push_back(rootParamCBVPerPass);
 
-		CD3DX12_DESCRIPTOR_RANGE cbvDescriptorRangeTable1;
-		cbvDescriptorRangeTable1.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1);
-		slotRootParams.push_back(CD3DX12_ROOT_PARAMETER());
-		slotRootParams[slotRootParams.size() - 1].InitAsDescriptorTable(1, &cbvDescriptorRangeTable1);
+
+		//CD3DX12_DESCRIPTOR_RANGE cbvDescriptorRangeTable1;
+		//cbvDescriptorRangeTable1.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1);
+		const D3D12_ROOT_PARAMETER1 rootParamCBVPerObject
+		{
+			.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV,
+			.Descriptor
+			{
+				.ShaderRegister = 1,
+				.RegisterSpace = 0,
+				.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC
+			}
+		};
+		slotRootParams.push_back(rootParamCBVPerObject);
 
 		//if (renderableDesc.GetSupportsTextures())
 		//{
@@ -163,12 +183,23 @@ void AstroGameInstance::BuildRootSignature()
 		//}
 
 		// Root signature is an array of root parameters
-		CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc(slotRootParams.size(), slotRootParams.data(), 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc(
+			slotRootParams.size(),
+			slotRootParams.data(),
+			0,
+			nullptr,
+			  D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
+			| D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED 
+			| D3D12_ROOT_SIGNATURE_FLAG_SAMPLER_HEAP_DIRECTLY_INDEXED);
 
 		// Create the root signature
 		ComPtr<ID3DBlob> serializedRootSignature = nullptr;
 		ComPtr<ID3DBlob> errorBlob = nullptr;
-		HRESULT hr = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, serializedRootSignature.GetAddressOf(), errorBlob.GetAddressOf());
+		HRESULT hr = D3D12SerializeVersionedRootSignature(
+			&rootSignatureDesc,
+			serializedRootSignature.GetAddressOf(),
+			errorBlob.GetAddressOf());
+		
 		if (errorBlob)
 		{
 			::OutputDebugStringA((char*)errorBlob->GetBufferPointer());
@@ -372,9 +403,9 @@ void AstroGameInstance::UpdateRenderablesConstantBuffers()
 {
 	// re-using the same constant buffer to set all the renderables objects - per object constant data.
 	auto currentFrameObjectCB = m_currentFrameResource->RenderableObjectConstantBuffer.get();
-	for (auto& renderableGroupPair : m_renderableGroupMap)
+	for (auto& [rootSignaturePSOPair, renderableGroup] : m_renderableGroupMap)
 	{
-		renderableGroupPair.second->ForEach([&](std::shared_ptr<IRenderable> renderable)
+		renderableGroup->ForEach([&](std::shared_ptr<IRenderable> renderable)
 		{
 			if (renderable->IsDirty())
 			{

@@ -271,7 +271,7 @@
       <PreprocessorDefinitions>_DEBUG;__WRL_NO_DEFAULT_LIB__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Dev\Personal\assimp-5.3.1\include;C:\Dev\Personal\AstroDX12\AstroDX12\Src;C:\Program Files (x86)\Microsoft GDK\230603\GRDK\GameKit\Include;C:\Dev\Personal\AstroDX12\packages\Microsoft.Direct3D.D3D12.1.611.0\build\native;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <SupportJustMyCode>false</SupportJustMyCode>
       <SuppressStartupBanner>false</SuppressStartupBanner>
       <TreatWarningAsError>false</TreatWarningAsError>

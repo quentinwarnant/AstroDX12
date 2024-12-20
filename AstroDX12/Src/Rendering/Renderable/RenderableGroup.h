@@ -9,6 +9,8 @@ class IRenderable;
 struct ID3D12PipelineState;
 struct ID3D12RootSignature;
 
+// A renderable group is a array of IRenderables which share the same root signature & PSO
+// TEMP: When moving to bindless resources, everything shares the same Root signature, so that should be removable, PSOs will stay bespoke to the group though
 class RenderableGroup
 {
 public:
@@ -38,6 +40,14 @@ public:
 		for (auto& renderable : m_renderables)
 		{
 			renderableIterationFn(renderable);
+		}
+	}
+
+	void ForEach(std::function<void(const std::shared_ptr<IRenderable>&, size_t ObjectIndex)> renderableIterationFn) const
+	{
+		for (size_t i = 0; i < m_renderables.size(); ++i)
+		{
+			renderableIterationFn(m_renderables[i],i);
 		}
 	}
 

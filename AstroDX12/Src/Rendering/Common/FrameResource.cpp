@@ -25,3 +25,11 @@ FrameResource::FrameResource(ID3D12Device* device, UINT passCount, UINT renderab
 FrameResource::~FrameResource()
 {
 }
+
+D3D12_GPU_VIRTUAL_ADDRESS FrameResource::GetRenderableObjectCbvGpuAddress(size_t ObjectIndex) const
+{
+	auto baseGPUAddress = RenderableObjectConstantBuffer->Resource()->GetGPUVirtualAddress();
+	const UINT renderableObjCBByteSize = RenderableObjectConstantBuffer->GetElementByteSize();
+
+	return baseGPUAddress + (((UINT)ObjectIndex) * renderableObjCBByteSize);
+}
