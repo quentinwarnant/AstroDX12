@@ -12,7 +12,6 @@
 
 
 class IRenderable;
-class Mesh;
 class RenderableGroup;
 using RenderableGroupMap = std::map<RootSignaturePSOPair, std::unique_ptr<RenderableGroup>>;
 

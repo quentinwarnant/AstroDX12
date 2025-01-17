@@ -1,7 +1,9 @@
 #pragma once
 
 #include <Common.h>
+#include <Rendering/Common/DescriptorHeap.h>
 #include <Rendering/Common/RenderingUtils.h>
+#include <vector>
 
 using namespace Microsoft::WRL;
 using namespace DX;
@@ -9,70 +11,70 @@ using namespace DX;
 class IStructuredBuffer
 {
 public:
-	virtual void Init(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, bool needSRV, bool needUAV, D3D12_CPU_DESCRIPTOR_HANDLE cpuDescriptorHandle) = 0;
-	virtual void SetHeapDescriptorIndex(int32_t descriptorIndex) = 0;
+	virtual void Init(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, bool needSRV, bool needUAV, DescriptorHeap& descriptorHeap) = 0;
+	virtual void DisposeUploadBuffer() = 0;
 };
 
 template<typename T>
 class StructuredBuffer : public IStructuredBuffer
 {
 public:
-	StructuredBuffer()
+	StructuredBuffer(std::vector<T> bufferData)
 		: m_elementByteSize(sizeof(T))
 		, m_defaultBuffer()
 		, m_mappedData(nullptr)
-		, m_descriptorIndex(-1)
+		, SrvIndex(-1)
+		, UavIndex(-1)
 		, m_initialised(false)
 	{
-		m_data = T();
-
-		ThrowIfFailed(D3DCreateBlob(m_elementByteSize, &m_bufferCPUBlob));
-		CopyMemory(m_bufferCPUBlob->GetBufferPointer(), &m_data, m_elementByteSize); // Uninitialised data at this point
+		m_dataVector = std::move(bufferData);
 	}
 
-	virtual void Init(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, bool needSRV, bool needUAV, D3D12_CPU_DESCRIPTOR_HANDLE cpuDescriptorHandle) override
+	virtual ~StructuredBuffer()
 	{
+		if (m_defaultBuffer)
+		{
+			m_defaultBuffer->Unmap(0, nullptr);
+		}
 
-		m_defaultBuffer = AstroTools::Rendering::CreateDefaultBuffer(device, cmdList, &m_data, m_elementByteSize, needUAV, m_uploadBuffer);
+		if (m_uploadBuffer)
+		{
+			m_uploadBuffer->Unmap(0, nullptr);
+		}
 
-		//const auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-		//const auto bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(m_elementByteSize);
-		//ThrowIfFailed(device->CreateCommittedResource(
-		//	&heapProp,
-		//	D3D12_HEAP_FLAG_NONE,
-		//	&bufferDesc,
-		//	D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-		//	nullptr,
-		//	IID_PPV_ARGS(&m_defaultBuffer)
-		//));
+		m_mappedData = nullptr;
+	}
 
+	virtual void Init(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, bool needSRV, bool needUAV, DescriptorHeap& descriptorHeap) override
+	{
+		// Creates botht he default buffer and the "helper" upload buffer + adds the copy of data resources copy to the command list
+		m_defaultBuffer = AstroTools::Rendering::CreateDefaultBuffer(device, cmdList, m_dataVector.data(), m_dataVector.size() * m_elementByteSize, needUAV, m_uploadBuffer);
+
+
+		// Assigns a pointer to m_mappedData that points to the subresource 0 inside the "uploadBuffer" I3D12Resource
+		// This way we can modify the contents of the upload buffer using CopyData()
+		// TODO: But somewhere we'll presumably still need to force a copy of subresource from the upload buffer to the default buffer (post initialisation if we modify it at runtime)
 		ThrowIfFailed(m_uploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&m_mappedData)));
 
 		m_initialised = true;
 
 		if (needSRV)
 		{
-			CreateSRV(device, cpuDescriptorHandle);
+			SrvIndex = descriptorHeap.GetCurrentDescriptorHeapHandle();
+			CreateSRV(device, descriptorHeap.GetCPUDescriptorHandleByIndex(SrvIndex));
+			descriptorHeap.IncreaseCurrentDescriptorHeapHandle();
 		}
 		
 		if (needUAV)
 		{
-			CreateUAV(device, cpuDescriptorHandle);
+			UavIndex = descriptorHeap.GetCurrentDescriptorHeapHandle();
+			CreateUAV(device, descriptorHeap.GetCPUDescriptorHandleByIndex(UavIndex));
+			descriptorHeap.IncreaseCurrentDescriptorHeapHandle();
 		}
-	}
-
-	~StructuredBuffer()
-	{
-		if (m_defaultBuffer)
-		{
-			m_defaultBuffer->Unmap(0, nullptr);
-		}
-		m_mappedData = nullptr;
 	}
 
 	StructuredBuffer(const StructuredBuffer& rhs) = delete;
 	StructuredBuffer& operator=(const StructuredBuffer& rhs) = delete;
-
 
 	ID3D12Resource* Resource() const
 	{
@@ -80,10 +82,11 @@ public:
 		return m_defaultBuffer.Get();
 	}
 
-	void CopyData(const T& data)
+	void CopyData(std::vector<T> data)
 	{
 		assert(m_initialised);
-		memcpy(&m_mappedData, &data, sizeof(T));
+		memcpy(&m_mappedData, &data.data(), sizeof(T) * data.size());
+		//TODO: schedule copy of subresource in uploadbuffer to common buffer (using cmd list) to push the data to fast GPU visible memory
 	}
 
 	UINT ByteSize()
@@ -91,18 +94,21 @@ public:
 		return m_elementByteSize;
 	}
 
-	virtual void SetHeapDescriptorIndex(int32_t descriptorIndex) override
+	// returns the descriptor index of an element in the descriptor heap this resource has a SRV for
+	int32_t GetSRVIndex() const 
 	{
-		assert(m_initialised);
-		m_descriptorIndex = descriptorIndex;
+		return SrvIndex;
 	}
 
-	int32_t GetHeapDescriptorIndex()
+	// returns the descriptor index of an element in the descriptor heap this resource has a SRV for
+	int32_t GetUAVIndex() const 
 	{
-		assert(m_initialised);
-		assert(m_descriptorIndex >= 0);
+		return UavIndex;
+	}
 
-		return m_descriptorIndex;
+	virtual void DisposeUploadBuffer() override
+	{
+		m_uploadBuffer = nullptr;
 	}
 
 private:
@@ -119,8 +125,8 @@ private:
 		);
 
 		srvDesc.Buffer.FirstElement = 0;
-		srvDesc.Buffer.NumElements = 1;
-		srvDesc.Buffer.StructureByteStride = UINT(sizeof(float) * 2);
+		srvDesc.Buffer.NumElements = UINT(m_dataVector.size());
+		srvDesc.Buffer.StructureByteStride = m_elementByteSize;
 		srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
 		device->CreateShaderResourceView(Resource(),  &srvDesc, cpuDescriptorHandle);
@@ -133,21 +139,21 @@ private:
 		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 
 		uavDesc.Buffer.FirstElement = 0;
-		uavDesc.Buffer.NumElements = 1;
-		uavDesc.Buffer.StructureByteStride = UINT(sizeof(float) * 2);
+		uavDesc.Buffer.NumElements = UINT(m_dataVector.size());
+		uavDesc.Buffer.StructureByteStride = m_elementByteSize;
 		uavDesc.Buffer.CounterOffsetInBytes = 0;
 		uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
 
 		device->CreateUnorderedAccessView(Resource(), nullptr, &uavDesc, cpuDescriptorHandle);
 	}
 
-	UINT m_elementByteSize;
-	ComPtr<ID3D12Resource> m_defaultBuffer;
-	ComPtr<ID3D12Resource> m_uploadBuffer;
-	BYTE* m_mappedData;
-	int32_t m_descriptorIndex;
-	bool m_initialised;
-	ComPtr<ID3DBlob> m_bufferCPUBlob;
+	UINT m_elementByteSize{ -1 };
+	ComPtr<ID3D12Resource> m_defaultBuffer{ nullptr };
+	ComPtr<ID3D12Resource> m_uploadBuffer{ nullptr };
+	BYTE* m_mappedData{ nullptr };
+	int32_t SrvIndex{-1};
+	int32_t UavIndex{ -1 };
+	bool m_initialised{ false };
 
-	T m_data;
+	std::vector<T> m_dataVector{};
 };

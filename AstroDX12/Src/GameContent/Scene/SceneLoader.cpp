@@ -4,17 +4,17 @@
 
 namespace SceneLoaderHelpers
 {
-	[[nodiscard]] static std::vector<uint16_t> GetMeshIndices(aiMesh* mesh)
+	[[nodiscard]] static std::vector<uint32_t> GetMeshIndices(aiMesh* mesh)
 	{
 		assert(mesh->HasFaces() && "Mesh has no face data, cannot access vert indices");
-		std::vector<std::uint16_t> indicesConverted;
+		std::vector<uint32_t> indicesConverted;
 		indicesConverted.reserve(mesh->mNumFaces * 3); // Only supporting triangle faces atm
 		for (uint64_t faceIdx = 0; faceIdx < mesh->mNumFaces; ++faceIdx)
 		{
 			assert(mesh->mFaces[faceIdx].mNumIndices == 3 && "Mesh face has a non 3 index count face, unsupported!");
-			indicesConverted.push_back(static_cast<uint16_t>(mesh->mFaces[faceIdx].mIndices[0]));
-			indicesConverted.push_back(static_cast<uint16_t>(mesh->mFaces[faceIdx].mIndices[1]));
-			indicesConverted.push_back(static_cast<uint16_t>(mesh->mFaces[faceIdx].mIndices[2]));
+			indicesConverted.push_back(static_cast<uint32_t>(mesh->mFaces[faceIdx].mIndices[0]));
+			indicesConverted.push_back(static_cast<uint32_t>(mesh->mFaces[faceIdx].mIndices[1]));
+			indicesConverted.push_back(static_cast<uint32_t>(mesh->mFaces[faceIdx].mIndices[2]));
 		}
 		return indicesConverted;
 	}
@@ -38,7 +38,7 @@ namespace SceneLoaderHelpers
 		}
 
 		// Indices
-		std::vector<std::uint16_t> indicesConverted = SceneLoaderHelpers::GetMeshIndices(mesh);
+		std::vector<uint32_t> indicesConverted = SceneLoaderHelpers::GetMeshIndices(mesh);
 
 		// Name 
 		std::string meshName = SceneLoaderHelpers::GetMeshName(mesh);
@@ -69,7 +69,7 @@ namespace SceneLoaderHelpers
 			}
 
 			// Indices
-			std::vector<std::uint16_t> indicesConverted = SceneLoaderHelpers::GetMeshIndices(mesh);
+			std::vector<uint32_t> indicesConverted = SceneLoaderHelpers::GetMeshIndices(mesh);
 			
 			// Name
 			std::string meshName = SceneLoaderHelpers::GetMeshName(mesh);
@@ -97,7 +97,7 @@ SceneData SceneLoader::LoadScene1()
 	const std::vector< std::string > meshPathsToLoad =
 	{
 		{"Content/Meshes/spider.fbx"},
-		{"Content/Meshes/box.fbx"}
+//		{"Content/Meshes/box.fbx"}
 	};
 
 	float rotAngle = 15.f;

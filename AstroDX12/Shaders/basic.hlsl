@@ -1,10 +1,10 @@
 //TODO: move to include file - begin
-cbuffer cbPerObject : register(b0)
+cbuffer cbPerObject : register(b2)
 {
     float4x4 gWorld;
 };
 
-cbuffer cbPass : register(b1)
+cbuffer cbPass : register(b0)
 {
     float4x4 gView;
     float4x4 InvView;
@@ -21,6 +21,12 @@ cbuffer cbPass : register(b1)
     float gTotalTime;
     float gDeltaTime;
 };
+
+cbuffer BindlessRenderResources : register(b1)
+{
+    int positionBufferIndex;
+}
+
 // ---- TODO move to include file - end
 
 struct VSInput
@@ -33,12 +39,21 @@ struct PSInput
     float4 PosH : SV_POSITION;
 };
 
-PSInput VS(VSInput i)
+struct VertexData
+{
+    float3 posLocal;
+};
+
+PSInput VS(uint VertexID : SV_VertexID)
 {
     PSInput o;
 
 	// Transform to homogeneous clip space.
-    float4 posW = mul(float4(i.PosL, 1.0f), gWorld);
+    StructuredBuffer<VertexData> positionBuffer = ResourceDescriptorHeap[positionBufferIndex];
+
+	// Transform to homogeneous clip space.
+    const float3 posL = positionBuffer[VertexID].posLocal;
+    const float4 posW = mul(float4(posL, 1.0f), gWorld);
     o.PosH = mul(posW, gViewProj);
 
     return o;

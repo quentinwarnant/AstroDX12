@@ -2,8 +2,14 @@
 
 #include <Common.h>
 
-#include <D3DCompiler.h>
-#pragma comment(lib,"d3dcompiler.lib")
+#include <DXC/d3d12shader.h>
+#include <DXC/dxcapi.h>
+#pragma comment(lib,"dxcompiler.lib")
+
+#include <string> 
+#include <fstream>
+
+using namespace Microsoft::WRL;
 
 namespace AstroTools
 {
@@ -17,32 +23,125 @@ namespace AstroTools
 			return (dataSize + 255) & ~255;
 		}
 
-		static Microsoft::WRL::ComPtr<ID3DBlob> CompileShader(
-			const std::string& filename,
-			const D3D_SHADER_MACRO* defines,
-			const std::string& entrypoint,
-			const std::string& target)
+		static ComPtr<IDxcBlob> CompileShader(
+			const std::wstring& filename,
+			const std::vector<std::wstring>& defines,
+			const std::wstring& entrypoint,
+			const std::wstring& targetProfile)
 		{
-			UINT compileFlags = 0;
-#if defined(DEBUG) || defined(_DEBUG)  
-			compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#endif
-			HRESULT hr = S_OK;
 
-			Microsoft::WRL::ComPtr<ID3DBlob> byteCode = nullptr;
-			Microsoft::WRL::ComPtr<ID3DBlob> errors;
-			auto filenameWStr = s2ws(filename);
-			hr = D3DCompileFromFile(filenameWStr.c_str(), defines, D3D_COMPILE_STANDARD_FILE_INCLUDE,
-				entrypoint.c_str(), target.c_str(), compileFlags, 0, &byteCode, &errors);
-
-			if (errors != nullptr)
+			ComPtr<IDxcUtils> utils;
 			{
-				OutputDebugStringA((char*)errors->GetBufferPointer());
+				const HRESULT hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(utils.GetAddressOf()));
+				DX::ThrowIfFailed(hr);
+			}
+			ComPtr<IDxcCompiler3> compiler;
+			{
+				const HRESULT hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(compiler.GetAddressOf()));
+				DX::ThrowIfFailed(hr);
 			}
 
-			DX::ThrowIfFailed(hr);
 
-			return byteCode;
+			// Load file
+			ComPtr<IDxcBlobEncoding> sourceBlob;
+			{
+				const HRESULT hr = utils->LoadFile(filename.c_str(), nullptr, &sourceBlob );
+				DX::ThrowIfFailed(hr);
+			}
+
+			DxcBuffer sourceBuffer
+			{
+				.Ptr = sourceBlob->GetBufferPointer(),
+				.Size = sourceBlob->GetBufferSize(),
+				.Encoding = 0u,
+			};
+
+			// Compile Shader 
+			std::vector<LPCWSTR> compilationArguments
+			{
+				L"-E",
+				entrypoint.c_str(),
+				L"-T",
+				targetProfile.c_str(),
+				DXC_ARG_PACK_MATRIX_COLUMN_MAJOR,
+				DXC_ARG_WARNINGS_ARE_ERRORS,
+				DXC_ARG_ALL_RESOURCES_BOUND,
+			};
+
+			for (const std::wstring& define : defines)
+			{
+				compilationArguments.push_back(L"-D");
+				compilationArguments.push_back(define.c_str());
+			}
+
+#if defined(DEBUG) || defined(_DEBUG)  
+				compilationArguments.push_back(DXC_ARG_DEBUG);
+#else
+				compilationArguments.push_back(DXC_ARG_OPTIMIZATION_LEVEL3);
+#endif
+			
+			ComPtr<IDxcResult> compiledShaderBuffer{};
+			{
+				const HRESULT hr = compiler->Compile(&sourceBuffer,
+					compilationArguments.data(),
+					static_cast<uint32_t>(compilationArguments.size()),
+					nullptr,
+					IID_PPV_ARGS(&compiledShaderBuffer));
+				DX::ThrowIfFailed(hr);
+
+				if (FAILED(hr))
+				{
+					assert(false && (std::wstring(L"Failed to compile shader with path : ") + filename.data()).c_str() );
+				}
+			}
+
+			// Get compilation errors (if any).
+			{
+				ComPtr<IDxcBlobUtf8> errors{};
+				const HRESULT hr = compiledShaderBuffer->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&errors), nullptr);
+				DX::ThrowIfFailed(hr);
+				if (errors && errors->GetStringLength() > 0)
+				{
+					const LPCSTR errorMessage = errors->GetStringPointer();
+					OutputDebugStringA(errorMessage);
+					assert(false && errorMessage);
+				}
+			}
+
+			// At this point we could extract reflection data from the compiled shader buffer object to get the input name, constant buffer names, parameters, etc
+			// TODO: doing this let's us automate the root signature description - which removes fiddly, manual configurations.
+			// see:https://rtarun9.github.io/blogs/shader_reflection/
+
+			
+			ComPtr<IDxcBlob> compiledShaderBlob{ nullptr };
+			{
+				const HRESULT hr = compiledShaderBuffer->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&compiledShaderBlob), nullptr);
+				DX::ThrowIfFailed(hr);
+			}
+
+			// Save out the symbols
+			{
+				ComPtr<IDxcBlob> symbolsData;
+				ComPtr<IDxcBlobUtf16> symbolsDataPath;
+				const HRESULT hr = compiledShaderBuffer->GetOutput(DXC_OUT_PDB, IID_PPV_ARGS(symbolsData.GetAddressOf()), symbolsDataPath.GetAddressOf());
+				DX::ThrowIfFailed(hr);
+
+				const LPCWSTR symbolNamePtr = symbolsDataPath.Get()->GetStringPointer();
+				auto symbolNameAsWString = std::wstring(symbolNamePtr);
+
+				auto filePath = s2ws(DX::GetWorkingDirectory());
+				filePath.append(L"/ShaderSymbols/");
+				filePath.append(symbolNameAsWString);
+
+				std::ofstream file(filePath, std::ios::binary | std::ios::out);
+
+				assert(file.is_open());
+
+				file.write((const char*)symbolsData->GetBufferPointer(), symbolsData->GetBufferSize());
+				file.close();
+			}
+
+			return compiledShaderBlob;
 		}
 
 		static Microsoft::WRL::ComPtr<ID3D12Resource> CreateDefaultBuffer(

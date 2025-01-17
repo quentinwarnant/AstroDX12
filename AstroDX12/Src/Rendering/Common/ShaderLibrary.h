@@ -12,10 +12,11 @@ namespace AstroTools::Rendering
 	class ShaderLibrary
 	{
 	public:
-		ComPtr<ID3DBlob> GetCompiledShader(
-			const std::string& path,
-			const std::string& entryPoint,
-			const std::string& target )
+		ComPtr<IDxcBlob> GetCompiledShader(
+			const std::wstring& path,
+			const std::wstring& entryPoint,
+			const std::vector<std::wstring>& defines,
+			const std::wstring& target )
 		{
 			const auto key = path + target;
 			if ( const auto& shaderIt = m_compiledShaders.find(key); shaderIt != m_compiledShaders.end())
@@ -23,12 +24,12 @@ namespace AstroTools::Rendering
 				return (*shaderIt).second;
 			}
 
-			auto compiledShader = AstroTools::Rendering::CompileShader(path, nullptr, entryPoint, target);
+			auto compiledShader = AstroTools::Rendering::CompileShader(path, defines, entryPoint, target);
 			m_compiledShaders.emplace(key, compiledShader);
 			return compiledShader;
 		}
 
 	private:
-		std::map<std::string, ComPtr<ID3DBlob>> m_compiledShaders;
+		std::map<std::wstring, ComPtr<IDxcBlob>> m_compiledShaders;
 	};
 }

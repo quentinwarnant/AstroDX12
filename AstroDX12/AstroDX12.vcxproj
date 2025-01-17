@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\Microsoft.Direct3D.D3D12.1.613.2\build\native\Microsoft.Direct3D.D3D12.props" Condition="Exists('..\packages\Microsoft.Direct3D.D3D12.1.613.2\build\native\Microsoft.Direct3D.D3D12.props')" />
+  <Import Project="..\packages\Microsoft.Direct3D.D3D12.1.614.1\build\native\Microsoft.Direct3D.D3D12.props" Condition="Exists('..\packages\Microsoft.Direct3D.D3D12.1.614.1\build\native\Microsoft.Direct3D.D3D12.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
@@ -132,12 +132,13 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LibraryPath>C:\Dev\Personal\AstroDX12\AstroDX12\Libs;$(Console_SdkLibPath);$(LibraryPath)</LibraryPath>
-    <IncludePath>C:\Dev\Personal\assimp-5.3.1\include;$(Console_SdkIncludeRoot);$(IncludePath)</IncludePath>
+    <IncludePath>C:\Dev\Personal\dxc\inc;C:\Dev\Personal\assimp-5.3.1\include;$(Console_SdkIncludeRoot);$(IncludePath)</IncludePath>
     <LinkIncremental>true</LinkIncremental>
     <PublicIncludeDirectories />
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
     <CopyLocalProjectReference>true</CopyLocalProjectReference>
     <CopyCppRuntimeToOutputDir>true</CopyCppRuntimeToOutputDir>
+    <OutDir>$(SolutionDir)\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Gaming.Desktop.x64'">
     <Link>
@@ -258,6 +259,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>$(SolutionDir)$(RootNamespace)\Libs\*.lib;$(Console_Libs);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Dev\Personal\AstroDX12\AstroDX12\Libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
@@ -270,7 +272,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;__WRL_NO_DEFAULT_LIB__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Dev\Personal\assimp-5.3.1\include;C:\Dev\Personal\AstroDX12\AstroDX12\Src;C:\Program Files (x86)\Microsoft GDK\230603\GRDK\GameKit\Include;C:\Dev\Personal\AstroDX12\packages\Microsoft.Direct3D.D3D12.1.611.0\build\native;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Dev\Personal\dxc\inc;C:\Dev\Personal\assimp-5.3.1\include;C:\Dev\Personal\AstroDX12\AstroDX12\Src;C:\Program Files (x86)\Microsoft GDK\230603\GRDK\GameKit\Include;C:\Dev\Personal\AstroDX12\packages\Microsoft.Direct3D.D3D12.1.611.0\build\native;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <SupportJustMyCode>false</SupportJustMyCode>
       <SuppressStartupBanner>false</SuppressStartupBanner>
@@ -284,11 +286,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Header.h" />
+    <ClInclude Include="Libs\dxc\inc\d3d12shader.h" />
+    <ClInclude Include="Libs\dxc\inc\dxcapi.h" />
+    <ClInclude Include="Libs\dxc\inc\dxcerrors.h" />
+    <ClInclude Include="Libs\dxc\inc\dxcisense.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="Src\External\Hash.h" />
     <ClInclude Include="Src\External\Math\Common.h" />
     <ClInclude Include="Src\GameContent\Compute\ComputeObjectConstantData.h" />
     <ClInclude Include="Src\GameContent\Scene\SceneLoader.h" />
     <ClInclude Include="Src\Input\KeyboardInput.h" />
+    <ClInclude Include="Src\Rendering\Common\DescriptorHeap.h" />
     <ClInclude Include="Src\Rendering\Common\FrameResource.h" />
     <ClInclude Include="Src\AstroGameInstance.h" />
     <ClInclude Include="Src\Common.h" />
@@ -297,6 +305,7 @@
     <ClInclude Include="Src\Maths\MathUtils.h" />
     <ClInclude Include="Src\Rendering\Common\MeshLibrary.h" />
     <ClInclude Include="Src\Rendering\Common\PipelineStateObjectLibrary.h" />
+    <ClInclude Include="Src\Rendering\Common\RendererContext.h" />
     <ClInclude Include="Src\Rendering\Common\RenderingUtils.h" />
     <ClInclude Include="Src\Rendering\Common\ShaderLibrary.h" />
     <ClInclude Include="Src\Rendering\Common\StructuredBuffer.h" />
@@ -350,6 +359,7 @@
     <Text Include="Shaders\basic.hlsl">
       <FileType>Document</FileType>
     </Text>
+    <None Include="packages.config" />
     <None Include="Shaders\color.hlsl">
       <FileType>Document</FileType>
     </None>
@@ -371,22 +381,25 @@
     <None Include="Libs\assimp-vc143-mtd.pdb">
       <DeploymentContent>true</DeploymentContent>
     </None>
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\..\..\Program Files (x86)\Windows Kits\10\Lib\10.0.19041.0\um\x64\dxgi.lib" />
     <Library Include="..\..\..\..\Program Files (x86)\Windows Kits\10\Lib\10.0.19041.0\um\x64\dxguid.lib" />
     <Library Include="Libs\assimp-vc143-mtd.lib" />
+    <Library Include="Libs\dxcompiler.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="AstroDX12.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="..\packages\Microsoft.Direct3D.D3D12.1.613.2\build\native\Microsoft.Direct3D.D3D12.targets" Condition="Exists('..\packages\Microsoft.Direct3D.D3D12.1.613.2\build\native\Microsoft.Direct3D.D3D12.targets')" />
+    <Import Project="..\packages\Microsoft.Direct3D.D3D12.1.614.1\build\native\Microsoft.Direct3D.D3D12.targets" Condition="Exists('..\packages\Microsoft.Direct3D.D3D12.1.614.1\build\native\Microsoft.Direct3D.D3D12.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\Microsoft.Direct3D.D3D12.1.613.2\build\native\Microsoft.Direct3D.D3D12.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Direct3D.D3D12.1.613.2\build\native\Microsoft.Direct3D.D3D12.props'))" />
-    <Error Condition="!Exists('..\packages\Microsoft.Direct3D.D3D12.1.613.2\build\native\Microsoft.Direct3D.D3D12.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Direct3D.D3D12.1.613.2\build\native\Microsoft.Direct3D.D3D12.targets'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.Direct3D.D3D12.1.614.1\build\native\Microsoft.Direct3D.D3D12.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Direct3D.D3D12.1.614.1\build\native\Microsoft.Direct3D.D3D12.props'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.Direct3D.D3D12.1.614.1\build\native\Microsoft.Direct3D.D3D12.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Direct3D.D3D12.1.614.1\build\native\Microsoft.Direct3D.D3D12.targets'))" />
   </Target>
 </Project>

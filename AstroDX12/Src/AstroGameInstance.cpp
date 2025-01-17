@@ -42,9 +42,7 @@ void AstroGameInstance::LoadSceneData()
 
 void AstroGameInstance::Create_const_uav_srv_BufferDescriptorHeaps()
 {
-	size_t renderableObjCount = m_renderablesDesc.size();
-	size_t computableObjCount = m_computableDescs.size();
-	m_renderer->Create_const_uav_srv_BufferDescriptorHeaps(NumFrameResources, renderableObjCount, computableObjCount);
+	m_renderer->Create_const_uav_srv_BufferDescriptorHeaps();
 
 }
 
@@ -67,7 +65,8 @@ void AstroGameInstance::CreateConstantBufferViews()
 			size_t heapDescriptorIdx = (frameIdx * renderableObjCount) + renderableObjIdx;
 
 			// Finalise creation of constant buffer view
-			m_renderer->CreateConstantBufferView(cbAddress, renderableObjCBByteSize, heapDescriptorIdx);
+			const auto cbvGpuHandle = m_renderer->CreateConstantBufferView(cbAddress, renderableObjCBByteSize, heapDescriptorIdx);
+			m_frameResources[frameIdx]->RenderableObjectPerObjDataCBVgpuAddress.push_back(cbAddress);
 		}
 	}
 
@@ -87,10 +86,9 @@ void AstroGameInstance::CreateConstantBufferViews()
 		size_t heapIdx = (renderableObjCount * NumFrameResources) + frameIdx;
 
 		// Finalise creation of constant buffer view
-		m_renderer->CreateConstantBufferView(cbAddress, passCBByteSize, heapIdx);
+		const auto cbvGpuHandle = m_renderer->CreateConstantBufferView(cbAddress, passCBByteSize, heapIdx);
+		m_frameResources[frameIdx]->ComputableObjectPerObjDataCBVgpuAddress.push_back(cbAddress);
 	}
-
-	m_renderer->SetPassCBVOffset(renderableObjCount * NumFrameResources);
 }
 
 void AstroGameInstance::CreateComputableObjectsStructuredBufferViews()
@@ -103,39 +101,27 @@ void AstroGameInstance::CreateComputableObjectsStructuredBufferViews()
 		// Computable objects each have their own buffer, instead of one shared buffer (testing different architecture / ease of maintainability until better memory management is implemented)
 		for (size_t computableObjIdx = 0; computableObjIdx < computableObjCount; ++computableObjIdx)
 		{
-			// Offset handle in the CBV descriptor heap
-			size_t heapDescriptorIdx = (frameIdx * computableObjCount * 3) + computableObjIdx;
 
-			m_renderer->CreateStructuredBufferAndViews(
+			m_renderer->CreateComputableObjStructuredBufferAndViews(
 				m_frameResources[frameIdx]->ComputableObjectStructuredBufferPerObj[computableObjIdx].get(),
 				true,
-				false,
-				heapDescriptorIdx
+				false
 			);
 
-			heapDescriptorIdx++;
-			m_renderer->CreateStructuredBufferAndViews(
+			m_renderer->CreateComputableObjStructuredBufferAndViews(
 				m_frameResources[frameIdx]->ComputableObjectStructuredBufferPerObj[computableObjIdx + 1].get(),
 				true,
-				false,
-				heapDescriptorIdx
+				false
 			);
 
-			heapDescriptorIdx++;
-			m_renderer->CreateStructuredBufferAndViews(
+			m_renderer->CreateComputableObjStructuredBufferAndViews(
 				m_frameResources[frameIdx]->ComputableObjectStructuredBufferPerObj[computableObjIdx + 2].get(),
 				false,
-				true,
-				heapDescriptorIdx
+				true
 			);
 		}
 	}
 }
-
-////TODO: MOVE
-//#define BINDLESS_TEXTURE2D_TABLE_SIZE 10
-//#define TEXTURE2D_DESCRIPTOR_SPACE 0
-//// End TODO
 
 void AstroGameInstance::BuildRootSignature()
 {
@@ -143,9 +129,10 @@ void AstroGameInstance::BuildRootSignature()
 	{
 		std::vector<D3D12_ROOT_PARAMETER1> slotRootParams;
 
-		// Descriptor table of 2 CBV - one per pass, one per object
-		//CD3DX12_DESCRIPTOR_RANGE cbvDescriptorRange0;
-		//cbvDescriptorRange0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+		// Descriptor table of 3 CBV:
+		// one per pass,
+		// one per object (transform) (object transform - to be depricated in favor of next one),
+		// one for the object's bindless resource indices 
 	
 		const D3D12_ROOT_PARAMETER1 rootParamCBVPerPass
 		{
@@ -159,15 +146,25 @@ void AstroGameInstance::BuildRootSignature()
 		};
 		slotRootParams.push_back(rootParamCBVPerPass);
 
+		const D3D12_ROOT_PARAMETER1 rootParamCBVPerObjectBindlessResourceIndices
+		{
+			.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS,
+			.Descriptor
+			{
+				.ShaderRegister = 1,
+				.RegisterSpace = 0,
+				.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC
+			}
+		};
+		slotRootParams.push_back(rootParamCBVPerObjectBindlessResourceIndices);
 
-		//CD3DX12_DESCRIPTOR_RANGE cbvDescriptorRangeTable1;
-		//cbvDescriptorRangeTable1.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1);
+
 		const D3D12_ROOT_PARAMETER1 rootParamCBVPerObject
 		{
 			.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV,
 			.Descriptor
 			{
-				.ShaderRegister = 1,
+				.ShaderRegister = 2,
 				.RegisterSpace = 0,
 				.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC
 			}
@@ -184,13 +181,13 @@ void AstroGameInstance::BuildRootSignature()
 
 		// Root signature is an array of root parameters
 		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc(
-			slotRootParams.size(),
+			(UINT)slotRootParams.size(),
 			slotRootParams.data(),
 			0,
 			nullptr,
 			  D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
 			| D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED 
-			| D3D12_ROOT_SIGNATURE_FLAG_SAMPLER_HEAP_DIRECTLY_INDEXED);
+		);
 
 		// Create the root signature
 		ComPtr<ID3DBlob> serializedRootSignature = nullptr;
@@ -250,18 +247,20 @@ void AstroGameInstance::BuildShaders(AstroTools::Rendering::ShaderLibrary& shade
 {
 	for (auto& renderableDesc : m_renderablesDesc)
 	{
-		renderableDesc.VS = shaderLibrary.GetCompiledShader(renderableDesc.VertexShaderPath, "VS", "vs_5_0");
-		renderableDesc.PS = shaderLibrary.GetCompiledShader(renderableDesc.PixelShaderPath, "PS", "ps_5_0");
+		renderableDesc.VS = shaderLibrary.GetCompiledShader(renderableDesc.VertexShaderPath, L"VS", {}, L"vs_6_6");
+		renderableDesc.PS = shaderLibrary.GetCompiledShader(renderableDesc.PixelShaderPath, L"PS", {}, L"ps_6_6");
 	}
 
 	for (auto& computableDesc : m_computableDescs)
 	{
-		computableDesc.CS = shaderLibrary.GetCompiledShader(computableDesc.ComputeShaderPath, "CSMain", "cs_5_0");
+		computableDesc.CS = shaderLibrary.GetCompiledShader(computableDesc.ComputeShaderPath, L"CSMain", {}, L"cs_6_6");
 	}
 }
 
 void AstroGameInstance::BuildSceneGeometry()
 {
+	auto rendererContext = m_renderer->GetRendererContext();
+
 	std::vector<VertexData_Short> verts;
 	verts.emplace_back(VertexData_Short(DirectX::XMFLOAT3(-1.5f, -1.5f, -1.5f), DirectX::XMFLOAT4(Colors::White)));
 	verts.emplace_back(VertexData_Short(DirectX::XMFLOAT3(-1.5f, +1.5f, -1.5f), DirectX::XMFLOAT4(Colors::Black)));
@@ -272,7 +271,7 @@ void AstroGameInstance::BuildSceneGeometry()
 	verts.emplace_back(VertexData_Short(DirectX::XMFLOAT3(+1.5f, +1.5f, +1.5f), DirectX::XMFLOAT4(Colors::Cyan)));
 	verts.emplace_back(VertexData_Short(DirectX::XMFLOAT3(+1.5f, -1.5f, +1.5f), DirectX::XMFLOAT4(Colors::Magenta)));
 
-	const std::vector<std::uint16_t> indices =
+	const std::vector<std::uint32_t> indices =
 	{
 		// Front face
 		0, 1, 2,
@@ -299,17 +298,15 @@ void AstroGameInstance::BuildSceneGeometry()
 		4, 3, 7
 	};
 
-	auto boxMesh = m_meshLibrary->AddMesh("BoxGeometry");
 	
 	const auto vertsPODList = VertexDataFactory::Convert(verts);
-	constexpr auto podDataSize = VertexDataFactory::GetPODTypeSize<VertexData_Short>();
-	m_renderer->AllocateMeshBackingBuffers(boxMesh, vertsPODList.data(), (UINT)vertsPODList.size(), podDataSize, indices);
+	auto boxMesh = m_meshLibrary->AddMesh(rendererContext, std::string("BoxGeometry"), vertsPODList, indices );
 
-	const auto rootPath = DX::GetWorkingDirectory();
-	const auto basicShaderPath = rootPath + std::string("\\Shaders\\basic.hlsl");
-	const auto vertexColorShaderPath = rootPath + std::string("\\Shaders\\color.hlsl");
-	const auto simpleNormalUVAndLightingShaderPath = rootPath + std::string("\\Shaders\\simpleNormalUVLighting.hlsl");
-	const auto texturedShaderPath = rootPath + std::string("\\Shaders\\Textured.hlsl");
+	const auto rootPath = s2ws(DX::GetWorkingDirectory());
+	const auto basicShaderPath = rootPath + std::wstring(L"\\Shaders\\basic.hlsl");
+	const auto vertexColorShaderPath = rootPath + std::wstring(L"\\Shaders\\color.hlsl");
+	const auto simpleNormalUVAndLightingShaderPath = rootPath + std::wstring(L"\\Shaders\\simpleNormalUVLighting.hlsl");
+	const auto texturedShaderPath = rootPath + std::wstring(L"\\Shaders\\Textured.hlsl");
 
 	// Box 1
 	auto transformBox1 = XMFLOAT4X4(
@@ -356,19 +353,21 @@ void AstroGameInstance::BuildSceneGeometry()
 
 	// .Obj load
 	const auto SceneData = LoadSceneGeometry();
-	constexpr auto vdPosNormUvPodDataSize = VertexDataFactory::GetPODTypeSize<VertexData_Pos_Normal_UV>();
 	for (const auto& SceneMeshObj : SceneData.SceneMeshObjects_VD_PosNormUV)
 	{
-		std::weak_ptr<Mesh> mesh;
+		std::weak_ptr<IMesh> mesh;
 		// Either find an existing mesh with the unique name or add a new one to the library
 		if (!m_meshLibrary->GetMesh(SceneMeshObj.meshName, mesh) )
 		{
-			mesh = m_meshLibrary->AddMesh(SceneMeshObj.meshName);
+			const auto newMeshvertsPODList = VertexDataFactory::Convert(SceneMeshObj.verts);
+			mesh = m_meshLibrary->AddMesh(
+				rendererContext,
+				SceneMeshObj.meshName,
+				newMeshvertsPODList,
+				SceneMeshObj.indices
+			);
 		}
 
-		const auto newMeshvertsPODList = VertexDataFactory::Convert(SceneMeshObj.verts);
-		m_renderer->AllocateMeshBackingBuffers(mesh, newMeshvertsPODList.data(), (UINT)newMeshvertsPODList.size(),
-			vdPosNormUvPodDataSize, SceneMeshObj.indices);
 
 		m_renderablesDesc.emplace_back(
 			mesh,
@@ -378,7 +377,6 @@ void AstroGameInstance::BuildSceneGeometry()
 			SceneMeshObj.transform,
 			false);
 	}
-
 }
 
 void AstroGameInstance::BuildFrameResources()
@@ -455,8 +453,8 @@ void AstroGameInstance::UpdateMainRenderPassConstantBuffer(float deltaTime)
 
 void AstroGameInstance::BuildComputeData()
 {
-	const auto rootPath = DX::GetWorkingDirectory();
-	const auto computeShaderPath = rootPath + std::string("\\Shaders\\computeTest1.hlsl");
+	const auto rootPath = s2ws(DX::GetWorkingDirectory());
+	const auto computeShaderPath = rootPath + std::wstring(L"\\Shaders\\computeTest1.hlsl");
 
 	m_computableDescs.emplace_back(
 		computeShaderPath,
@@ -576,5 +574,4 @@ void AstroGameInstance::Render(float deltaTime)
 	// drawing full screen rect with blur output Render target
 
 	PIXEndEvent();
-
 }

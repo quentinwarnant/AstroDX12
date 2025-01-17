@@ -11,10 +11,11 @@ using Microsoft::WRL::ComPtr;
 using RootSignaturePSOPair = std::pair< const ComPtr< ID3D12RootSignature>, const ComPtr<ID3D12PipelineState>>;
 using RenderableGroupMap = std::map<RootSignaturePSOPair, std::unique_ptr<RenderableGroup>>;
 class IVertexData;
-class Mesh;
+class IMesh;
 struct FrameResource;
 class ComputeGroup;
 class IStructuredBuffer;
+struct RendererContext;
 
 class IRenderer
 {
@@ -31,16 +32,12 @@ public:
 	virtual void AddNewFence(std::function<void(int)> onNewFenceValue) = 0;
 	virtual void Shutdown() = 0;
 	virtual void CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature, ComPtr<ID3D12RootSignature>& outRootSignature) = 0;
-	virtual void AllocateMeshBackingBuffers(
-		std::weak_ptr<Mesh>& meshPtr, 
-		const void* vertexData, 
-		const UINT vertexDataCount, 
-		const UINT vertexDataByteSize, 
-		const std::vector<std::uint16_t>& indices) = 0;
+	
+	virtual RendererContext GetRendererContext() = 0;
 protected:
 	virtual ComPtr<ID3D12Device> GetDevice() const = 0;
 public:
-	virtual void Create_const_uav_srv_BufferDescriptorHeaps(size_t frameResourceCount, size_t renderableObjectCount, size_t computableObjectCount) = 0;
+	virtual void Create_const_uav_srv_BufferDescriptorHeaps() = 0;
 
 	template<typename T>
 	std::unique_ptr<UploadBuffer<T>> CreateConstantBuffer(UINT elementCount)
@@ -48,21 +45,21 @@ public:
 		return std::make_unique<UploadBuffer<T>>(GetDevice().Get(), elementCount, true);
 	}
 
-	virtual void CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize, size_t handleOffset) = 0;
-	virtual void CreateStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav, size_t handleOffset) = 0;
+	virtual D3D12_GPU_DESCRIPTOR_HANDLE CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize, size_t handleOffset) = 0;
+	virtual void CreateStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav) = 0;
+	virtual void CreateComputableObjStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav) = 0;
 	virtual void CreateGraphicsPipelineState(
 		ComPtr<ID3D12PipelineState>& pso,
 		ComPtr<ID3D12RootSignature>& rootSignature,
 		std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout,
-		ComPtr<ID3DBlob>& vertexShaderByteCode,
-		ComPtr<ID3DBlob>& pixelShaderByteCode) = 0;
+		ComPtr<IDxcBlob>& vertexShaderByteCode,
+		ComPtr<IDxcBlob>& pixelShaderByteCode) = 0;
 	virtual void CreateComputePipelineState(
 		ComPtr<ID3D12PipelineState>& pso,
 		ComPtr<ID3D12RootSignature>& rootSignature,
 		std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout,
-		ComPtr<ID3DBlob>& computeShaderByteCode) = 0;
+		ComPtr<IDxcBlob>& computeShaderByteCode) = 0;
 	virtual void BuildFrameResources(std::vector<std::unique_ptr<FrameResource>>& outFrameResourcesList, int frameResourcesCount, int renderableObjectCount, int computableObjectCount) = 0;
 	virtual UINT64 GetLastCompletedFence() = 0;
 	virtual void WaitForFence(UINT64 fenceValue) = 0;
-	virtual void SetPassCBVOffset(size_t offset) = 0;
 };

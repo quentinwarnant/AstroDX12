@@ -18,7 +18,13 @@ FrameResource::FrameResource(ID3D12Device* device, UINT passCount, UINT renderab
 	ComputableObjectStructuredBufferPerObj.reserve(computableObjectCount * bufferCountPerComputeObject);
 	for (size_t i = 0; i < computableObjectCount * bufferCountPerComputeObject; ++i)
 	{
-		ComputableObjectStructuredBufferPerObj.push_back(std::make_unique<StructuredBuffer<ComputeObjectData>>());
+		ComputeObjectData BufferDataArray
+		{
+			.Val1{ 42,1}
+		};
+
+		std::vector<ComputeObjectData> BufferDataVector { BufferDataArray };
+		ComputableObjectStructuredBufferPerObj.push_back(std::make_unique<StructuredBuffer<ComputeObjectData>>(BufferDataVector));
 	}
 }
 
@@ -28,8 +34,5 @@ FrameResource::~FrameResource()
 
 D3D12_GPU_VIRTUAL_ADDRESS FrameResource::GetRenderableObjectCbvGpuAddress(size_t ObjectIndex) const
 {
-	auto baseGPUAddress = RenderableObjectConstantBuffer->Resource()->GetGPUVirtualAddress();
-	const UINT renderableObjCBByteSize = RenderableObjectConstantBuffer->GetElementByteSize();
-
-	return baseGPUAddress + (((UINT)ObjectIndex) * renderableObjCBByteSize);
+	return RenderableObjectPerObjDataCBVgpuAddress[ObjectIndex];
 }

@@ -1,58 +1,99 @@
 #pragma once
 
 #include <Common.h>
+#include <memory>
+#include <Rendering/Common/RendererContext.h>
+#include <Rendering/Common/StructuredBuffer.h>
 
 using Microsoft::WRL::ComPtr;
 
+class IMesh
+{
+public:
+	IMesh(const std::string& meshName, std::vector<uint32_t> vertexIndices)
+		: Name(meshName)
+		, VertexIndices(vertexIndices)
+		, IndexBufferByteSize(vertexIndices.size() * sizeof(std::uint32_t))
+	{
+	}
+
+	virtual ~IMesh() {}
+
+	virtual void DisposeUploadBuffers()
+	{
+		IndexUploadBuffer = nullptr;
+	}
+
+
+protected:
+	std::string Name;
+	
+	std::vector<uint32_t> VertexIndices;
+	DXGI_FORMAT IndexFormat = DXGI_FORMAT_R32_UINT;
+	size_t IndexBufferByteSize = 0;
+
+	ComPtr<ID3D12Resource> IndexBufferGPU = nullptr;
+	ComPtr<ID3D12Resource> IndexUploadBuffer = nullptr;
+
+public:
+	virtual D3D12_INDEX_BUFFER_VIEW IndexBufferView() const = 0;
+	size_t GetVertexIndicesCount() { return VertexIndices.size(); }
+
+	virtual int32_t GetVertexBufferSRV() const = 0;
+};
+
 // Mesh represents a lot of vertices & indices & backing memory needed to render a single mesh object
-class Mesh
+template <typename VertexDataType> //POD Data Type
+class Mesh : public IMesh
 {
 public: 
-	Mesh() = default;
-	Mesh(Mesh&& other) = default;
-
-	~Mesh()
+	Mesh(
+		RendererContext& rendererContext,
+		const std::string& meshName,
+		std::vector<VertexDataType> vertexData,
+		std::vector<uint32_t> vertexIndices)
+		: IMesh(meshName, vertexIndices)
+		, VertexDataStructuredBuffer(std::make_unique<StructuredBuffer<VertexDataType>>(vertexData))
 	{
-		DisposeUploaders();
+		// Vertex Data (structured) Buffer
+		VertexDataStructuredBuffer->Init(
+			rendererContext.Device.Get(),
+			rendererContext.CommandList.Get(),
+			true, // SRV
+			false,// UAV
+			*rendererContext.RenderableObjectCBVSRVUAVHeap);
+
+		// Vertex Index buffer
+		IndexBufferGPU = AstroTools::Rendering::CreateDefaultBuffer(rendererContext.Device.Get(), rendererContext.CommandList.Get(),
+			VertexIndices.data(), IndexBufferByteSize, false, IndexUploadBuffer);
 	}
 
-	std::string Name;
+	Mesh(Mesh&& other) = delete;
 
-	ComPtr<ID3DBlob> VertexBufferCPU = nullptr;
-	ComPtr<ID3DBlob> IndexBufferCPU = nullptr;
-	ComPtr<ID3D12Resource> VertexBufferGPU = nullptr;
-	ComPtr<ID3D12Resource> IndexBufferGPU = nullptr;
-	ComPtr<ID3D12Resource> VertexBufferUploader = nullptr;
-	ComPtr<ID3D12Resource> IndexBufferUploader = nullptr;
-
-	// Buffer data
-	UINT VertexBufferByteSize = 0;
-	UINT VertexByteStride = 0; // Needed if only storing one mesh data per mesh obj?
-	DXGI_FORMAT IndexFormat = DXGI_FORMAT_R16_UINT;
-	UINT IndexBufferByteSize = 0;
-	UINT IndexCount = 0;
-
-	const D3D12_VERTEX_BUFFER_VIEW VertexBufferView() const
+	virtual ~Mesh() override
 	{
-		D3D12_VERTEX_BUFFER_VIEW vbv;
-		vbv.BufferLocation = VertexBufferGPU->GetGPUVirtualAddress();
-		vbv.StrideInBytes = VertexByteStride;
-		vbv.SizeInBytes = VertexBufferByteSize;
-		return vbv;
+		DisposeUploadBuffers();
 	}
 
-	D3D12_INDEX_BUFFER_VIEW IndexBufferView() const
+	std::unique_ptr<StructuredBuffer<VertexDataType>> VertexDataStructuredBuffer; // TODO: could probably store this as a IStructuredBuffer
+
+	virtual D3D12_INDEX_BUFFER_VIEW IndexBufferView() const override
 	{
 		D3D12_INDEX_BUFFER_VIEW ibv;
 		ibv.BufferLocation = IndexBufferGPU->GetGPUVirtualAddress();
 		ibv.Format = IndexFormat;
-		ibv.SizeInBytes = IndexBufferByteSize;
+		ibv.SizeInBytes = (UINT)IndexBufferByteSize;
 		return ibv;
 	}
 
-	void DisposeUploaders()
+	virtual void DisposeUploadBuffers() override
 	{
-		VertexBufferUploader = nullptr;
-		IndexBufferUploader = nullptr;
+		IMesh::DisposeUploadBuffers();
+		VertexDataStructuredBuffer->DisposeUploadBuffer();
+	}
+
+	virtual int32_t GetVertexBufferSRV() const
+	{
+		return VertexDataStructuredBuffer->GetSRVIndex();
 	}
 };

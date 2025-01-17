@@ -10,7 +10,7 @@ struct SceneMeshData
 
 	SceneMeshData(
 		std::vector<VertexData_Type> inVerts,
-		std::vector<std::uint16_t> inIndices,
+		std::vector<uint32_t> inIndices,
 		std::string inMeshName)
 		: verts(std::move(inVerts))
 		, indices(std::move(inIndices))
@@ -21,7 +21,7 @@ struct SceneMeshData
 	virtual ~SceneMeshData() = default;
 
 	std::vector<VertexData_Type> verts;
-	std::vector<std::uint16_t> indices;
+	std::vector<std::uint32_t> indices;
 	XMFLOAT4X4 transform;
 	std::string meshName;
 	

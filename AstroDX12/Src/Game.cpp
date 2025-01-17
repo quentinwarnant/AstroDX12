@@ -47,10 +47,10 @@ void Game::Initialize(HWND window, int width, int height)
     OnWindowSizeChanged(width, height);
     m_renderer->Init( window, width, height);
 
+    Create_const_uav_srv_BufferDescriptorHeaps();
     LoadSceneData();
 
     BuildFrameResources();
-    Create_const_uav_srv_BufferDescriptorHeaps();
     CreateConstantBufferViews();
     CreateComputableObjectsStructuredBufferViews();
     BuildRootSignature();

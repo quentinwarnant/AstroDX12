@@ -22,6 +22,9 @@ namespace
 
 LPCWSTR g_szAppName = L"AstroDX12";
 
+extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = 614; }
+extern "C" { __declspec(dllexport) extern const char* D3D12SDKPath = ".\\D3D12\\"; }
+
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
 // Entry point

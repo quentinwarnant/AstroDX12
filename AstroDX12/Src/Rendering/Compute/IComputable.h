@@ -12,7 +12,7 @@ class ComputableDesc
 {
 public:
 	ComputableDesc(
-		const std::string computeShaderPath,
+		const std::wstring computeShaderPath,
 		const std::vector< D3D12_INPUT_ELEMENT_DESC>& inInputLayout
 	)
 		: ComputeShaderPath(computeShaderPath)
@@ -23,12 +23,12 @@ public:
 	{
 	}
 
-	std::string ComputeShaderPath;
+	std::wstring ComputeShaderPath;
 
 	ComPtr<ID3D12PipelineState> PipelineStateObject;
 	ComPtr<ID3D12RootSignature> RootSignature;
 	std::vector<D3D12_INPUT_ELEMENT_DESC> InputLayout;
-	ComPtr<ID3DBlob> CS;
+	ComPtr<IDxcBlob> CS;
 };
 
 class IComputable

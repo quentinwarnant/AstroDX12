@@ -1,9 +1,10 @@
 #pragma once
-#include <Rendering/IRenderer.h>
+
 #include <Common.h>
 #include <map>
-
+#include <Rendering/Common/DescriptorHeap.h>
 #include <Rendering/Common/PipelineStateObjectLibrary.h>
+#include <Rendering/IRenderer.h>
 
 using namespace Microsoft::WRL;
 
@@ -27,34 +28,30 @@ public:
     virtual void AddNewFence(std::function<void(int)> onNewFenceValue) override;
     virtual void Shutdown() override;
     virtual void CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature, ComPtr<ID3D12RootSignature>& outRootSignature) override;
-    virtual void AllocateMeshBackingBuffers(
-        std::weak_ptr<Mesh>& meshPtr, 
-        const void* vertexData, 
-        const UINT vertexDataCount, 
-        const UINT vertexDataByteSize, 
-        const std::vector<std::uint16_t>& indices) override;
+    virtual RendererContext GetRendererContext() override;
+
 protected:
     virtual ComPtr<ID3D12Device>  GetDevice() const override { return m_device; };
 public:
-    virtual void Create_const_uav_srv_BufferDescriptorHeaps(size_t frameResourceCount, size_t renderableObjectCount, size_t computableObjectCount) override;
-    virtual void CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize, size_t handleOffset) override;
+    virtual void Create_const_uav_srv_BufferDescriptorHeaps() override;
+    virtual D3D12_GPU_DESCRIPTOR_HANDLE CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize, size_t handleOffset) override;
 
-    virtual void CreateStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav, size_t handleOffset) override;
+    virtual void CreateStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav) override;
+    virtual void CreateComputableObjStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav) override;
     virtual void CreateGraphicsPipelineState(
         ComPtr<ID3D12PipelineState>& pso,
         ComPtr<ID3D12RootSignature>& rootSignature,
         std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout,
-        ComPtr<ID3DBlob>& vertexShaderByteCode,
-        ComPtr<ID3DBlob>& pixelShaderByteCode) override;
+        ComPtr<IDxcBlob>& vertexShaderByteCode,
+        ComPtr<IDxcBlob>& pixelShaderByteCode) override;
     virtual void CreateComputePipelineState(
         ComPtr<ID3D12PipelineState>& pso,
         ComPtr<ID3D12RootSignature>& rootSignature,
         std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout,
-        ComPtr<ID3DBlob>& computeShaderByteCode);
+        ComPtr<IDxcBlob>& computeShaderByteCode);
     virtual void BuildFrameResources(std::vector<std::unique_ptr<FrameResource>>& outFrameResourcesList, int frameResourcesCount, int renderableObjectCount, int computableObjectCount) override;
     virtual UINT64 GetLastCompletedFence() override;
     virtual void WaitForFence(UINT64 fenceValue) override;
-    virtual void SetPassCBVOffset(size_t offset) override;
     // IRenderer - END
 
 private:
@@ -94,9 +91,9 @@ private:
     ComPtr<ID3D12Fence> m_fence;
     ComPtr<IDXGISwapChain1> m_swapChain;
 
-    UINT m_descriptorSizeRTV;   // Render Target View
-    UINT m_descriptorSizeDSV;   // Depth/Stencil View
-    UINT m_descriptorSizeCBV;   // Constant Buffer View (& SRV/UAV)
+    int32_t m_descriptorSizeRTV;   // Render Target View
+    int32_t m_descriptorSizeDSV;   // Depth/Stencil View
+    int32_t m_descriptorSizeCBV;   // Constant Buffer View (& SRV/UAV)
 
     UINT m_msaaQualityLevel;
 
@@ -109,8 +106,8 @@ private:
 
     ComPtr<ID3D12DescriptorHeap> m_rtvHeap; // Render Target
     ComPtr<ID3D12DescriptorHeap> m_dsvHeap; // Depth/Stencil 
-    ComPtr<ID3D12DescriptorHeap> m_renderableObjectCBVSRVUAVHeap; // Constant Buffers heap for renderables
-    ComPtr<ID3D12DescriptorHeap> m_computableObjectSRVUAVHeap; // AUV/SRV/CBV Buffers heap for computables
+    DescriptorHeap m_renderableObjectCBVSRVUAVHeap; // UAV/SRV/CBV Buffers heap for renderables
+    DescriptorHeap m_computableObjectSRVUAVHeap; // UAV/SRV/CBV Buffers heap for computables
 
 
     ComPtr<ID3D12Resource> m_swapchainBuffers[m_swapChainBufferCount];

@@ -1,9 +1,9 @@
-cbuffer cbPerObject : register(b0)
+cbuffer cbPerObject : register(b2)
 {
 	float4x4 gWorld;
 };
 
-cbuffer cbPass : register(b1)
+cbuffer cbPass : register(b0)
 {
 	float4x4 gView;
 	float4x4 InvView;
@@ -21,11 +21,10 @@ cbuffer cbPass : register(b1)
 	float gDeltaTime;
 };
 
-struct VSInput
+cbuffer BindlessRenderResources : register(b1)
 {
-	float3 PosL  : POSITION;
-	float4 Color : COLOR;
-};
+    int positionBufferIndex;
+}
 
 struct PSInput
 {
@@ -33,14 +32,23 @@ struct PSInput
 	float4 Color : COLOR;
 };
 
-PSInput VS(VSInput i)
+struct VertexData
+{
+    float3 posLocal;
+    float4 color;
+};
+
+PSInput VS(uint VertexID : SV_VertexID)
 {
 	PSInput o;
 
+    StructuredBuffer<VertexData> positionBuffer = ResourceDescriptorHeap[positionBufferIndex];
+
 	// Transform to homogeneous clip space.
-	float4 posW = mul(float4(i.PosL, 1.0f), gWorld);
+    const float3 posL = positionBuffer[VertexID].posLocal;
+    const float4 posW = mul(float4(posL, 1.0f), gWorld);
 	o.PosH = mul(posW, gViewProj);
-	o.Color = i.Color;
+    o.Color = positionBuffer[VertexID].color;
 
 	return o;
 }

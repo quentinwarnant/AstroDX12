@@ -46,15 +46,12 @@ public:
 	{
 		return m_rootSignature;
 	}
-	virtual D3D12_VERTEX_BUFFER_VIEW GetVertexBufferView() const override
-	{
-		return m_mesh.lock()->VertexBufferView();
-	}
+	
 	virtual D3D12_INDEX_BUFFER_VIEW GetIndexBufferView() const override
 	{
 		return m_mesh.lock()->IndexBufferView();
 	}
-	virtual UINT GetIndexCount() const override { return m_mesh.lock()->IndexCount;  }
+	virtual size_t GetIndexCount() const override { return m_mesh.lock()->GetVertexIndicesCount();  }
 
 	virtual const ComPtr<ID3D12PipelineState>& GetPipelineStateObject() const override
 	{
@@ -87,10 +84,20 @@ public:
 		return m_supportsTextures;
 	}
 
+	virtual std::vector<int32_t> GetBindlessResourceIndices() const
+	{
+		return { m_mesh.lock()->GetVertexBufferSRV() };
+	}
+
+	virtual uint32_t GetBindlessResourceIndicesRootSignatureIndex() const
+	{
+		return 1; // let's go with index 1 as the bindless resource indices for the root signature entry as a convention, after the pass constants
+	}
+
 private:
 	XMFLOAT4X4 m_transform;
 	ComPtr<ID3D12RootSignature> m_rootSignature;
-	std::weak_ptr<Mesh> m_mesh;
+	std::weak_ptr<IMesh> m_mesh;
 	ComPtr<ID3D12PipelineState> m_pipelineStateObject;
 
 	// Amount of frame resources remaining that need to be updated to newer data

@@ -149,6 +149,13 @@
     <ClInclude Include="Src\Rendering\Compute\ComputeGroup.h" />
     <ClInclude Include="Src\GameContent\Scene\SceneLoader.h" />
     <ClInclude Include="Src\Input\KeyboardInput.h" />
+    <ClInclude Include="Src\Rendering\Common\DescriptorHeap.h" />
+    <ClInclude Include="Src\Rendering\Common\RendererContext.h" />
+    <ClInclude Include="Libs\dxc\inc\d3d12shader.h" />
+    <ClInclude Include="Libs\dxc\inc\dxcapi.h" />
+    <ClInclude Include="Libs\dxc\inc\dxcerrors.h" />
+    <ClInclude Include="Libs\dxc\inc\dxcisense.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="GraphicsLogo.png" />
@@ -161,7 +168,6 @@
     <None Include="..\packages\Microsoft.Direct3D.D3D12.1.611.0\build\native\bin\x64\d3d12SDKLayers.dll" />
     <None Include="..\..\..\..\Windows\System32\DXGIDebug.dll" />
     <None Include="..\..\..\..\Windows\System32\dxgi.dll" />
-    <None Include="packages.config" />
     <None Include="Libs\assimp-vc143-mtd.dll" />
     <None Include="Libs\assimp-vc143-mtd.pdb" />
     <None Include="Shaders\color.hlsl">
@@ -171,15 +177,20 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\Textured.hlsl" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\..\..\Program Files (x86)\Windows Kits\10\Lib\10.0.19041.0\um\x64\dxguid.lib" />
     <Library Include="..\..\..\..\Program Files (x86)\Windows Kits\10\Lib\10.0.19041.0\um\x64\dxgi.lib" />
     <Library Include="Libs\assimp-vc143-mtd.lib" />
+    <Library Include="Libs\dxcompiler.lib" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="Shaders\basic.hlsl">
       <Filter>Shaders</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="AstroDX12.rc" />
   </ItemGroup>
 </Project>
