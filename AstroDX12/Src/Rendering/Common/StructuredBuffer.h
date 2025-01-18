@@ -50,7 +50,6 @@ public:
 		// Creates botht he default buffer and the "helper" upload buffer + adds the copy of data resources copy to the command list
 		m_defaultBuffer = AstroTools::Rendering::CreateDefaultBuffer(device, cmdList, m_dataVector.data(), m_dataVector.size() * m_elementByteSize, needUAV, m_uploadBuffer);
 
-
 		// Assigns a pointer to m_mappedData that points to the subresource 0 inside the "uploadBuffer" I3D12Resource
 		// This way we can modify the contents of the upload buffer using CopyData()
 		// TODO: But somewhere we'll presumably still need to force a copy of subresource from the upload buffer to the default buffer (post initialisation if we modify it at runtime)

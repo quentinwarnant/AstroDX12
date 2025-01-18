@@ -10,13 +10,13 @@ struct RenderPassConstants;
 
 #include <GameContent/Compute/ComputeObjectConstantData.h>
 
-struct FrameResource
+struct FrameResource final
 {
 public: 
 	FrameResource(ID3D12Device* device, UINT passCount, UINT renderableObjectCount, UINT computableObjectCount, int16_t frameResourceIndex);
 	FrameResource(const FrameResource& other) = delete;
 	FrameResource& operator=(const FrameResource& other) = delete;
-	~FrameResource();
+	virtual ~FrameResource();
 
 	int16_t GetIndex() { return m_frameResourceIndex; }
 

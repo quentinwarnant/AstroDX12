@@ -193,7 +193,7 @@ void Game::OnKeyboardKey(KeyboardKey key)
         m_cameraOriginPos = XMVectorAdd(m_cameraOriginPos, Up * 5);
         break;
     default:
-        assert(false && "Key not handled");
+        DX::astro_assert(false, "Key not handled");
     }
 }
 

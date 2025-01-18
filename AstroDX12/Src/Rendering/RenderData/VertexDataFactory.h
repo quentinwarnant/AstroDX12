@@ -42,7 +42,7 @@ public:
 			return sizeof(VertexData_Position_Normal_UV_POD);
 		}
 
-		assert(false && "VertexData type not supported, add entry to GetPODTypeSize");
+		DX::astro_assert(false, "VertexData type not supported, add entry to GetPODTypeSize");
 		return 0;
 	}
 	

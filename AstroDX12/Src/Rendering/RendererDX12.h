@@ -106,8 +106,8 @@ private:
 
     ComPtr<ID3D12DescriptorHeap> m_rtvHeap; // Render Target
     ComPtr<ID3D12DescriptorHeap> m_dsvHeap; // Depth/Stencil 
-    DescriptorHeap m_renderableObjectCBVSRVUAVHeap; // UAV/SRV/CBV Buffers heap for renderables
-    DescriptorHeap m_computableObjectSRVUAVHeap; // UAV/SRV/CBV Buffers heap for computables
+    std::shared_ptr<DescriptorHeap> m_renderableObjectCBVSRVUAVHeap; // UAV/SRV/CBV Buffers heap for renderables
+    std::shared_ptr<DescriptorHeap> m_computableObjectSRVUAVHeap; // UAV/SRV/CBV Buffers heap for computables
 
 
     ComPtr<ID3D12Resource> m_swapchainBuffers[m_swapChainBufferCount];

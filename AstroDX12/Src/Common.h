@@ -86,6 +86,47 @@ namespace DX
         }
     }
 
+    inline void ShowAssertWindow(const char* message, const char* file, int line)
+    {
+        std::stringstream ss;
+        ss << "Assertion Failed!\n\n"
+            << "Message: " << message << "\n"
+            << "File: " << file << "\n"
+            << "Line: " << line;
+
+        MessageBoxA(nullptr, ss.str().c_str(), "Assertion Failed", MB_OK | MB_ICONERROR);
+    }
+
+    //wchar variant
+    inline void ShowAssertWindow(const wchar_t* message, const char* file, int line)
+    {
+        std::wstringstream wss;
+        wss << "Assertion Failed!\n\n"
+            << "Message: " << message << "\n"
+            << "File: " << file << "\n"
+            << "Line: " << line;
+
+        MessageBoxW(nullptr, wss.str().c_str(), L"Assertion Failed", MB_OK | MB_ICONERROR);
+    }
+
+    inline void astro_assert(bool condition, const char* message) 
+    {
+        if (!(condition))
+        {
+            ShowAssertWindow(message, __FILE__, __LINE__);
+            DebugBreak();// Break into the debugger  
+        }
+    }
+
+    inline void astro_assert(bool condition, const wchar_t* message)
+    {
+        if (!(condition))
+        {
+            ShowAssertWindow(message, __FILE__, __LINE__);
+            DebugBreak();// Break into the debugger  
+        }
+    }
+
     static std::string GetWorkingDirectory()
     {
         wchar_t buffer[MAX_PATH];

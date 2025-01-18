@@ -11,7 +11,7 @@ struct ID3D12RootSignature;
 
 // A renderable group is a array of IRenderables which share the same root signature & PSO
 // TEMP: When moving to bindless resources, everything shares the same Root signature, so that should be removable, PSOs will stay bespoke to the group though
-class RenderableGroup
+class RenderableGroup final
 {
 public:
 	RenderableGroup(const ComPtr<ID3D12PipelineState>& pso, const ComPtr<ID3D12RootSignature>& rootSignature)
@@ -20,7 +20,7 @@ public:
 		, m_renderables()
 	{}
 
-	~RenderableGroup()
+	virtual ~RenderableGroup()
 	{
 		m_renderables.clear();
 	}

@@ -7,7 +7,7 @@ using namespace Microsoft::WRL;
 using namespace DX;
 
 template<typename T>
-class UploadBuffer
+class UploadBuffer final
 {
 public: 
 	UploadBuffer(ID3D12Device* device, UINT elementCount, bool isConstantBuffer)
@@ -36,7 +36,7 @@ public:
 		ThrowIfFailed(m_uploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&m_mappedData)));
 	}
 
-	~UploadBuffer()
+	virtual ~UploadBuffer()
 	{
 		if (m_uploadBuffer) 
 		{

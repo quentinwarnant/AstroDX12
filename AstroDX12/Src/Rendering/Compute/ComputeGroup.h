@@ -7,12 +7,14 @@
 
 using Microsoft::WRL::ComPtr;
 
-class ComputeGroup
+class ComputeGroup final
 {
 public:
 	ComputeGroup()
 		:Computables()
 	{}
+
+	virtual ~ComputeGroup(){}
 
 	std::vector<std::shared_ptr<ComputableObject>> Computables;
 

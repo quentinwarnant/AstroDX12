@@ -4,7 +4,7 @@
 using namespace Microsoft::WRL;
 
 // A helpful wrapper around a resource description heap object
-class DescriptorHeap
+class DescriptorHeap final
 {
 public:
 
@@ -18,6 +18,10 @@ public:
         : m_heap(heap)
         , m_descriptorSize(descriptorSize)
         , m_currentDescriptorHeapHandle(0)
+    {
+    }
+
+    virtual ~DescriptorHeap()
     {
     }
 

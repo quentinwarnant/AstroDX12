@@ -1,49 +1,18 @@
 1. Load scene from file
 2. Add ImGUI library and use it to load scenes
-3. Implement Work Graph (Using Warp driver if needed)
-4. Implement bindless resources
-	Plan:
-		- each frame has a FrameResources, which is a container for:
-			- a command list allocator (needed to register & execute commands during render)
-
-	consider CHANGE: we want the buffers to be 1:1 to objects in the scene, instead of duplicated across frame resources
-		- can't we have different descriptor view to the same buffer, for each frameResource.
-		- and handle read/write to buffers, through fencing?
-			Frame 1: we write to buffer Ping with a UAV -> Fence -> Frame 2 wait for fence -> read buffer Ping with SRV, and write to Pong with UAV
-
-
-5. clean errors on shutdown
-6. populate data in buffers
+3. clean errors on shutdown
+4. load unmodified shaders from previously compiled binary
+5. add textures
+6. implement effect, eg: fluid sim, radiance cascade, etc
+7. Implement Work Graph (Using Warp driver if needed)
 
 
 > check data locality?
-
-> Make Const Buffer type not fixed for all renderables (template & generate POD type data when uploading)
-Constant buffer index offsets will start breaking down when different renderable groups use different sizes of buffers,
-will need to track progressive offset instead of assuming same size for each
 
 > remove duplication of PSO & Root signature between renderable object & renderable object groups
 should only be stored once in the group
 
 > do a pass on what needs to be size_t / int16_t / int32_t
 
-> Switch to bindless resources!
-
-Resources:
-1. create buffer (has a gpu address)
-	1.1 eg: Upload buffer calls device->CreateCommittedResource
-		Heap will be automatically handled, there's other ways of creating resources where you handle the heap memory yourself, but that's more complex
-	1.2 map buffer to mapped data (get's the cpu pointer of the buffer)
-	
-
-2. create a Buffer View / descriptor (cpu address) with the gpu address of the resource
-	2.1 get the "Resource" 's GPUVirtualAddress
-	2.2 get the descriptor index within the descriptor heap
-	2.3 call create buffer view
-
-Questions :
--can we have multiple structured buffers in one buffer & have multiple views over them???
-
 ----------------------------
-- swap model loader to assimp & test armadillo model.
 - test draw instanced using actual instances instead of individual calls

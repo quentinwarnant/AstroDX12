@@ -8,7 +8,7 @@ using Microsoft::WRL::ComPtr;
 struct ID3D12RootSignature;
 struct ID3D12PipelineState;
 
-class ComputableDesc
+class ComputableDesc final
 {
 public:
 	ComputableDesc(
@@ -22,6 +22,9 @@ public:
 		, CS(nullptr)
 	{
 	}
+
+	virtual ~ComputableDesc(){}
+
 
 	std::wstring ComputeShaderPath;
 
@@ -37,6 +40,5 @@ public:
 	virtual int16_t GetObjectBufferIndex() const = 0;
 	virtual ComPtr<ID3D12RootSignature> GetRootSignature() const = 0;
 	virtual ComPtr<ID3D12PipelineState> GetPSO() const = 0;
-
 };
 

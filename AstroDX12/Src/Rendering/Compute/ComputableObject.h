@@ -2,7 +2,7 @@
 
 #include <Rendering/Compute/IComputable.h>
 
-class ComputableObject : public IComputable
+class ComputableObject final : public IComputable
 {
 public:
 	ComputableObject(
@@ -15,6 +15,8 @@ public:
 		, m_objectsBufferIndex(objectIndex)
 	{
 	}
+
+	virtual ~ComputableObject() {}
 	
 	virtual int16_t GetObjectBufferIndex() const override final
 	{

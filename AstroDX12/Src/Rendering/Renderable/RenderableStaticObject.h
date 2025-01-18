@@ -25,6 +25,8 @@ public:
 	{
 	}
 
+	virtual ~RenderableStaticObject() {}
+
 	//virtual void SetPosition(const XMVECTOR& pos) override
 	//{
 	//}

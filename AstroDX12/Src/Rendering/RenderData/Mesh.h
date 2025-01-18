@@ -44,7 +44,7 @@ public:
 
 // Mesh represents a lot of vertices & indices & backing memory needed to render a single mesh object
 template <typename VertexDataType> //POD Data Type
-class Mesh : public IMesh
+class Mesh final : public IMesh
 {
 public: 
 	Mesh(
@@ -61,7 +61,7 @@ public:
 			rendererContext.CommandList.Get(),
 			true, // SRV
 			false,// UAV
-			*rendererContext.RenderableObjectCBVSRVUAVHeap);
+			*rendererContext.RenderableObjectCBVSRVUAVHeap.lock());
 
 		// Vertex Index buffer
 		IndexBufferGPU = AstroTools::Rendering::CreateDefaultBuffer(rendererContext.Device.Get(), rendererContext.CommandList.Get(),

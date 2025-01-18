@@ -81,7 +81,6 @@ private:
     int m_screenWidth;
     int m_screenHeight;
     float m_totalTime;
-    AstroTools::Rendering::ShaderLibrary m_shaderLibrary;
 
 protected:
     POINT m_lastMousePos;
@@ -89,4 +88,6 @@ protected:
     float m_cameraPhi;
     XMVECTOR m_cameraOriginPos;
     XMVECTOR m_lookDir;
+private:
+    AstroTools::Rendering::ShaderLibrary m_shaderLibrary;
 };

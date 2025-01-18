@@ -115,6 +115,7 @@ void RendererDX12::Init(HWND window, int width, int height)
 	if (FAILED(m_device->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &shaderModelSupport, sizeof(D3D12_FEATURE_DATA_SHADER_MODEL))))
 	{
 		assert(false);
+		DX::astro_assert(false, "D3D12 device doesn't support shader model 6.7 which is necessary for bindless rendering. This renderer won't work for this GPU");
 	}
 	else
 	{
@@ -127,7 +128,6 @@ void RendererDX12::Init(HWND window, int width, int height)
 			break;
 		
 		}
-
 	}
 
 	HMODULE a = LoadLibraryA("D3D12Core.dll");
@@ -299,13 +299,13 @@ void RendererDX12::Create_const_uav_srv_BufferDescriptorHeaps()
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> renderablesCBVSRVUAVHeap;
 	ThrowIfFailed(m_device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(renderablesCBVSRVUAVHeap.GetAddressOf())));
-	m_renderableObjectCBVSRVUAVHeap = { renderablesCBVSRVUAVHeap, m_descriptorSizeCBV };
+	m_renderableObjectCBVSRVUAVHeap = std::make_shared<DescriptorHeap>( renderablesCBVSRVUAVHeap, m_descriptorSizeCBV );
 
 	// Computables
 	descriptorHeapDesc.NumDescriptors = (UINT)descriptorCount;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> computablesCBVSRVUAVHeap;
 	ThrowIfFailed(m_device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(computablesCBVSRVUAVHeap.GetAddressOf())));
-	m_computableObjectSRVUAVHeap = { computablesCBVSRVUAVHeap, m_descriptorSizeCBV };
+	m_computableObjectSRVUAVHeap = std::make_shared<DescriptorHeap>(computablesCBVSRVUAVHeap, m_descriptorSizeCBV );
 }
 
 void RendererDX12::CreateDepthStencilBuffer()
@@ -380,9 +380,9 @@ D3D12_CPU_DESCRIPTOR_HANDLE RendererDX12::GetUAVDescriptorHandleCPU(ERendererPro
 	// UAV & SRV are created on the same heap as CBV since they're the same size
 	if (objectHeapType == ERendererProcessedObjectType::Renderable)
 	{
-		return m_renderableObjectCBVSRVUAVHeap.GetCPUDescriptorHandleForHeapStart();
+		return m_renderableObjectCBVSRVUAVHeap->GetCPUDescriptorHandleForHeapStart();
 	}
-	return m_computableObjectSRVUAVHeap.GetCPUDescriptorHandleForHeapStart();
+	return m_computableObjectSRVUAVHeap->GetCPUDescriptorHandleForHeapStart();
 }
 
 void RendererDX12::ProcessRenderableObjectsForRendering(
@@ -443,7 +443,7 @@ void RendererDX12::ProcessComputableObjects(
 
 		UINT bufferIndex = /*((frameResources->GetIndex() - 1) * totalComputables * 3) +*/ (computableObj->GetObjectBufferIndex() * 3);
 
-		auto computePassDescriptorHeapHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_computableObjectSRVUAVHeap.GetGPUDescriptorHandleForHeapStart());
+		auto computePassDescriptorHeapHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_computableObjectSRVUAVHeap->GetGPUDescriptorHandleForHeapStart());
 
 		// Buffer SRV 1
 		computePassDescriptorHeapHandle.Offset((INT)bufferIndex, m_descriptorSizeCBV);
@@ -507,7 +507,7 @@ void RendererDX12::Render(float /*deltaTime*/,
 	//////////////////////////////////////////////////
 	// Begin Compute pass
 	//////////////////////////////////////////////////
-	ID3D12DescriptorHeap* computeDescriptorHeaps[] = { m_computableObjectSRVUAVHeap.GetHeapPtr() };
+	ID3D12DescriptorHeap* computeDescriptorHeaps[] = { m_computableObjectSRVUAVHeap->GetHeapPtr() };
 	m_commandList->SetDescriptorHeaps(_countof(computeDescriptorHeaps), computeDescriptorHeaps);
 
 	ProcessComputableObjects(m_commandList, computeObjectGroup, computeObjectGroup.Computables.size(), frameResources);
@@ -518,7 +518,7 @@ void RendererDX12::Render(float /*deltaTime*/,
 	//////////////////////////////////////////////////
 	ID3D12DescriptorHeap* renderableDescriptorHeaps[] = 
 	{
-		m_renderableObjectCBVSRVUAVHeap.GetHeapPtr() 
+		m_renderableObjectCBVSRVUAVHeap->GetHeapPtr() 
 	};
 	m_commandList->SetDescriptorHeaps(_countof(renderableDescriptorHeaps), renderableDescriptorHeaps);
 
@@ -576,10 +576,10 @@ void RendererDX12::Shutdown()
 
 D3D12_GPU_DESCRIPTOR_HANDLE RendererDX12::CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize, size_t handleOffset)
 {
-	const auto cbvDescriptorIndex = m_renderableObjectCBVSRVUAVHeap.GetCurrentDescriptorHeapHandle();
-	const auto cpuDescriptorHandle = m_renderableObjectCBVSRVUAVHeap.GetCPUDescriptorHandleByIndex(cbvDescriptorIndex);
-	const auto gpuDescriptorHandle = m_renderableObjectCBVSRVUAVHeap.GetGPUDescriptorHandleByIndex(cbvDescriptorIndex);
-	m_renderableObjectCBVSRVUAVHeap.IncreaseCurrentDescriptorHeapHandle();
+	const auto cbvDescriptorIndex = m_renderableObjectCBVSRVUAVHeap->GetCurrentDescriptorHeapHandle();
+	const auto cpuDescriptorHandle = m_renderableObjectCBVSRVUAVHeap->GetCPUDescriptorHandleByIndex(cbvDescriptorIndex);
+	const auto gpuDescriptorHandle = m_renderableObjectCBVSRVUAVHeap->GetGPUDescriptorHandleByIndex(cbvDescriptorIndex);
+	m_renderableObjectCBVSRVUAVHeap->IncreaseCurrentDescriptorHeapHandle();
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbViewDesc;
 	cbViewDesc.BufferLocation = cbvGpuAddress;
@@ -592,12 +592,12 @@ D3D12_GPU_DESCRIPTOR_HANDLE RendererDX12::CreateConstantBufferView(D3D12_GPU_VIR
 
 void RendererDX12::CreateStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav)
 {
-	structuredBuffer->Init(m_device.Get(), m_commandList.Get(), srv, uav, m_renderableObjectCBVSRVUAVHeap);
+	structuredBuffer->Init(m_device.Get(), m_commandList.Get(), srv, uav, *m_renderableObjectCBVSRVUAVHeap);
 }
 
 void RendererDX12::CreateComputableObjStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav)
 {
-	structuredBuffer->Init(m_device.Get(), m_commandList.Get(), srv, uav, m_computableObjectSRVUAVHeap);
+	structuredBuffer->Init(m_device.Get(), m_commandList.Get(), srv, uav, *m_computableObjectSRVUAVHeap);
 }
 
 void RendererDX12::CreateGraphicsPipelineState(
@@ -609,7 +609,7 @@ void RendererDX12::CreateGraphicsPipelineState(
 {
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
 	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-	psoDesc.InputLayout = { inputLayout.data(), (UINT)inputLayout.size() };
+	psoDesc.InputLayout = { nullptr, 0 }; // Bindless rendering doesn't require us to declare input layout ahead of time. The shader takes care of it
 	psoDesc.pRootSignature = rootSignature.Get();
 	psoDesc.VS =
 	{
@@ -699,7 +699,7 @@ RendererContext RendererDX12::GetRendererContext()
 	{
 		.Device = m_device,
 		.CommandList = m_commandList,
-		.RenderableObjectCBVSRVUAVHeap = &m_renderableObjectCBVSRVUAVHeap
+		.RenderableObjectCBVSRVUAVHeap = m_renderableObjectCBVSRVUAVHeap
 	};
 }
 

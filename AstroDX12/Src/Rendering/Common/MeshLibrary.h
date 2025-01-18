@@ -29,8 +29,6 @@ public:
 		return std::weak_ptr<IMesh>(entryIt->second);
 	}
 
-
-
 	bool GetMesh(const std::string& meshName, std::weak_ptr<IMesh>& OutMesh) const
 	{
 		auto it = Meshes.find(meshName);

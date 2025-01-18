@@ -91,7 +91,7 @@ namespace AstroTools
 
 				if (FAILED(hr))
 				{
-					assert(false && (std::wstring(L"Failed to compile shader with path : ") + filename.data()).c_str() );
+					DX::astro_assert(false, (std::wstring(L"Failed to compile shader with path : ") + filename.data() ).c_str() );
 				}
 			}
 
@@ -104,7 +104,8 @@ namespace AstroTools
 				{
 					const LPCSTR errorMessage = errors->GetStringPointer();
 					OutputDebugStringA(errorMessage);
-					assert(false && errorMessage);
+					DX::astro_assert(false, errorMessage);
+
 				}
 			}
 

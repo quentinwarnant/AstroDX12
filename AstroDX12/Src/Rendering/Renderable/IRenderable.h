@@ -9,7 +9,7 @@ using namespace DirectX;
 
 struct RenderableObjectConstantData;
 
-class IRenderableDesc
+class IRenderableDesc final
 {
 public:
 	explicit IRenderableDesc(std::weak_ptr<IMesh> inMesh, const std::wstring vsPath, std::wstring psPath,
@@ -17,8 +17,8 @@ public:
 		const XMFLOAT4X4& inInitialTransform, bool inSupportsTextures)
 		: Mesh(inMesh)
 		, RootSignature(nullptr)
-		, VertexShaderPath( vsPath )
-		, PixelShaderPath( psPath )
+		, VertexShaderPath(vsPath)
+		, PixelShaderPath(psPath)
 		, VS(nullptr)
 		, PS(nullptr)
 		, InputLayout(inInputLayout)
@@ -27,6 +27,8 @@ public:
 		, SupportsTextures(inSupportsTextures)
 	{
 	}
+
+	virtual ~IRenderableDesc() {}
 
 	bool GetSupportsTextures()
 	{

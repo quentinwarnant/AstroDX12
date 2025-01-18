@@ -9,16 +9,6 @@ using namespace Microsoft::WRL;
 
 namespace AstroTools::Rendering
 {
-	/*struct PSODescHashable
-	{
-	public:
-		PSODescHashable(D3D12_GRAPHICS_PIPELINE_STATE_DESC& PSODesc)
-		{
-		
-		}
-	};*/
-
-
 	class PipelineStateObjectLibrary
 	{
 	public:
