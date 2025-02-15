@@ -61,7 +61,7 @@ float4 PS(PSInput i) : SV_Target
 {
     const float3 fakeLightDir = normalize(float3(-0.2f, -0.8f, 0.3f));
     const float3 normal = normalize(i.Normal);
-    const float nDotL = dot(normal, fakeLightDir);
+    const float nDotL = max(0.1, dot(normal, fakeLightDir));
     const float4 color = float4(0.8f, 0.1f, 0.2f, 1.f) * nDotL;
     
     return color;
