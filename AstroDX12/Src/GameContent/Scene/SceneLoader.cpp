@@ -1,6 +1,11 @@
 #include "SceneLoader.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
+#include <fstream>
+#include <ios>
+#include <iostream>
+
+#include <GameContent\Scene\SceneDescription.h>
 
 namespace SceneLoaderHelpers
 {
@@ -77,6 +82,19 @@ namespace SceneLoaderHelpers
 			SceneMeshData<VertexData_Pos_Normal_UV> meshObject_VD_PosNormUV = { vertsConverted, indicesConverted, meshName};
 			return meshObject_VD_PosNormUV;
 	}
+
+	[[nodiscard]] static XMFLOAT3 ConvertStringToFloat3(const std::string& str)
+	{
+		const size_t yIndex = str.find(',', 0) + 1;
+		const size_t zIndex = str.find(',', yIndex) + 1;
+
+		XMFLOAT3 result;
+		result.x = std::stof(str.substr(0, yIndex - 1));
+		result.y = std::stof(str.substr(yIndex, zIndex - yIndex - 1));
+		result.z = std::stof(str.substr(zIndex, str.length() - zIndex));
+
+		return result;
+	}
 }
 
 SceneData SceneLoader::LoadScene(std::uint8_t SceneIdx)
@@ -94,49 +112,80 @@ SceneData SceneLoader::LoadScene(std::uint8_t SceneIdx)
 
 SceneData SceneLoader::LoadScene1()
 {
-	const std::vector< std::string > meshPathsToLoad =
+	SceneDescription sceneDesc;
 	{
-		{"Content/Meshes/spider.fbx"},
-//		{"Content/Meshes/box.fbx"}
-	};
+		std::ifstream stream;
+		stream.open(DX::GetWorkingDirectory()+"/Content/Scenes/Scene1.lvl", std::ifstream::in);
 
-	float rotAngle = 15.f;
-	float c = cosf(rotAngle);
-	float s = sinf(rotAngle);
+		SceneObjectDesc newObject;
+		while (stream.good())
+		{
+			char line[64];
+			stream.getline(line,64);
 
-	const std::vector<XMFLOAT3> translation =
-	{
-		{0.f,0.f,0.f},
-		{10.f,0.f,0.f}
-	};
+			std::string text{ line };
 
-	const std::vector<float> rotationXAxis =
-	{
-		{0.f},
-		{30.f}
-	};
+			if (text == "#")
+			{
+				newObject = {};
+			}
+			else if (text == "/")
+			{
+				// finalise object and add to the list
+				sceneDesc.sceneObjects.push_back(newObject);
+			}
+			else
+			{
+				// parse lines and initialise parameters of newObject
+				stream.getline(line, 64);
+				std::string propertyVal{ line };
 
-	const std::vector<XMFLOAT3> scale =
-	{
-		{1.f,0.f,0.f},
-		{0.02f,0.f,0.f}
-	};
+				if (text == "MeshPath")
+				{
+					newObject.meshPath = propertyVal;
+				}
+				else if (text == "Position")
+				{
+					newObject.position = SceneLoaderHelpers::ConvertStringToFloat3(propertyVal);
+				}
+				else if (text == "Rotation")
+				{
+					XMFLOAT3 eulerAnglesInDegrees = SceneLoaderHelpers::ConvertStringToFloat3(propertyVal);
+					newObject.rotationEulerAngles = { XMConvertToRadians(eulerAnglesInDegrees.x),XMConvertToRadians(eulerAnglesInDegrees.y),XMConvertToRadians(eulerAnglesInDegrees.z) };
+				}
+				else if (text == "Scale")
+				{
+					newObject.scale = SceneLoaderHelpers::ConvertStringToFloat3(propertyVal);
+				}
+			}
+		}
+
+		stream.close();
+	}
 
 
 	SceneData sd;
 	Assimp::Importer importer;
 	std::vector<aiMesh*> sceneMeshes;
-	for (int16_t idx = 0; idx <meshPathsToLoad.size(); ++idx)
+	for (int16_t idx = 0; idx < sceneDesc.sceneObjects.size(); ++idx)
 	{
-		const aiScene* meshScene = importer.ReadFile(meshPathsToLoad[idx], 0);
-		assert(meshScene && importer.GetErrorString() );
+		const aiScene* meshScene = importer.ReadFile(sceneDesc.sceneObjects[idx].meshPath, 0);
+		assert(meshScene && importer.GetErrorString());
 
-		XMFLOAT4X4 transform = XMFLOAT4X4(
-			scale[idx].x, 0.0f, 0.0f, translation[idx].x,
-			0.0f, scale[idx].y + cosf(rotationXAxis[idx]), -sinf(rotationXAxis[idx]), translation[idx].y,
-			0.0f, sinf(rotationXAxis[idx]), scale[idx].z + cosf(rotationXAxis[idx]), translation[idx].z,
-			0.0f, 0.0f, 0.0f, 1.f);
+		const XMFLOAT3 pos = sceneDesc.sceneObjects[idx].position;
+		const XMFLOAT3 rot = sceneDesc.sceneObjects[idx].rotationEulerAngles;
+		const XMFLOAT3 scale = sceneDesc.sceneObjects[idx].scale;
 
+		const XMVECTOR vTranslation = XMLoadFloat3(&pos);
+		const XMVECTOR vRotation = XMLoadFloat3(&rot); // Euler angles (radians)
+		const XMVECTOR vScale = XMLoadFloat3(&scale);
+		const XMMATRIX matTranslation = XMMatrixTranslationFromVector(vTranslation);
+		const XMMATRIX matRotation = XMMatrixRotationRollPitchYawFromVector(vRotation);
+		const XMMATRIX matScale = XMMatrixScalingFromVector(vScale);
+
+		const XMMATRIX transformMat = matScale * matRotation * matTranslation;
+		XMFLOAT4X4 transform;
+		XMStoreFloat4x4(&transform, transformMat);
 
 		for (int64_t meshIdx = 0; meshIdx < meshScene->mNumMeshes; ++meshIdx)
 		{

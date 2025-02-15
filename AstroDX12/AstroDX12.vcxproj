@@ -294,6 +294,7 @@
     <ClInclude Include="Src\External\Hash.h" />
     <ClInclude Include="Src\External\Math\Common.h" />
     <ClInclude Include="Src\GameContent\Compute\ComputeObjectConstantData.h" />
+    <ClInclude Include="Src\GameContent\Scene\SceneDescription.h" />
     <ClInclude Include="Src\GameContent\Scene\SceneLoader.h" />
     <ClInclude Include="Src\Input\KeyboardInput.h" />
     <ClInclude Include="Src\Rendering\Common\DescriptorHeap.h" />
@@ -359,6 +360,7 @@
     <Text Include="Shaders\basic.hlsl">
       <FileType>Document</FileType>
     </Text>
+    <None Include="Content\Scenes\Scene1.lvl" />
     <None Include="packages.config" />
     <None Include="Shaders\color.hlsl">
       <FileType>Document</FileType>
