@@ -6,8 +6,8 @@ class ComputableObject final : public IComputable
 {
 public:
 	ComputableObject(
-		ComPtr<ID3D12RootSignature>& rootSignature,
-		ComPtr<ID3D12PipelineState>& pipelineStateObject,
+		ComPtr<ID3D12RootSignature> rootSignature,
+		ComPtr<ID3D12PipelineState> pipelineStateObject,
 		int16_t objectIndex
 	)
 		: m_rootSignature(rootSignature)

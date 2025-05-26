@@ -123,7 +123,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     }
 
     //XGameRuntimeUninitialize();
-
+    Sleep(120); // Letting final frames finish rendering on the GPU, before uninitialising resources
     g_game.reset();
 
     return static_cast<int>(msg.wParam);

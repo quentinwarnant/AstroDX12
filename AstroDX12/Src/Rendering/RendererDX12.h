@@ -19,12 +19,17 @@ public:
     // IRenderer - BEGIN
     virtual void Init(HWND window, int  width, int height) override;
     virtual void FinaliseInit() override;
-    virtual void Render(
-        float deltaTime,
-        const RenderableGroupMap& renderableObjectGroups,
-        const ComputeGroup& computeObjectGroup,
-        FrameResource* currentFrameResources,
-        std::function<void(int)> onNewFenceValue) override;
+    virtual void StartNewFrame(FrameResource* frameResources) override;
+    virtual void EndNewFrame(std::function<void(int)> onNewFenceValue) override;
+
+    virtual void ProcessGraphicsPass(
+        const GraphicsPass& pass,
+        const FrameResource& frameResources) override;
+
+    virtual void ProcessComputePass(
+        const ComputePass& pass,
+        const FrameResource& frameResources ) override;
+
     virtual void AddNewFence(std::function<void(int)> onNewFenceValue) override;
     virtual void Shutdown() override;
     virtual void CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature, ComPtr<ID3D12RootSignature>& outRootSignature) override;
@@ -34,7 +39,7 @@ protected:
     virtual ComPtr<ID3D12Device>  GetDevice() const override { return m_device; };
 public:
     virtual void Create_const_uav_srv_BufferDescriptorHeaps() override;
-    virtual D3D12_GPU_DESCRIPTOR_HANDLE CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize, size_t handleOffset) override;
+    virtual D3D12_GPU_DESCRIPTOR_HANDLE CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize) override;
 
     virtual void CreateStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav) override;
     virtual void CreateComputableObjStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav) override;
@@ -66,18 +71,6 @@ private:
     D3D12_CPU_DESCRIPTOR_HANDLE GetDepthStencilView() const;
     D3D12_CPU_DESCRIPTOR_HANDLE GetUAVDescriptorHandleCPU(ERendererProcessedObjectType objectHeapType) const;
 
-    void ProcessRenderableObjectsForRendering(
-        ComPtr<ID3D12GraphicsCommandList>& commandList,
-        const std::unique_ptr<RenderableGroup>& renderablesGroup,
-        FrameResource* frameResources);
-    uint32_t CountTotalRenderables(const RenderableGroupMap& renderablesGroupMap);
-
-    void ProcessComputableObjects(
-        ComPtr<ID3D12GraphicsCommandList>& commandList,
-        const ComputeGroup& computeObjectGroup,
-        uint32_t totalComputables,
-        FrameResource* frameResources);
-
 private:
     int m_width = 32;
     int m_height = 32;
@@ -108,7 +101,6 @@ private:
     ComPtr<ID3D12DescriptorHeap> m_dsvHeap; // Depth/Stencil 
     std::shared_ptr<DescriptorHeap> m_renderableObjectCBVSRVUAVHeap; // UAV/SRV/CBV Buffers heap for renderables
     std::shared_ptr<DescriptorHeap> m_computableObjectSRVUAVHeap; // UAV/SRV/CBV Buffers heap for computables
-
 
     ComPtr<ID3D12Resource> m_swapchainBuffers[m_swapChainBufferCount];
     ComPtr<ID3D12Resource> m_depthStencilBuffer;

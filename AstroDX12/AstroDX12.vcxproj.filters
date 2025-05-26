@@ -61,6 +61,8 @@
       <Filter>Src\Rendering\Common</Filter>
     </ClCompile>
     <ClCompile Include="Src\GameContent\Scene\SceneLoader.cpp" />
+    <ClCompile Include="Src\GameContent\GPUPasses\BasePassSceneGeometry.cpp" />
+    <ClCompile Include="Src\GameContent\GPUPasses\Compute\ComputePassAddBufferValues.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\AstroGameInstance.h">
@@ -156,6 +158,10 @@
     <ClInclude Include="Libs\dxc\inc\dxcerrors.h" />
     <ClInclude Include="Libs\dxc\inc\dxcisense.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Src\GameContent\Scene\SceneDescription.h" />
+    <ClInclude Include="Src\Rendering\Common\GPUPass.h" />
+    <ClInclude Include="Src\GameContent\GPUPasses\BasePassSceneGeometry.h" />
+    <ClInclude Include="Src\GameContent\GPUPasses\Compute\ComputePassAddBufferValues.h" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="GraphicsLogo.png" />
@@ -178,6 +184,7 @@
     </None>
     <None Include="Shaders\Textured.hlsl" />
     <None Include="packages.config" />
+    <None Include="Content\Scenes\Scene1.lvl" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\..\..\Program Files (x86)\Windows Kits\10\Lib\10.0.19041.0\um\x64\dxguid.lib" />

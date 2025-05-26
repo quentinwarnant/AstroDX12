@@ -8,14 +8,11 @@
 #include <map>
 using Microsoft::WRL::ComPtr;
 
-using RootSignaturePSOPair = std::pair< const ComPtr< ID3D12RootSignature>, const ComPtr<ID3D12PipelineState>>;
-using RenderableGroupMap = std::map<RootSignaturePSOPair, std::unique_ptr<RenderableGroup>>;
-class IVertexData;
-class IMesh;
 struct FrameResource;
-class ComputeGroup;
 class IStructuredBuffer;
 struct RendererContext;
+class GraphicsPass;
+class ComputePass;
 
 class IRenderer
 {
@@ -23,12 +20,17 @@ public:
 	virtual ~IRenderer() {};
 	virtual void Init(HWND window, int width, int height) = 0;
 	virtual void FinaliseInit() = 0;
-	virtual void Render(
-		float deltaTime,
-		const RenderableGroupMap& renderableObjectGroups,
-		const ComputeGroup& computeObjectGroup,
-		FrameResource* currentFrameResources,
-		std::function<void(int)> onNewFenceValue) = 0;
+	virtual void StartNewFrame(FrameResource* frameResources) = 0;
+	virtual void EndNewFrame(std::function<void(int)> onNewFenceValue) = 0;
+	
+	virtual void ProcessGraphicsPass(
+		const GraphicsPass& pass,
+		const FrameResource& frameResources) = 0;
+	
+	virtual void ProcessComputePass(
+		const ComputePass& pass,
+		const FrameResource& frameResources) = 0;
+
 	virtual void AddNewFence(std::function<void(int)> onNewFenceValue) = 0;
 	virtual void Shutdown() = 0;
 	virtual void CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature, ComPtr<ID3D12RootSignature>& outRootSignature) = 0;
@@ -45,7 +47,7 @@ public:
 		return std::make_unique<UploadBuffer<T>>(GetDevice().Get(), elementCount, true);
 	}
 
-	virtual D3D12_GPU_DESCRIPTOR_HANDLE CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize, size_t handleOffset) = 0;
+	virtual D3D12_GPU_DESCRIPTOR_HANDLE CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize) = 0;
 	virtual void CreateStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav) = 0;
 	virtual void CreateComputableObjStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav) = 0;
 	virtual void CreateGraphicsPipelineState(

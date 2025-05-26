@@ -294,6 +294,8 @@
     <ClInclude Include="Src\External\Hash.h" />
     <ClInclude Include="Src\External\Math\Common.h" />
     <ClInclude Include="Src\GameContent\Compute\ComputeObjectConstantData.h" />
+    <ClInclude Include="Src\GameContent\GPUPasses\BasePassSceneGeometry.h" />
+    <ClInclude Include="Src\GameContent\GPUPasses\Compute\ComputePassAddBufferValues.h" />
     <ClInclude Include="Src\GameContent\Scene\SceneDescription.h" />
     <ClInclude Include="Src\GameContent\Scene\SceneLoader.h" />
     <ClInclude Include="Src\Input\KeyboardInput.h" />
@@ -304,6 +306,7 @@
     <ClInclude Include="Src\d3dx12.h" />
     <ClInclude Include="Src\Game.h" />
     <ClInclude Include="Src\Maths\MathUtils.h" />
+    <ClInclude Include="Src\Rendering\Common\GPUPass.h" />
     <ClInclude Include="Src\Rendering\Common\MeshLibrary.h" />
     <ClInclude Include="Src\Rendering\Common\PipelineStateObjectLibrary.h" />
     <ClInclude Include="Src\Rendering\Common\RendererContext.h" />
@@ -348,6 +351,8 @@
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\GameContent\GPUPasses\BasePassSceneGeometry.cpp" />
+    <ClCompile Include="Src\GameContent\GPUPasses\Compute\ComputePassAddBufferValues.cpp" />
     <ClCompile Include="Src\GameContent\Scene\SceneLoader.cpp" />
     <ClCompile Include="Src\Rendering\Common\FrameResource.cpp" />
     <ClCompile Include="Src\AstroGameInstance.cpp" />

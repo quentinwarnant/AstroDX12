@@ -6,6 +6,7 @@
 #include <Rendering/Renderable/IRenderable.h>
 #include <Rendering/RenderData/VertexData.h>
 #include <Rendering/Compute/ComputeGroup.h>
+#include <Rendering/Common/GPUPass.h>
 
 using namespace Microsoft::WRL;
 using namespace DX;
@@ -38,15 +39,15 @@ void RendererDX12::Init(HWND window, int width, int height)
 	// Device
 	
 	// Collect adapters, and select the best one
-	UINT i = 0;
+	UINT AdaptedIndex = 0;
 	IDXGIAdapter* currentAdapter;
 	{
 
 		std::vector <IDXGIAdapter*> availableAdapters;
-		while (m_dxgiFactory->EnumAdapters(i, &currentAdapter) != DXGI_ERROR_NOT_FOUND)
+		while (m_dxgiFactory->EnumAdapters(AdaptedIndex, &currentAdapter) != DXGI_ERROR_NOT_FOUND)
 		{
 			availableAdapters.push_back(currentAdapter);
-			++i;
+			++AdaptedIndex;
 		}
 
 		// -> Make sure to select the best gpu available
@@ -385,92 +386,12 @@ D3D12_CPU_DESCRIPTOR_HANDLE RendererDX12::GetUAVDescriptorHandleCPU(ERendererPro
 	return m_computableObjectSRVUAVHeap->GetCPUDescriptorHandleForHeapStart();
 }
 
-void RendererDX12::ProcessRenderableObjectsForRendering(
-	ComPtr<ID3D12GraphicsCommandList>& commandList, 
-	const std::unique_ptr<RenderableGroup>& renderablesGroup,
-	FrameResource* frameResources)
-{
-	renderablesGroup->ForEach([&](const std::shared_ptr<IRenderable>& renderableObj, size_t ObjectIndex)
-	{
-		const auto renderableCBVBufferGPUAddress = frameResources->GetRenderableObjectCbvGpuAddress(ObjectIndex);
-		m_commandList->SetGraphicsRootConstantBufferView(2, renderableCBVBufferGPUAddress);
-
-		//if (renderableObj->GetSupportsTextures())
-		//{
-		//	auto srvHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_renderableObjectCBVSRVUAVHeap->GetGPUDescriptorHandleForHeapStart());
-		//	//TEST - really need to move this to the front of the CBV descriptor, ahead of dynamic stuff
-		//	UINT srvIndex = /*amount of frame resources*/ (3 * totalRenderables) + 0;
-		//	srvHandle.Offset(srvIndex, m_descriptorSizeCBV);
-		//	commandList->SetGraphicsRootDescriptorTable(2, srvHandle);
-		//}
-
-		const auto indexBuffer = renderableObj->GetIndexBufferView();
-		commandList->IASetIndexBuffer(&indexBuffer);
-		commandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-		const uint32_t BindlessResourceIndicesRootSigParamIndex = renderableObj->GetBindlessResourceIndicesRootSignatureIndex();
-		const std::vector<int32_t> BindlessResourceIndices = renderableObj->GetBindlessResourceIndices();
-		commandList->SetGraphicsRoot32BitConstants(
-			BindlessResourceIndicesRootSigParamIndex,
-			BindlessResourceIndices.size(), BindlessResourceIndices.data(), 0);
-
-		commandList->DrawIndexedInstanced((UINT)renderableObj->GetIndexCount(), 1, 0, 0, 0);
-	});
-}
-
-uint32_t RendererDX12::CountTotalRenderables(const RenderableGroupMap& renderablesGroupMap)
-{
-	uint32_t total = 0;
-	for (const auto& renderablesGroupPair : renderablesGroupMap)
-	{
-		total += renderablesGroupPair.second->GetRenderablesCount();
-	}
-	return total;
-}
-
-void RendererDX12::ProcessComputableObjects(
-	ComPtr<ID3D12GraphicsCommandList>& commandList,
-	const ComputeGroup& computeObjectGroup,
-	uint32_t totalComputables,
-	FrameResource* frameResources)
-{
-	computeObjectGroup.ForEach([&](const std::shared_ptr<IComputable>& computableObj)
-	{
-
-		m_commandList->SetComputeRootSignature(computableObj->GetRootSignature().Get());
-		m_commandList->SetPipelineState(computableObj->GetPSO().Get());
-
-
-		UINT bufferIndex = /*((frameResources->GetIndex() - 1) * totalComputables * 3) +*/ (computableObj->GetObjectBufferIndex() * 3);
-
-		auto computePassDescriptorHeapHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_computableObjectSRVUAVHeap->GetGPUDescriptorHandleForHeapStart());
-
-		// Buffer SRV 1
-		computePassDescriptorHeapHandle.Offset((INT)bufferIndex, m_descriptorSizeCBV);
-		commandList->SetComputeRootShaderResourceView(0, frameResources->ComputableObjectStructuredBufferPerObj[bufferIndex]->Resource()->GetGPUVirtualAddress());
-
-		// Buffer SRV 2
-		computePassDescriptorHeapHandle.Offset((INT)1, m_descriptorSizeCBV);
-		commandList->SetComputeRootShaderResourceView(1, frameResources->ComputableObjectStructuredBufferPerObj[bufferIndex+1]->Resource()->GetGPUVirtualAddress());
-
-		// Buffer UAV 1
-		computePassDescriptorHeapHandle.Offset((INT)1, m_descriptorSizeCBV);
-		commandList->SetComputeRootUnorderedAccessView(2, frameResources->ComputableObjectStructuredBufferPerObj[bufferIndex+2]->Resource()->GetGPUVirtualAddress());
-
-		commandList->Dispatch(1, 1, 1);
-	});
-}
-
 void RendererDX12::CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature, ComPtr<ID3D12RootSignature>& outRootSignature)
 {
 	ThrowIfFailed( m_device->CreateRootSignature(0, serializedRootSignature->GetBufferPointer(), serializedRootSignature->GetBufferSize(), IID_PPV_ARGS(&outRootSignature)) );
 }
 
-void RendererDX12::Render(float /*deltaTime*/,
-	const RenderableGroupMap& renderableObjectGroups,
-	const ComputeGroup& computeObjectGroup,
-	FrameResource* frameResources,
-	std::function<void(int)> onNewFenceValue)
+void RendererDX12::StartNewFrame( FrameResource* frameResources )
 {
 	// We know at this point we've waited for last frame's commands to be executed on the GPU , we can now safely reset the commandlist allocator
 	ThrowIfFailed(frameResources->CmdListAllocator->Reset());
@@ -503,39 +424,10 @@ void RendererDX12::Render(float /*deltaTime*/,
 
 	// Set buffer we're rendering to (output merger)
 	m_commandList->OMSetRenderTargets(1, &currentBackBufferView, true, &currentDepthStencilView);
+}
 
-	//////////////////////////////////////////////////
-	// Begin Compute pass
-	//////////////////////////////////////////////////
-	ID3D12DescriptorHeap* computeDescriptorHeaps[] = { m_computableObjectSRVUAVHeap->GetHeapPtr() };
-	m_commandList->SetDescriptorHeaps(_countof(computeDescriptorHeaps), computeDescriptorHeaps);
-
-	ProcessComputableObjects(m_commandList, computeObjectGroup, computeObjectGroup.Computables.size(), frameResources);
-
-
-	//////////////////////////////////////////////////
-	// Begin graphics pass
-	//////////////////////////////////////////////////
-	ID3D12DescriptorHeap* renderableDescriptorHeaps[] = 
-	{
-		m_renderableObjectCBVSRVUAVHeap->GetHeapPtr() 
-	};
-	m_commandList->SetDescriptorHeaps(_countof(renderableDescriptorHeaps), renderableDescriptorHeaps);
-
-	//TODO: add root32bit constants with indices for the shaders to read into the descriptor heap above
-	
-	const auto frameResourceCBVBufferGPUAddress = frameResources->PassConstantBuffer->Resource()->GetGPUVirtualAddress();
-	for (const auto& [groupRootSignaturePsoPair, renderableGroup] : renderableObjectGroups)
-	{
-		auto& renderableGroupRootSignature = groupRootSignaturePsoPair.first;
-	
-		m_commandList->SetGraphicsRootSignature(renderableGroupRootSignature.Get());
-		m_commandList->SetGraphicsRootConstantBufferView(0, frameResourceCBVBufferGPUAddress);
-		m_commandList->SetPipelineState(renderableGroup->GetPSO().Get());
-
-		ProcessRenderableObjectsForRendering(m_commandList, renderableGroup, frameResources);
-	}
-
+void RendererDX12::EndNewFrame(std::function<void(int)> onNewFenceValue)
+{
 	// Transition backbuffer resource state from render target to present 
 	const auto backBufferResourceBarrierRTToPresent = CD3DX12_RESOURCE_BARRIER::Transition(
 		GetCurrentBackBuffer().Get(),
@@ -548,7 +440,7 @@ void RendererDX12::Render(float /*deltaTime*/,
 	);
 
 	ThrowIfFailed(m_commandList->Close());
-	
+
 	// add command lists on queue
 	ID3D12CommandList* cmdLists[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(_countof(cmdLists), cmdLists);
@@ -558,6 +450,29 @@ void RendererDX12::Render(float /*deltaTime*/,
 	m_currentBackBuffer = (m_currentBackBuffer + 1) % m_swapChainBufferCount;
 
 	AddNewFence(onNewFenceValue);
+}
+
+void RendererDX12::ProcessGraphicsPass(
+	const GraphicsPass& pass,
+	const FrameResource& frameResources )
+{
+	ID3D12DescriptorHeap* renderableDescriptorHeaps[] =
+	{
+		m_renderableObjectCBVSRVUAVHeap->GetHeapPtr()
+	};
+	m_commandList->SetDescriptorHeaps(_countof(renderableDescriptorHeaps), renderableDescriptorHeaps);
+
+	pass.Execute(m_commandList, 0.f, frameResources);
+}
+
+void RendererDX12::ProcessComputePass(
+	const ComputePass& pass,
+	const FrameResource& frameResources )
+{
+	ID3D12DescriptorHeap* computeDescriptorHeaps[] = { m_computableObjectSRVUAVHeap->GetHeapPtr() };
+	m_commandList->SetDescriptorHeaps(_countof(computeDescriptorHeaps), computeDescriptorHeaps);
+
+	pass.Execute(m_commandList, 0.0f, frameResources, *m_computableObjectSRVUAVHeap.get(), m_descriptorSizeCBV);
 }
 
 void RendererDX12::AddNewFence(std::function<void(int)> onNewFenceValue)
@@ -574,7 +489,7 @@ void RendererDX12::Shutdown()
 {
 }
 
-D3D12_GPU_DESCRIPTOR_HANDLE RendererDX12::CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize, size_t handleOffset)
+D3D12_GPU_DESCRIPTOR_HANDLE RendererDX12::CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize)
 {
 	const auto cbvDescriptorIndex = m_renderableObjectCBVSRVUAVHeap->GetCurrentDescriptorHeapHandle();
 	const auto cpuDescriptorHandle = m_renderableObjectCBVSRVUAVHeap->GetCPUDescriptorHandleByIndex(cbvDescriptorIndex);
@@ -702,7 +617,6 @@ RendererContext RendererDX12::GetRendererContext()
 		.RenderableObjectCBVSRVUAVHeap = m_renderableObjectCBVSRVUAVHeap
 	};
 }
-
 
 UINT64 RendererDX12::GetLastCompletedFence()
 {

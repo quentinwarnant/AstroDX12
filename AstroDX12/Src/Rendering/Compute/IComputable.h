@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <d3d12.h>
+#include <DXC/dxcapi.h>
 
 using Microsoft::WRL::ComPtr;
 struct ID3D12RootSignature;

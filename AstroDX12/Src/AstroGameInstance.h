@@ -1,14 +1,15 @@
 #pragma once
 
-#include <Game.h>
 #include <Common.h>
+#include <Game.h>
+#include <Maths/MathUtils.h>
+#include <Rendering/Common/FrameResource.h>
+#include <Rendering/Common/GPUPass.h>
 #include <Rendering/Common/MeshLibrary.h>
 #include <Rendering/Common/UploadBuffer.h>
-#include <Rendering/Common/FrameResource.h>
+#include <Rendering/Compute/IComputable.h>
 #include <Rendering/Renderable/RenderableStaticObject.h>
 #include <Rendering/RenderData/Mesh.h>
-#include <Rendering/Compute/IComputable.h>
-#include <Maths/MathUtils.h>
 
 using Microsoft::WRL::ComPtr;
 class IRenderableDesc;
@@ -37,7 +38,6 @@ public:
 private:
     void BuildSceneGeometry();
     void UpdateFrameResource();
-    void UpdateRenderablesConstantBuffers();
     void UpdateMainRenderPassConstantBuffer(float deltaTime);
 
     void BuildComputeData();
@@ -63,9 +63,12 @@ private:
     FrameResource* m_currentFrameResource = nullptr;
     int m_currentFrameResourceIndex = 0;
 
-    virtual void CreateRenderables() override;
-    virtual void CreateComputables() override;
+    std::vector<std::shared_ptr<GPUPass>> m_gpuPasses;
+
+    virtual void CreatePasses() override;
     virtual void Update(float deltaTime) override;
     virtual void Render(float deltaTime) override;
+    virtual void Shutdown() override;
+
 };
 

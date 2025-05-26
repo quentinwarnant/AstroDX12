@@ -23,8 +23,6 @@ Game::Game() noexcept(false)
     , m_cameraTheta(1.5f * XM_PI)
     , m_cameraOriginPos(XMVectorSet(0,0,-10, 1))
     , m_lookDir( XMVectorSet(0,0,1,0) )
-    , m_renderableGroupMap()
-    , m_computeGroup(std::make_unique<ComputeGroup>())
 {
     //m_deviceResources = std::make_unique<DX::DeviceResources>();
     //m_deviceResources->RegisterDeviceNotify(this);
@@ -35,6 +33,7 @@ Game::~Game()
 {
     m_renderer->Shutdown();
     m_renderer.reset();
+    Shutdown();
     //if (m_deviceResources)
     //{
     //    m_deviceResources->WaitForGpu();
@@ -59,8 +58,7 @@ void Game::Initialize(HWND window, int width, int height)
 
     m_renderer->FinaliseInit();
 
-    CreateRenderables();
-    CreateComputables();
+    CreatePasses();
 
     //m_deviceResources->SetWindow(window, width, height);
 
@@ -70,6 +68,10 @@ void Game::Initialize(HWND window, int width, int height)
     m_timer.SetFixedTimeStep(true);
     m_timer.SetTargetElapsedSeconds(1.0 / 60);
     */
+}
+
+void Game::Shutdown()
+{
 
 }
 
@@ -83,14 +85,14 @@ void Game::Tick(float totalTime, float deltaTime)
 }
 
 // Updates the world.
-void Game::Update(float deltaTime)
+void Game::Update(float /*deltaTime*/)
 {
 }
 #pragma endregion
 
 #pragma region Frame Render
 // Draws the scene.
-void Game::Render(float deltaTime)
+void Game::Render(float /*deltaTime*/)
 {
 }
 #pragma endregion
@@ -137,14 +139,14 @@ void Game::OnWindowSizeChanged(int width, int height)
 }
 
 
-void Game::OnMouseDown(WPARAM btnState, int x, int y)
+void Game::OnMouseDown(WPARAM /*btnState*/, int x, int y)
 {
     m_lastMousePos.x = x;
     m_lastMousePos.y = y;
    
 }
 
-void Game::OnMouseUp(WPARAM btnState, int x, int y)
+void Game::OnMouseUp(WPARAM /*btnState*/, int /*x*/, int /*y*/)
 {
 }
 
@@ -203,24 +205,6 @@ void Game::GetDefaultSize(int& width, int& height) const noexcept
     // TODO: Change to desired default window size (note minimum size is 320x200).
     width = 2048;
     height = 1080;
-}
-
-void Game::AddRenderable(std::shared_ptr<IRenderable> renderableObj)
-{
-    const auto& rootSignature = renderableObj->GetGraphicsRootSignature();
-    const auto& pso = renderableObj->GetPipelineStateObject();
-    RootSignaturePSOPair keyPair = { rootSignature, pso };
-
-    auto it = m_renderableGroupMap.find(keyPair);
-    if (it == m_renderableGroupMap.end())
-    {
-        auto emplacedItemPair = m_renderableGroupMap.emplace(keyPair, std::make_unique<RenderableGroup>(renderableObj->GetPipelineStateObject(), rootSignature));
-        (*emplacedItemPair.first).second->AddRenderable(renderableObj);
-    }
-    else
-    {
-        (*it).second->AddRenderable(renderableObj);
-    }
 }
 
 #pragma endregion

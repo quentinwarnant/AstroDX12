@@ -1,6 +1,6 @@
-1. Load scene from file
-2. Add ImGUI library and use it to load scenes
-3. clean errors on shutdown
+1. Add ImGUI library and use it to load scenes
+2. clean warnings on shutdown
+3. Integrate a raymarcher, then add shapes and Lodding to it
 4. load unmodified shaders from previously compiled binary
 5. add textures
 6. implement effect, eg: fluid sim, radiance cascade, etc

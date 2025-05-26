@@ -8,6 +8,9 @@
 #include <Rendering/Common/VertexDataInputLayoutLibrary.h>
 #include <Rendering/Compute/ComputableObject.h>
 
+#include <GameContent/GPUPasses/BasePassSceneGeometry.h>
+#include <GameContent/GPUPasses/Compute/ComputePassAddBufferValues.h>
+
 #include <GameContent/Scene/SceneLoader.h>
 
 namespace
@@ -61,11 +64,8 @@ void AstroGameInstance::CreateConstantBufferViews()
 			// offset address to the i-th object constant buffer in the current frame resource buffer
 			cbAddress += (((UINT)renderableObjIdx) * renderableObjCBByteSize);
 
-			// Offset handle in the CBV descriptor heap
-			size_t heapDescriptorIdx = (frameIdx * renderableObjCount) + renderableObjIdx;
-
 			// Finalise creation of constant buffer view
-			const auto cbvGpuHandle = m_renderer->CreateConstantBufferView(cbAddress, renderableObjCBByteSize, heapDescriptorIdx);
+			const auto cbvGpuHandle = m_renderer->CreateConstantBufferView(cbAddress, renderableObjCBByteSize);
 			m_frameResources[frameIdx]->RenderableObjectPerObjDataCBVgpuAddress.push_back(cbAddress);
 		}
 	}
@@ -82,11 +82,8 @@ void AstroGameInstance::CreateConstantBufferViews()
 
 		D3D12_GPU_VIRTUAL_ADDRESS cbAddress = passCB->GetGPUVirtualAddress();
 
-		// Offset handle in CBV Descriptor heap
-		size_t heapIdx = (renderableObjCount * NumFrameResources) + frameIdx;
-
 		// Finalise creation of constant buffer view
-		const auto cbvGpuHandle = m_renderer->CreateConstantBufferView(cbAddress, passCBByteSize, heapIdx);
+		const auto cbvGpuHandle = m_renderer->CreateConstantBufferView(cbAddress, passCBByteSize);
 		m_frameResources[frameIdx]->ComputableObjectPerObjDataCBVgpuAddress.push_back(cbAddress);
 	}
 }
@@ -397,27 +394,6 @@ void AstroGameInstance::UpdateFrameResource()
 	}
 }
 
-void AstroGameInstance::UpdateRenderablesConstantBuffers()
-{
-	// re-using the same constant buffer to set all the renderables objects - per object constant data.
-	auto currentFrameObjectCB = m_currentFrameResource->RenderableObjectConstantBuffer.get();
-	for (auto& [rootSignaturePSOPair, renderableGroup] : m_renderableGroupMap)
-	{
-		renderableGroup->ForEach([&](std::shared_ptr<IRenderable> renderable)
-		{
-			if (renderable->IsDirty())
-			{
-				XMMATRIX worldTransform = XMLoadFloat4x4(&renderable->GetWorldTransform());
-				RenderableObjectConstantData objectConstants;
-				XMStoreFloat4x4(&objectConstants.WorldTransform, XMMatrixTranspose(worldTransform));
-				currentFrameObjectCB->CopyData(renderable->GetConstantBufferIndex(), objectConstants);
-
-				renderable->ReduceDirtyFrameCount();
-			}
-		});
-	}
-}
-
 void AstroGameInstance::UpdateMainRenderPassConstantBuffer(float deltaTime)
 {
 	XMMATRIX view = XMLoadFloat4x4(&m_viewMat);
@@ -489,32 +465,21 @@ void AstroGameInstance::BuildPipelineStateObject()
 	}
 }
 
-void AstroGameInstance::CreateRenderables()
+void AstroGameInstance::CreatePasses()
 {
-	int16_t index = 0;
-	for (auto& renderableDesc : m_renderablesDesc)
-	{
-		auto renderableObj = std::make_shared<RenderableStaticObject>(
-			renderableDesc,			
-			index++
-			);
-		renderableObj->MarkDirty(NumFrameResources);
-		AddRenderable(std::move(renderableObj));
-	}
+	// Base Geo PASS
+	auto BaseGeoPass = std::make_shared< BasePassSceneGeometry>();
+	BaseGeoPass->Init(m_renderablesDesc, NumFrameResources);
+	m_gpuPasses.push_back(std::move(BaseGeoPass));
+
+	auto AddTwoBuffersTogetherPass = std::make_shared< ComputePassAddBufferValues >();
+	AddTwoBuffersTogetherPass->Init(m_computableDescs);
+	m_gpuPasses.push_back(std::move(AddTwoBuffersTogetherPass));
+
+
+	// TODO: call Shutdown on all gpu passes
 }
 
-void AstroGameInstance::CreateComputables()
-{
-	int16_t index = 0;
-	for (auto& computableDesc : m_computableDescs)
-	{
-		m_computeGroup->Computables.emplace_back(std::move(std::make_shared<ComputableObject>(
-			computableDesc.RootSignature,
-			computableDesc.PipelineStateObject,
-			index)));
-		index++;
-	}
-}
 
 void AstroGameInstance::Update(float deltaTime)
 {
@@ -553,25 +518,51 @@ void AstroGameInstance::Update(float deltaTime)
 
 	PIXBeginEvent(PIX_COLOR_DEFAULT, L"Update Constant Buffers Objects & Main Render pass");
 	
-	UpdateRenderablesConstantBuffers();
 	UpdateMainRenderPassConstantBuffer(deltaTime);
+
+	// TODO: register Update input function with a lambda when creating the pass
+	m_gpuPasses[0]->Update( m_currentFrameResource->RenderableObjectConstantBuffer.get() ); // BasePassSceneGeometry
+	m_gpuPasses[1]->Update(nullptr);														// ComputePassAddBufferValues
+
 	PIXEndEvent();
 }
 
-void AstroGameInstance::Render(float deltaTime)
+
+
+void AstroGameInstance::Render(float /*deltaTime*/)
 {
 	PIXBeginEvent(PIX_COLOR_DEFAULT, L"Render");
 
-	// Default render pass
-	m_renderer->Render(deltaTime, m_renderableGroupMap, *m_computeGroup, m_currentFrameResource,
-		[&](int newFenceValue) {
-			m_currentFrameResource->Fence = newFenceValue;
+	m_renderer->StartNewFrame(m_currentFrameResource);
+
+
+	for (auto& pass : m_gpuPasses)
+	{
+		switch (pass->PassType())
+		{
+		case GPUPassType::Graphics:
+			m_renderer->ProcessGraphicsPass(*dynamic_cast<GraphicsPass*>(pass.get()), *m_currentFrameResource); // TODO: This is ugly... should use templated functions instead
+			break;
+		case GPUPassType::Compute:
+			m_renderer->ProcessComputePass(*dynamic_cast<ComputePass*>(pass.get()), *m_currentFrameResource);
+			break;
+		default:
+			DX::astro_assert(false, "Pass type not supported");
+		}
+	}
+
+	m_renderer->EndNewFrame([&](int newFenceValue) {
+		m_currentFrameResource->Fence = newFenceValue;
 		});
 
-	// Blur compute pass
-
-	// Copy blur to backbuffer pass
-	// drawing full screen rect with blur output Render target
-
 	PIXEndEvent();
+}
+
+void AstroGameInstance::Shutdown()
+{
+	for (auto& pass : m_gpuPasses)
+	{
+		pass->Shutdown();
+	}
+	m_gpuPasses.clear();
 }

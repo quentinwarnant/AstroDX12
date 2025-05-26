@@ -32,11 +32,6 @@ public:
 
 	virtual ~StructuredBuffer()
 	{
-		if (m_defaultBuffer)
-		{
-			m_defaultBuffer->Unmap(0, nullptr);
-		}
-
 		if (m_uploadBuffer)
 		{
 			m_uploadBuffer->Unmap(0, nullptr);
@@ -47,7 +42,7 @@ public:
 
 	virtual void Init(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, bool needSRV, bool needUAV, DescriptorHeap& descriptorHeap) override
 	{
-		// Creates botht he default buffer and the "helper" upload buffer + adds the copy of data resources copy to the command list
+		// Creates both he default buffer and the "helper" upload buffer + adds the copy of data resources copy to the command list
 		m_defaultBuffer = AstroTools::Rendering::CreateDefaultBuffer(device, cmdList, m_dataVector.data(), m_dataVector.size() * m_elementByteSize, needUAV, m_uploadBuffer);
 
 		// Assigns a pointer to m_mappedData that points to the subresource 0 inside the "uploadBuffer" I3D12Resource

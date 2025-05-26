@@ -8,19 +8,15 @@
 #include <Rendering/IRenderer.h>
 #include <Rendering/Renderable/IRenderable.h>
 #include <Rendering/Common/ShaderLibrary.h>
-#include <Rendering/Compute/ComputeGroup.h>
-
 
 class IRenderable;
-class RenderableGroup;
-using RenderableGroupMap = std::map<RootSignaturePSOPair, std::unique_ptr<RenderableGroup>>;
 
 // A basic game implementation that creates a D3D12 device and
 // provides a game loop.
 class Game 
 {
 public:
-    Game() noexcept(false);
+	Game() noexcept(false);
     virtual ~Game();
 
     Game(Game&&) = default;
@@ -54,8 +50,6 @@ public:
     inline float GetScreenHeight() const { return (float)m_screenHeight; }
     inline float GetTotalTime() const { return m_totalTime; }
 
-    void AddRenderable(std::shared_ptr<IRenderable> renderableObj);
-
     // Scene renderable objects building
     virtual void BuildFrameResources() = 0;
     virtual void Create_const_uav_srv_BufferDescriptorHeaps() = 0;
@@ -68,14 +62,12 @@ public:
 protected:
     // Triggered after Initialise, meant for initial state configuration 
     virtual void LoadSceneData() = 0;
-    virtual void CreateRenderables() = 0;
-    virtual void CreateComputables() = 0;
+    virtual void CreatePasses() = 0;
     virtual void Update(float deltaTime) = 0;
     virtual void Render(float deltaTime) = 0;
-
+    virtual void Shutdown() = 0;
+   
     std::unique_ptr<IRenderer> m_renderer;
-    RenderableGroupMap m_renderableGroupMap;
-    std::unique_ptr<ComputeGroup> m_computeGroup;
 
 private:
     int m_screenWidth;
