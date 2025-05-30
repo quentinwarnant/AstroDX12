@@ -65,7 +65,7 @@ private:
 
     std::vector<std::shared_ptr<GPUPass>> m_gpuPasses;
 
-    virtual void CreatePasses() override;
+    virtual void CreatePasses(AstroTools::Rendering::ShaderLibrary& shaderLibrary) override;
     virtual void Update(float deltaTime) override;
     virtual void Render(float deltaTime) override;
     virtual void Shutdown() override;

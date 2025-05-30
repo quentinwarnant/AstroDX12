@@ -25,6 +25,9 @@ public:
 	{
 	}
 
+	RenderableStaticObject(const RenderableStaticObject& other) = delete;
+	RenderableStaticObject(RenderableStaticObject&& other) = default;
+
 	virtual ~RenderableStaticObject() {}
 
 	//virtual void SetPosition(const XMVECTOR& pos) override

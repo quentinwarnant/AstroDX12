@@ -25,9 +25,9 @@ public:
 		m_renderables.clear();
 	}
 
-	void AddRenderable(const std::shared_ptr<IRenderable>& renderable)
+	void AddRenderable(std::shared_ptr<IRenderable>&& renderable)
 	{
-		m_renderables.push_back(std::move(renderable));
+		m_renderables.push_back(renderable);
 	}
 
 	ComPtr<ID3D12PipelineState> GetPSO() const

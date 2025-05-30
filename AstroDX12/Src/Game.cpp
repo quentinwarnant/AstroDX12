@@ -56,9 +56,10 @@ void Game::Initialize(HWND window, int width, int height)
     BuildShaders(m_shaderLibrary);
     BuildPipelineStateObject();
 
-    m_renderer->FinaliseInit();
 
-    CreatePasses();
+    CreatePasses(m_shaderLibrary);
+
+    m_renderer->FinaliseInit();
 
     //m_deviceResources->SetWindow(window, width, height);
 

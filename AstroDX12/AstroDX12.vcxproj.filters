@@ -63,6 +63,7 @@
     <ClCompile Include="Src\GameContent\Scene\SceneLoader.cpp" />
     <ClCompile Include="Src\GameContent\GPUPasses\BasePassSceneGeometry.cpp" />
     <ClCompile Include="Src\GameContent\GPUPasses\Compute\ComputePassAddBufferValues.cpp" />
+    <ClCompile Include="Src\GameContent\GPUPasses\Compute\ComputePassParticles.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\AstroGameInstance.h">
@@ -162,6 +163,7 @@
     <ClInclude Include="Src\Rendering\Common\GPUPass.h" />
     <ClInclude Include="Src\GameContent\GPUPasses\BasePassSceneGeometry.h" />
     <ClInclude Include="Src\GameContent\GPUPasses\Compute\ComputePassAddBufferValues.h" />
+    <ClInclude Include="Src\GameContent\GPUPasses\Compute\ComputePassParticles.h" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="GraphicsLogo.png" />
@@ -176,13 +178,6 @@
     <None Include="..\..\..\..\Windows\System32\dxgi.dll" />
     <None Include="Libs\assimp-vc143-mtd.dll" />
     <None Include="Libs\assimp-vc143-mtd.pdb" />
-    <None Include="Shaders\color.hlsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\simpleNormalUVLighting.hlsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\Textured.hlsl" />
     <None Include="packages.config" />
     <None Include="Content\Scenes\Scene1.lvl" />
   </ItemGroup>
@@ -191,11 +186,6 @@
     <Library Include="..\..\..\..\Program Files (x86)\Windows Kits\10\Lib\10.0.19041.0\um\x64\dxgi.lib" />
     <Library Include="Libs\assimp-vc143-mtd.lib" />
     <Library Include="Libs\dxcompiler.lib" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="Shaders\basic.hlsl">
-      <Filter>Shaders</Filter>
-    </Text>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="AstroDX12.rc" />

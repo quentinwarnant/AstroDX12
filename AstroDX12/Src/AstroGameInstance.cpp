@@ -10,6 +10,7 @@
 
 #include <GameContent/GPUPasses/BasePassSceneGeometry.h>
 #include <GameContent/GPUPasses/Compute/ComputePassAddBufferValues.h>
+#include <GameContent/GPUPasses/Compute/ComputePassParticles.h>
 
 #include <GameContent/Scene/SceneLoader.h>
 
@@ -24,6 +25,8 @@ namespace
 AstroGameInstance::AstroGameInstance()
 	: Game()
 	, m_renderablesDesc()
+	, m_computableDescs()
+	, m_cameraPos(0,0,0)
 	, m_frameResources()
 	, m_currentFrameResource(nullptr)
 	, m_currentFrameResourceIndex(0)
@@ -465,7 +468,7 @@ void AstroGameInstance::BuildPipelineStateObject()
 	}
 }
 
-void AstroGameInstance::CreatePasses()
+void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shaderLibrary)
 {
 	// Base Geo PASS
 	auto BaseGeoPass = std::make_shared< BasePassSceneGeometry>();
@@ -476,7 +479,10 @@ void AstroGameInstance::CreatePasses()
 	AddTwoBuffersTogetherPass->Init(m_computableDescs);
 	m_gpuPasses.push_back(std::move(AddTwoBuffersTogetherPass));
 
-
+	auto ParticlesPass = std::make_shared< ComputePassParticles >();
+	ParticlesPass->Init(*m_renderer.get(), shaderLibrary);
+	m_gpuPasses.push_back(std::move(ParticlesPass));
+	
 	// TODO: call Shutdown on all gpu passes
 }
 
@@ -523,6 +529,7 @@ void AstroGameInstance::Update(float deltaTime)
 	// TODO: register Update input function with a lambda when creating the pass
 	m_gpuPasses[0]->Update( m_currentFrameResource->RenderableObjectConstantBuffer.get() ); // BasePassSceneGeometry
 	m_gpuPasses[1]->Update(nullptr);														// ComputePassAddBufferValues
+	m_gpuPasses[2]->Update(nullptr);														// ComputePassParticles
 
 	PIXEndEvent();
 }

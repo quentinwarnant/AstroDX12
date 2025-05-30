@@ -282,6 +282,8 @@
       <EntryPointName>PS</EntryPointName>
       <ShaderType>Pixel</ShaderType>
       <ShaderModel>6.6</ShaderModel>
+      <AllResourcesBound>false</AllResourcesBound>
+      <EnableUnboundedDescriptorTables>true</EnableUnboundedDescriptorTables>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -296,6 +298,7 @@
     <ClInclude Include="Src\GameContent\Compute\ComputeObjectConstantData.h" />
     <ClInclude Include="Src\GameContent\GPUPasses\BasePassSceneGeometry.h" />
     <ClInclude Include="Src\GameContent\GPUPasses\Compute\ComputePassAddBufferValues.h" />
+    <ClInclude Include="Src\GameContent\GPUPasses\Compute\ComputePassParticles.h" />
     <ClInclude Include="Src\GameContent\Scene\SceneDescription.h" />
     <ClInclude Include="Src\GameContent\Scene\SceneLoader.h" />
     <ClInclude Include="Src\Input\KeyboardInput.h" />
@@ -353,6 +356,7 @@
   <ItemGroup>
     <ClCompile Include="Src\GameContent\GPUPasses\BasePassSceneGeometry.cpp" />
     <ClCompile Include="Src\GameContent\GPUPasses\Compute\ComputePassAddBufferValues.cpp" />
+    <ClCompile Include="Src\GameContent\GPUPasses\Compute\ComputePassParticles.cpp" />
     <ClCompile Include="Src\GameContent\Scene\SceneLoader.cpp" />
     <ClCompile Include="Src\Rendering\Common\FrameResource.cpp" />
     <ClCompile Include="Src\AstroGameInstance.cpp" />
@@ -362,20 +366,8 @@
     <ClCompile Include="Src\Timing\GameTimer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="Shaders\basic.hlsl">
-      <FileType>Document</FileType>
-    </Text>
     <None Include="Content\Scenes\Scene1.lvl" />
     <None Include="packages.config" />
-    <None Include="Shaders\color.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="Shaders\simpleNormalUVLighting.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="Shaders\Textured.hlsl">
-      <FileType>Document</FileType>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\Windows\System32\dxgi.dll" />

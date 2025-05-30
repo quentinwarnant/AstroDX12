@@ -62,7 +62,7 @@ public:
 protected:
     // Triggered after Initialise, meant for initial state configuration 
     virtual void LoadSceneData() = 0;
-    virtual void CreatePasses() = 0;
+    virtual void CreatePasses(AstroTools::Rendering::ShaderLibrary& shaderLibrary) = 0;
     virtual void Update(float deltaTime) = 0;
     virtual void Render(float deltaTime) = 0;
     virtual void Shutdown() = 0;

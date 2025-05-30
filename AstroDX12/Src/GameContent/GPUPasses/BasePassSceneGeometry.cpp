@@ -27,11 +27,11 @@ void BasePassSceneGeometry::Init(const std::vector<IRenderableDesc>& renderables
         if (it == m_renderableGroupMap.end())
         {
             auto emplacedItemPair = m_renderableGroupMap.emplace(keyPair, std::make_unique<RenderableGroup>(renderableObj->GetPipelineStateObject(), rootSignature));
-            (*emplacedItemPair.first).second->AddRenderable( renderableObj );
+            (*emplacedItemPair.first).second->AddRenderable( std::move(renderableObj) );
         }
         else
         {
-            (*it).second->AddRenderable(renderableObj);
+            (*it).second->AddRenderable(std::move(renderableObj));
         }
     }
 }
