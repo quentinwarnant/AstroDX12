@@ -12,7 +12,6 @@ FrameResource::FrameResource(ID3D12Device* device, UINT passCount, UINT renderab
 	));
 
 	PassConstantBuffer = std::make_unique<UploadBuffer<RenderPassConstants>>(device, passCount, true);
-	RenderableObjectConstantBuffer = std::make_unique<UploadBuffer<RenderableObjectConstantData>>(device, renderableObjectCount, true);
 
 	constexpr int bufferCountPerComputeObject = 3;
 	ComputableObjectStructuredBufferPerObj.reserve(computableObjectCount * bufferCountPerComputeObject);
@@ -20,7 +19,7 @@ FrameResource::FrameResource(ID3D12Device* device, UINT passCount, UINT renderab
 	{
 		ComputeObjectData BufferDataArray
 		{
-			.Val1{ 42,1}
+			.Val1{ 42,17}
 		};
 
 		std::vector<ComputeObjectData> BufferDataVector { BufferDataArray };
@@ -30,9 +29,4 @@ FrameResource::FrameResource(ID3D12Device* device, UINT passCount, UINT renderab
 
 FrameResource::~FrameResource()
 {
-}
-
-D3D12_GPU_VIRTUAL_ADDRESS FrameResource::GetRenderableObjectCbvGpuAddress(size_t ObjectIndex) const
-{
-	return RenderableObjectPerObjDataCBVgpuAddress[ObjectIndex];
 }

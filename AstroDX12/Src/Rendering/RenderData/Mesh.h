@@ -61,7 +61,7 @@ public:
 			rendererContext.CommandList.Get(),
 			true, // SRV
 			false,// UAV
-			*rendererContext.RenderableObjectCBVSRVUAVHeap.lock());
+			*rendererContext.GlobalCBVSRVUAVDescriptorHeap.lock());
 
 		// Vertex Index buffer
 		IndexBufferGPU = AstroTools::Rendering::CreateDefaultBuffer(rendererContext.Device.Get(), rendererContext.CommandList.Get(),

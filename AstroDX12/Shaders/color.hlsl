@@ -1,8 +1,3 @@
-cbuffer cbPerObject : register(b2)
-{
-	float4x4 gWorld;
-};
-
 cbuffer cbPass : register(b0)
 {
 	float4x4 gView;
@@ -24,12 +19,19 @@ cbuffer cbPass : register(b0)
 cbuffer BindlessRenderResources : register(b1)
 {
     int positionBufferIndex;
+    int objectConstantsBufferIndex;
+    int objectIdx;
 }
 
 struct PSInput
 {
 	float4 PosH  : SV_POSITION;
 	float4 Color : COLOR;
+};
+
+struct ObjectConstants
+{
+    float4x4 gWorld;
 };
 
 struct VertexData
@@ -42,11 +44,12 @@ PSInput VS(uint VertexID : SV_VertexID)
 {
 	PSInput o;
 
+    StructuredBuffer<ObjectConstants> objectConstantsBuffer = ResourceDescriptorHeap[objectConstantsBufferIndex];
     StructuredBuffer<VertexData> positionBuffer = ResourceDescriptorHeap[positionBufferIndex];
-
+	
 	// Transform to homogeneous clip space.
     const float3 posL = positionBuffer[VertexID].posLocal;
-    const float4 posW = mul(float4(posL, 1.0f), gWorld);
+    const float4 posW = mul(float4(posL, 1.0f), objectConstantsBuffer[objectIdx].gWorld);
 	o.PosH = mul(posW, gViewProj);
     o.Color = positionBuffer[VertexID].color;
 

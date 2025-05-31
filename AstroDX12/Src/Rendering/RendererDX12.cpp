@@ -300,13 +300,7 @@ void RendererDX12::Create_const_uav_srv_BufferDescriptorHeaps()
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> renderablesCBVSRVUAVHeap;
 	ThrowIfFailed(m_device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(renderablesCBVSRVUAVHeap.GetAddressOf())));
-	m_renderableObjectCBVSRVUAVHeap = std::make_shared<DescriptorHeap>( renderablesCBVSRVUAVHeap, m_descriptorSizeCBV );
-
-	// Computables
-	descriptorHeapDesc.NumDescriptors = (UINT)descriptorCount;
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> computablesCBVSRVUAVHeap;
-	ThrowIfFailed(m_device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(computablesCBVSRVUAVHeap.GetAddressOf())));
-	m_computableObjectSRVUAVHeap = std::make_shared<DescriptorHeap>(computablesCBVSRVUAVHeap, m_descriptorSizeCBV );
+	m_globalCBVSRVUAVDescriptorHeap = std::make_shared<DescriptorHeap>( renderablesCBVSRVUAVHeap, m_descriptorSizeCBV );
 }
 
 void RendererDX12::CreateDepthStencilBuffer()
@@ -379,11 +373,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE RendererDX12::GetDepthStencilView() const
 D3D12_CPU_DESCRIPTOR_HANDLE RendererDX12::GetUAVDescriptorHandleCPU(ERendererProcessedObjectType objectHeapType) const
 {
 	// UAV & SRV are created on the same heap as CBV since they're the same size
-	if (objectHeapType == ERendererProcessedObjectType::Renderable)
-	{
-		return m_renderableObjectCBVSRVUAVHeap->GetCPUDescriptorHandleForHeapStart();
-	}
-	return m_computableObjectSRVUAVHeap->GetCPUDescriptorHandleForHeapStart();
+	return m_globalCBVSRVUAVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 }
 
 void RendererDX12::CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature, ComPtr<ID3D12RootSignature>& outRootSignature)
@@ -452,27 +442,17 @@ void RendererDX12::EndNewFrame(std::function<void(int)> onNewFenceValue)
 	AddNewFence(onNewFenceValue);
 }
 
-void RendererDX12::ProcessGraphicsPass(
-	const GraphicsPass& pass,
+void RendererDX12::ProcessGPUPass(
+	const GPUPass& pass,
 	const FrameResource& frameResources )
 {
 	ID3D12DescriptorHeap* renderableDescriptorHeaps[] =
 	{
-		m_renderableObjectCBVSRVUAVHeap->GetHeapPtr()
+		m_globalCBVSRVUAVDescriptorHeap->GetHeapPtr()
 	};
 	m_commandList->SetDescriptorHeaps(_countof(renderableDescriptorHeaps), renderableDescriptorHeaps);
 
 	pass.Execute(m_commandList, 0.f, frameResources);
-}
-
-void RendererDX12::ProcessComputePass(
-	const ComputePass& pass,
-	const FrameResource& frameResources )
-{
-	ID3D12DescriptorHeap* computeDescriptorHeaps[] = { m_computableObjectSRVUAVHeap->GetHeapPtr() };
-	m_commandList->SetDescriptorHeaps(_countof(computeDescriptorHeaps), computeDescriptorHeaps);
-
-	pass.Execute(m_commandList, 0.0f, frameResources, *m_computableObjectSRVUAVHeap.get(), m_descriptorSizeCBV);
 }
 
 void RendererDX12::AddNewFence(std::function<void(int)> onNewFenceValue)
@@ -491,10 +471,10 @@ void RendererDX12::Shutdown()
 
 D3D12_GPU_DESCRIPTOR_HANDLE RendererDX12::CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize)
 {
-	const auto cbvDescriptorIndex = m_renderableObjectCBVSRVUAVHeap->GetCurrentDescriptorHeapHandle();
-	const auto cpuDescriptorHandle = m_renderableObjectCBVSRVUAVHeap->GetCPUDescriptorHandleByIndex(cbvDescriptorIndex);
-	const auto gpuDescriptorHandle = m_renderableObjectCBVSRVUAVHeap->GetGPUDescriptorHandleByIndex(cbvDescriptorIndex);
-	m_renderableObjectCBVSRVUAVHeap->IncreaseCurrentDescriptorHeapHandle();
+	const auto cbvDescriptorIndex = m_globalCBVSRVUAVDescriptorHeap->GetCurrentDescriptorHeapHandle();
+	const auto cpuDescriptorHandle = m_globalCBVSRVUAVDescriptorHeap->GetCPUDescriptorHandleByIndex(cbvDescriptorIndex);
+	const auto gpuDescriptorHandle = m_globalCBVSRVUAVDescriptorHeap->GetGPUDescriptorHandleByIndex(cbvDescriptorIndex);
+	m_globalCBVSRVUAVDescriptorHeap->IncreaseCurrentDescriptorHeapHandle();
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbViewDesc;
 	cbViewDesc.BufferLocation = cbvGpuAddress;
@@ -507,12 +487,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE RendererDX12::CreateConstantBufferView(D3D12_GPU_VIR
 
 void RendererDX12::CreateStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav)
 {
-	structuredBuffer->Init(m_device.Get(), m_commandList.Get(), srv, uav, *m_renderableObjectCBVSRVUAVHeap);
-}
-
-void RendererDX12::CreateComputableObjStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav)
-{
-	structuredBuffer->Init(m_device.Get(), m_commandList.Get(), srv, uav, *m_computableObjectSRVUAVHeap);
+	structuredBuffer->Init(m_device.Get(), m_commandList.Get(), srv, uav, *m_globalCBVSRVUAVDescriptorHeap);
 }
 
 void RendererDX12::CreateGraphicsPipelineState(
@@ -614,7 +589,7 @@ RendererContext RendererDX12::GetRendererContext()
 	{
 		.Device = m_device,
 		.CommandList = m_commandList,
-		.RenderableObjectCBVSRVUAVHeap = m_renderableObjectCBVSRVUAVHeap
+		.GlobalCBVSRVUAVDescriptorHeap = m_globalCBVSRVUAVDescriptorHeap
 	};
 }
 

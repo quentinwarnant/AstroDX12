@@ -76,10 +76,10 @@ public:
 		return m_defaultBuffer.Get();
 	}
 
-	void CopyData(std::vector<T> data)
+	void CopyData(const std::vector<T>& data)
 	{
 		assert(m_initialised);
-		memcpy(&m_mappedData, &data.data(), sizeof(T) * data.size());
+		memcpy(&m_mappedData, data.data(), sizeof(T) * data.size());
 		//TODO: schedule copy of subresource in uploadbuffer to common buffer (using cmd list) to push the data to fast GPU visible memory
 	}
 

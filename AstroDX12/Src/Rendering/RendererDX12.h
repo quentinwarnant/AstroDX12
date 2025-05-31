@@ -22,13 +22,9 @@ public:
     virtual void StartNewFrame(FrameResource* frameResources) override;
     virtual void EndNewFrame(std::function<void(int)> onNewFenceValue) override;
 
-    virtual void ProcessGraphicsPass(
-        const GraphicsPass& pass,
+    virtual void ProcessGPUPass(
+        const GPUPass& pass,
         const FrameResource& frameResources) override;
-
-    virtual void ProcessComputePass(
-        const ComputePass& pass,
-        const FrameResource& frameResources ) override;
 
     virtual void AddNewFence(std::function<void(int)> onNewFenceValue) override;
     virtual void Shutdown() override;
@@ -42,7 +38,6 @@ public:
     virtual D3D12_GPU_DESCRIPTOR_HANDLE CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize) override;
 
     virtual void CreateStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav) override;
-    virtual void CreateComputableObjStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav) override;
     virtual void CreateGraphicsPipelineState(
         ComPtr<ID3D12PipelineState>& pso,
         ComPtr<ID3D12RootSignature>& rootSignature,
@@ -99,8 +94,7 @@ private:
 
     ComPtr<ID3D12DescriptorHeap> m_rtvHeap; // Render Target
     ComPtr<ID3D12DescriptorHeap> m_dsvHeap; // Depth/Stencil 
-    std::shared_ptr<DescriptorHeap> m_renderableObjectCBVSRVUAVHeap; // UAV/SRV/CBV Buffers heap for renderables
-    std::shared_ptr<DescriptorHeap> m_computableObjectSRVUAVHeap; // UAV/SRV/CBV Buffers heap for computables
+    std::shared_ptr<DescriptorHeap> m_globalCBVSRVUAVDescriptorHeap; // UAV/SRV/CBV Buffers heap for everything including bindless resources
 
     ComPtr<ID3D12Resource> m_swapchainBuffers[m_swapChainBufferCount];
     ComPtr<ID3D12Resource> m_depthStencilBuffer;

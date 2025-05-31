@@ -88,13 +88,18 @@ public:
 	{
 		return m_supportsTextures;
 	}
-
-	virtual std::vector<int32_t> GetBindlessResourceIndices() const
+	
+	virtual std::vector<int32_t> GetBindlessResourceIndices() const override // TODO: remove if unused
 	{
-		return { m_mesh.lock()->GetVertexBufferSRV() };
+		return { m_mesh.lock()->GetVertexBufferSRV() }; 
 	}
 
-	virtual uint32_t GetBindlessResourceIndicesRootSignatureIndex() const
+	virtual int32_t GetMeshVertexBufferSRVHeapIndex() const override
+	{
+		return m_mesh.lock()->GetVertexBufferSRV();
+	}
+
+	virtual uint32_t GetBindlessResourceIndicesRootSignatureIndex() const  override
 	{
 		return 1; // let's go with index 1 as the bindless resource indices for the root signature entry as a convention, after the pass constants
 	}

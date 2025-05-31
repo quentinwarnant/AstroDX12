@@ -5,10 +5,12 @@
 #include <Rendering/Compute/ComputableObject.h>
 #include <directxmath.h>
 #include <Rendering/Common/StructuredBuffer.h>
+#include <Rendering\RenderData\Mesh.h >
 
 using Microsoft::WRL::ComPtr;
 
 class IRenderer;
+class MeshLibrary;
 namespace AstroTools::Rendering
 {
     class ShaderLibrary;
@@ -39,18 +41,18 @@ class ComputePassParticles :
 public:
     ComputePassParticles();
 
-    void Init(IRenderer& renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary);
-    virtual void Update(void* Data) override;
+    void Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary);
+    virtual void Update(int32_t frameIdxModulo, void* Data) override;
     virtual void Execute(
         ComPtr<ID3D12GraphicsCommandList> cmdList,
         float deltaTime,
-        const FrameResource& frameResources,
-        const DescriptorHeap& descriptorHeap,
-        int32_t descriptorSizeCBV) const override;
+        const FrameResource& frameResources) const override;
     virtual void Shutdown() override;
 
+    int32_t GetParticleReadBufferSRVHeapIndex() const;
+
 private:
-    int32_t m_frameIdx = 0;
+    int32_t m_frameIdxModulo = 0;
 
     std::unique_ptr<StructuredBuffer<ParticleData>> m_particleDataBufferPing;
     std::unique_ptr<StructuredBuffer<ParticleData>> m_particleDataBufferPong;
@@ -58,3 +60,19 @@ private:
     std::unique_ptr<ComputableObject> m_particlesComputeObj;
 };
 
+class GraphicsPassParticles : public GraphicsPass
+{
+public:
+    GraphicsPassParticles();
+    void Init(std::weak_ptr<const ComputePassParticles> particlesComputePass, IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, const MeshLibrary& meshLibrary);
+    virtual void Update(int32_t frameIdxModulo, void* Data) override;
+    virtual void Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float deltaTime, const FrameResource& frameResources) const override;
+    virtual void Shutdown() override;
+
+private:
+    std::weak_ptr<IMesh> m_boxMesh;
+    ComPtr<ID3D12PipelineState> m_pipelineStateObject;
+    ComPtr<ID3D12RootSignature> m_rootSignature;
+
+    std::weak_ptr<const ComputePassParticles> m_particlesComputePass;
+};

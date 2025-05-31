@@ -10,5 +10,5 @@ struct RendererContext final
 {
     ComPtr<ID3D12Device> Device;
     ComPtr<ID3D12GraphicsCommandList> CommandList;
-    std::weak_ptr<DescriptorHeap> RenderableObjectCBVSRVUAVHeap;
+    std::weak_ptr<DescriptorHeap> GlobalCBVSRVUAVDescriptorHeap;
 };

@@ -44,6 +44,8 @@ private:
 
     SceneData LoadSceneGeometry();
 
+    uint32_t m_frameIdx = 0;
+
     std::vector<IRenderableDesc> m_renderablesDesc;
     std::vector<ComputableDesc> m_computableDescs;
 

@@ -15,7 +15,7 @@ void ComputePassAddBufferValues::Init(const std::vector<ComputableDesc>& computa
 	}
 }
 
-void ComputePassAddBufferValues::Update(void* /*Data*/)
+void ComputePassAddBufferValues::Update(int32_t frameIdxModulo, void* /*Data*/)
 {
 
 }
@@ -23,9 +23,7 @@ void ComputePassAddBufferValues::Update(void* /*Data*/)
 void ComputePassAddBufferValues::Execute(
 	ComPtr<ID3D12GraphicsCommandList> cmdList,
 	float /*deltaTime*/,
-	const FrameResource& frameResources,
-	const DescriptorHeap& descriptorHeap,
-	int32_t descriptorSizeCBV) const
+	const FrameResource& frameResources) const
 {
 	m_computeGroup->ForEach([&](const std::shared_ptr<IComputable>& computableObj)
 	{

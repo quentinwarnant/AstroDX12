@@ -24,6 +24,7 @@ namespace
 
 AstroGameInstance::AstroGameInstance()
 	: Game()
+	, m_frameIdx(0)
 	, m_renderablesDesc()
 	, m_computableDescs()
 	, m_cameraPos(0,0,0)
@@ -54,29 +55,6 @@ void AstroGameInstance::Create_const_uav_srv_BufferDescriptorHeaps()
 
 void AstroGameInstance::CreateConstantBufferViews()
 {
-	const size_t renderableObjCount = m_renderablesDesc.size();
-
-	// Create CBV descriptors for each "renderable" object in each frame resource
-	for (int16_t frameIdx = 0; frameIdx < NumFrameResources; ++frameIdx)
-	{
-		UINT renderableObjCBByteSize = m_frameResources[frameIdx]->RenderableObjectConstantBuffer->GetElementByteSize();
-		auto renderableObjectCB = m_frameResources[frameIdx]->RenderableObjectConstantBuffer->Resource();
-		for (size_t renderableObjIdx = 0; renderableObjIdx < renderableObjCount; ++renderableObjIdx)
-		{
-			D3D12_GPU_VIRTUAL_ADDRESS cbAddress = renderableObjectCB->GetGPUVirtualAddress();
-			// offset address to the i-th object constant buffer in the current frame resource buffer
-			cbAddress += (((UINT)renderableObjIdx) * renderableObjCBByteSize);
-
-			// Finalise creation of constant buffer view
-			const auto cbvGpuHandle = m_renderer->CreateConstantBufferView(cbAddress, renderableObjCBByteSize);
-			m_frameResources[frameIdx]->RenderableObjectPerObjDataCBVgpuAddress.push_back(cbAddress);
-		}
-	}
-
-	// TODO: longterm I should probably move these view to be allocated in a different heap - it's not clear here (hidden behind the CreateConstantBufferView call),
-	// but it's using the renderable object heap.
-	// This doesn't necessarily make that much sense from a logical pov. although idk if it has a perf impact to be like this.
-	// 
 	// Create CBV descriptors shared for the whole render pass, in each frame resource, after all the renderable objects in the renderable object heap
 	for (int16_t frameIdx = 0; frameIdx < NumFrameResources; ++frameIdx)
 	{
@@ -102,19 +80,19 @@ void AstroGameInstance::CreateComputableObjectsStructuredBufferViews()
 		for (size_t computableObjIdx = 0; computableObjIdx < computableObjCount; ++computableObjIdx)
 		{
 
-			m_renderer->CreateComputableObjStructuredBufferAndViews(
+			m_renderer->CreateStructuredBufferAndViews(
 				m_frameResources[frameIdx]->ComputableObjectStructuredBufferPerObj[computableObjIdx].get(),
 				true,
 				false
 			);
 
-			m_renderer->CreateComputableObjStructuredBufferAndViews(
+			m_renderer->CreateStructuredBufferAndViews(
 				m_frameResources[frameIdx]->ComputableObjectStructuredBufferPerObj[computableObjIdx + 1].get(),
 				true,
 				false
 			);
 
-			m_renderer->CreateComputableObjStructuredBufferAndViews(
+			m_renderer->CreateStructuredBufferAndViews(
 				m_frameResources[frameIdx]->ComputableObjectStructuredBufferPerObj[computableObjIdx + 2].get(),
 				false,
 				true
@@ -125,7 +103,7 @@ void AstroGameInstance::CreateComputableObjectsStructuredBufferViews()
 
 void AstroGameInstance::BuildRootSignature()
 {
-	for (auto& renderableDesc : m_renderablesDesc)
+	for (auto& renderableDesc : m_renderablesDesc) // TODO: move to BasePassSceneGeometry Pass 
 	{
 		std::vector<D3D12_ROOT_PARAMETER1> slotRootParams;
 
@@ -149,27 +127,14 @@ void AstroGameInstance::BuildRootSignature()
 		const D3D12_ROOT_PARAMETER1 rootParamCBVPerObjectBindlessResourceIndices
 		{
 			.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS,
-			.Descriptor
+			.Constants
 			{
 				.ShaderRegister = 1,
 				.RegisterSpace = 0,
-				.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC
+				.Num32BitValues = 3
 			}
 		};
 		slotRootParams.push_back(rootParamCBVPerObjectBindlessResourceIndices);
-
-
-		const D3D12_ROOT_PARAMETER1 rootParamCBVPerObject
-		{
-			.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV,
-			.Descriptor
-			{
-				.ShaderRegister = 2,
-				.RegisterSpace = 0,
-				.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC
-			}
-		};
-		slotRootParams.push_back(rootParamCBVPerObject);
 
 		//if (renderableDesc.GetSupportsTextures())
 		//{
@@ -324,10 +289,10 @@ void AstroGameInstance::BuildSceneGeometry()
 
 	// Box 2
 	auto transformBox2 = XMFLOAT4X4(
-		1.0f, 0.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f, 10.0f,
 		0.0f, 1.0f, 0.0f, 0.0f,
 		0.0f, 0.0f, 1.0f, 0.0f,
-		10.0f, 0.0f, 0.0f, 1.0f);
+		0.0f, 0.0f, 0.0f, 1.0f);
 	m_renderablesDesc.emplace_back(
 		boxMesh,
 		vertexColorShaderPath,
@@ -338,10 +303,10 @@ void AstroGameInstance::BuildSceneGeometry()
 
 	// Box 3
 	auto transformBox3 = XMFLOAT4X4(
-		2.0f, 0.0f, 0.0f, 0.0f,
-		0.0f, 2.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 2.0f, 0.0f,
-		0.0f, 10.0f, 10.0f, 1.0f);
+		4.0f, 0.0f, 0.0f, 20.0f,
+		0.0f, 4.0f, 0.0f, 20.0f,
+		0.0f, 0.0f, 4.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f);
 	m_renderablesDesc.emplace_back(
 		boxMesh,
 		vertexColorShaderPath,
@@ -367,7 +332,6 @@ void AstroGameInstance::BuildSceneGeometry()
 				SceneMeshObj.indices
 			);
 		}
-
 
 		m_renderablesDesc.emplace_back(
 			mesh,
@@ -472,17 +436,22 @@ void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shade
 {
 	// Base Geo PASS
 	auto BaseGeoPass = std::make_shared< BasePassSceneGeometry>();
-	BaseGeoPass->Init(m_renderablesDesc, NumFrameResources);
+	BaseGeoPass->Init(m_renderer.get(), m_renderablesDesc, NumFrameResources);
 	m_gpuPasses.push_back(std::move(BaseGeoPass));
 
 	auto AddTwoBuffersTogetherPass = std::make_shared< ComputePassAddBufferValues >();
 	AddTwoBuffersTogetherPass->Init(m_computableDescs);
 	m_gpuPasses.push_back(std::move(AddTwoBuffersTogetherPass));
 
-	auto ParticlesPass = std::make_shared< ComputePassParticles >();
-	ParticlesPass->Init(*m_renderer.get(), shaderLibrary);
-	m_gpuPasses.push_back(std::move(ParticlesPass));
-	
+	auto ParticlesSimPass = std::make_shared< ComputePassParticles >();	
+	ParticlesSimPass->Init(m_renderer.get(), shaderLibrary);
+	std::weak_ptr< ComputePassParticles > ParticleSimPassWeak = ParticlesSimPass;
+	m_gpuPasses.push_back(std::move(ParticlesSimPass));
+
+	auto ParticlesRenderPass = std::make_shared< GraphicsPassParticles >();
+	ParticlesRenderPass->Init(ParticleSimPassWeak, m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
+	m_gpuPasses.push_back(std::move(ParticlesRenderPass));
+
 	// TODO: call Shutdown on all gpu passes
 }
 
@@ -490,6 +459,8 @@ void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shade
 void AstroGameInstance::Update(float deltaTime)
 {
 	Game::Update(deltaTime);
+
+	m_frameIdx++;
 
 	PIXBeginEvent(PIX_COLOR_DEFAULT, L"Update Frame Resource"); 
 	UpdateFrameResource();
@@ -526,15 +497,15 @@ void AstroGameInstance::Update(float deltaTime)
 	
 	UpdateMainRenderPassConstantBuffer(deltaTime);
 
-	// TODO: register Update input function with a lambda when creating the pass
-	m_gpuPasses[0]->Update( m_currentFrameResource->RenderableObjectConstantBuffer.get() ); // BasePassSceneGeometry
-	m_gpuPasses[1]->Update(nullptr);														// ComputePassAddBufferValues
-	m_gpuPasses[2]->Update(nullptr);														// ComputePassParticles
+	const int32_t frameIdxModulo = m_frameIdx % NumFrameResources;
+
+	for (auto& gpuPass : m_gpuPasses)
+	{
+		gpuPass.get()->Update(frameIdxModulo, nullptr);
+	}
 
 	PIXEndEvent();
 }
-
-
 
 void AstroGameInstance::Render(float /*deltaTime*/)
 {
@@ -545,13 +516,13 @@ void AstroGameInstance::Render(float /*deltaTime*/)
 
 	for (auto& pass : m_gpuPasses)
 	{
+		m_renderer->ProcessGPUPass(*pass.get(), *m_currentFrameResource);
+		
 		switch (pass->PassType())
 		{
 		case GPUPassType::Graphics:
-			m_renderer->ProcessGraphicsPass(*dynamic_cast<GraphicsPass*>(pass.get()), *m_currentFrameResource); // TODO: This is ugly... should use templated functions instead
 			break;
 		case GPUPassType::Compute:
-			m_renderer->ProcessComputePass(*dynamic_cast<ComputePass*>(pass.get()), *m_currentFrameResource);
 			break;
 		default:
 			DX::astro_assert(false, "Pass type not supported");

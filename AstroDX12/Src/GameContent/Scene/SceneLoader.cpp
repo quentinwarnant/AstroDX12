@@ -183,7 +183,8 @@ SceneData SceneLoader::LoadScene1()
 		const XMMATRIX matRotation = XMMatrixRotationRollPitchYawFromVector(vRotation);
 		const XMMATRIX matScale = XMMatrixScalingFromVector(vScale);
 
-		const XMMATRIX transformMat = matScale * matRotation * matTranslation;
+		// HLSL uses Column major matrices, XMMaths uses Row major matrices - so transposing it to be compatible
+		const XMMATRIX transformMat = XMMatrixTranspose(matScale * matRotation * matTranslation);
 		XMFLOAT4X4 transform;
 		XMStoreFloat4x4(&transform, transformMat);
 

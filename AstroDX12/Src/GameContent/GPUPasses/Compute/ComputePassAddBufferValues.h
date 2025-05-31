@@ -15,16 +15,13 @@ public:
     }
 
     void Init(const std::vector<ComputableDesc>& computableDescs);
-    virtual void Update(void* Data) override;
+    virtual void Update(int32_t frameIdxModulo, void* Data) override;
     virtual void Execute(
         ComPtr<ID3D12GraphicsCommandList> cmdList,
         float deltaTime,
-        const FrameResource& frameResources,
-        const DescriptorHeap& descriptorHeap,
-        int32_t descriptorSizeCBV) const override;
+        const FrameResource& frameResources) const override;
     virtual void Shutdown() override;
 
 private:
     std::unique_ptr<ComputeGroup> m_computeGroup;
-
 };

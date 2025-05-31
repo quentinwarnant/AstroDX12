@@ -66,6 +66,8 @@ public:
 	virtual int16_t GetConstantBufferIndex() const = 0;
 
 	virtual std::vector<int32_t> GetBindlessResourceIndices() const = 0;
+	virtual int32_t GetMeshVertexBufferSRVHeapIndex() const = 0;
+
 	virtual uint32_t GetBindlessResourceIndicesRootSignatureIndex() const = 0;
 
 	virtual bool GetSupportsTextures() const = 0;

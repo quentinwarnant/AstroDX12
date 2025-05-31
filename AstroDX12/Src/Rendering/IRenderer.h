@@ -11,8 +11,7 @@ using Microsoft::WRL::ComPtr;
 struct FrameResource;
 class IStructuredBuffer;
 struct RendererContext;
-class GraphicsPass;
-class ComputePass;
+class GPUPass;
 
 class IRenderer
 {
@@ -23,14 +22,10 @@ public:
 	virtual void StartNewFrame(FrameResource* frameResources) = 0;
 	virtual void EndNewFrame(std::function<void(int)> onNewFenceValue) = 0;
 	
-	virtual void ProcessGraphicsPass(
-		const GraphicsPass& pass,
+	virtual void ProcessGPUPass(
+		const GPUPass& pass,
 		const FrameResource& frameResources) = 0;
 	
-	virtual void ProcessComputePass(
-		const ComputePass& pass,
-		const FrameResource& frameResources) = 0;
-
 	virtual void AddNewFence(std::function<void(int)> onNewFenceValue) = 0;
 	virtual void Shutdown() = 0;
 	virtual void CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature, ComPtr<ID3D12RootSignature>& outRootSignature) = 0;
@@ -49,7 +44,6 @@ public:
 
 	virtual D3D12_GPU_DESCRIPTOR_HANDLE CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize) = 0;
 	virtual void CreateStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav) = 0;
-	virtual void CreateComputableObjStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav) = 0;
 	virtual void CreateGraphicsPipelineState(
 		ComPtr<ID3D12PipelineState>& pso,
 		ComPtr<ID3D12RootSignature>& rootSignature,
