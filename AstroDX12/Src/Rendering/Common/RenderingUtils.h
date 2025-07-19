@@ -207,5 +207,32 @@ namespace AstroTools
 
 			return defaultBuffer;
 		}
+
+
+		[[nodiscard]] static Microsoft::WRL::ComPtr<ID3D12Resource> CreateRenderTarget(
+			ID3D12Device* device,
+			UINT64 width,
+			UINT64 height,
+			DXGI_FORMAT format,
+			bool initialStateIsUAV = true
+		)
+		{
+			Microsoft::WRL::ComPtr<ID3D12Resource> renderTargetResource;
+
+			// Create default buffer resource
+			auto defaultHeapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+			auto bufferDesc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, (UINT)height);
+			bufferDesc.Flags = (D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS | D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
+			DX::ThrowIfFailed(device->CreateCommittedResource(
+				&defaultHeapProps,
+				D3D12_HEAP_FLAG_NONE,
+				&bufferDesc,
+				initialStateIsUAV ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : D3D12_RESOURCE_STATE_RENDER_TARGET,
+				nullptr,
+				IID_PPV_ARGS(renderTargetResource.GetAddressOf())));
+
+			return renderTargetResource;
+		}
+
 	};
 }

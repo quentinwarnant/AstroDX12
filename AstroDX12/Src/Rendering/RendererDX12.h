@@ -33,6 +33,7 @@ public:
 
 protected:
     virtual ComPtr<ID3D12Device>  GetDevice() const override { return m_device; };
+    virtual void CreateRenderTargetView(ID3D12Resource* resource, const D3D12_RENDER_TARGET_VIEW_DESC* desc) override;
 public:
     virtual void Create_const_uav_srv_BufferDescriptorHeaps() override;
     virtual D3D12_GPU_DESCRIPTOR_HANDLE CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize) override;
@@ -50,6 +51,14 @@ public:
         std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout,
         ComPtr<IDxcBlob>& computeShaderByteCode);
     virtual void BuildFrameResources(std::vector<std::unique_ptr<FrameResource>>& outFrameResourcesList, int frameResourcesCount, int renderableObjectCount, int computableObjectCount) override;
+    
+    virtual void InitialiseRenderTarget(
+        std::weak_ptr<RenderTarget> renderTarget,
+        LPCWSTR name,
+        UINT32 width,
+        UINT32 height,
+        DXGI_FORMAT format,
+        bool initialStateIsUAV = true) override;
     virtual UINT64 GetLastCompletedFence() override;
     virtual void WaitForFence(UINT64 fenceValue) override;
     // IRenderer - END
@@ -95,6 +104,8 @@ private:
     ComPtr<ID3D12DescriptorHeap> m_rtvHeap; // Render Target
     ComPtr<ID3D12DescriptorHeap> m_dsvHeap; // Depth/Stencil 
     std::shared_ptr<DescriptorHeap> m_globalCBVSRVUAVDescriptorHeap; // UAV/SRV/CBV Buffers heap for everything including bindless resources
+
+	int32_t m_rtvHeapViewsCount = 0; // Count of RTV views in the heap
 
     ComPtr<ID3D12Resource> m_swapchainBuffers[m_swapChainBufferCount];
     ComPtr<ID3D12Resource> m_depthStencilBuffer;

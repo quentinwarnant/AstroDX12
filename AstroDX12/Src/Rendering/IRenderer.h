@@ -2,6 +2,7 @@
 
 #include <Common.h>
 #include <Rendering/Common/UploadBuffer.h>
+#include <Rendering/Common/RenderTarget.h>
 #include <Rendering/Renderable/RenderableGroup.h>
 #include <Rendering/RendererProcessedObjectType.h>
 #include <functional>
@@ -33,6 +34,8 @@ public:
 	virtual RendererContext GetRendererContext() = 0;
 protected:
 	virtual ComPtr<ID3D12Device> GetDevice() const = 0;
+	virtual void CreateRenderTargetView(ID3D12Resource* resource, const D3D12_RENDER_TARGET_VIEW_DESC* desc) = 0;
+
 public:
 	virtual void Create_const_uav_srv_BufferDescriptorHeaps() = 0;
 
@@ -56,6 +59,13 @@ public:
 		std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout,
 		ComPtr<IDxcBlob>& computeShaderByteCode) = 0;
 	virtual void BuildFrameResources(std::vector<std::unique_ptr<FrameResource>>& outFrameResourcesList, int frameResourcesCount, int renderableObjectCount, int computableObjectCount) = 0;
+	virtual void InitialiseRenderTarget(
+		std::weak_ptr<RenderTarget> renderTarget,
+		LPCWSTR name,
+		UINT32 width,
+		UINT32 height,
+		DXGI_FORMAT format,
+		bool initialStateIsUAV = true) = 0; 
 	virtual UINT64 GetLastCompletedFence() = 0;
 	virtual void WaitForFence(UINT64 fenceValue) = 0;
 };

@@ -25,6 +25,7 @@ class AstroGameInstance final :
 {
 public:
     AstroGameInstance();
+    virtual ~AstroGameInstance();
     virtual void LoadSceneData() override;
     // Scene renderable objects building
     virtual void BuildFrameResources() override;
@@ -34,6 +35,8 @@ public:
     virtual void BuildRootSignature() override;
     virtual void BuildShaders(AstroTools::Rendering::ShaderLibrary& shaderLibrary) override;
     virtual void BuildPipelineStateObject() override;
+    
+    virtual void Shutdown() override;
 
 private:
     void BuildSceneGeometry();
@@ -70,7 +73,6 @@ private:
     virtual void CreatePasses(AstroTools::Rendering::ShaderLibrary& shaderLibrary) override;
     virtual void Update(float deltaTime) override;
     virtual void Render(float deltaTime) override;
-    virtual void Shutdown() override;
 
 };
 

@@ -97,6 +97,8 @@ public:
 	// returns the descriptor index of an element in the descriptor heap this resource has a SRV for
 	int32_t GetUAVIndex() const 
 	{
+		DX::astro_assert(UavIndex!= -1, "UAV Index is invalid, UAV hasn't been initialised");
+
 		return UavIndex;
 	}
 

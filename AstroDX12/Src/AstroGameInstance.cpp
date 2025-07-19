@@ -11,6 +11,8 @@
 #include <GameContent/GPUPasses/BasePassSceneGeometry.h>
 #include <GameContent/GPUPasses/Compute/ComputePassAddBufferValues.h>
 #include <GameContent/GPUPasses/Compute/ComputePassParticles.h>
+#include <GameContent/GPUPasses/Compute/ComputePassRaymarchScene.h>
+
 
 #include <GameContent/Scene/SceneLoader.h>
 
@@ -32,7 +34,14 @@ AstroGameInstance::AstroGameInstance()
 	, m_currentFrameResource(nullptr)
 	, m_currentFrameResourceIndex(0)
 	, m_meshLibrary(std::make_unique<MeshLibrary>())
+	, m_gpuPasses()
 {
+}
+
+AstroGameInstance::~AstroGameInstance()
+{
+	m_frameResources.clear();
+	m_meshLibrary.reset();
 }
 
 void AstroGameInstance::LoadSceneData()
@@ -435,24 +444,27 @@ void AstroGameInstance::BuildPipelineStateObject()
 void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shaderLibrary)
 {
 	// Base Geo PASS
-	auto BaseGeoPass = std::make_shared< BasePassSceneGeometry>();
-	BaseGeoPass->Init(m_renderer.get(), m_renderablesDesc, NumFrameResources);
-	m_gpuPasses.push_back(std::move(BaseGeoPass));
+	auto baseGeoPass = std::make_shared< BasePassSceneGeometry>();
+	baseGeoPass->Init(m_renderer.get(), m_renderablesDesc, NumFrameResources);
+	m_gpuPasses.push_back(std::move(baseGeoPass));
 
-	auto AddTwoBuffersTogetherPass = std::make_shared< ComputePassAddBufferValues >();
-	AddTwoBuffersTogetherPass->Init(m_computableDescs);
-	m_gpuPasses.push_back(std::move(AddTwoBuffersTogetherPass));
+	auto addTwoBuffersTogetherPass = std::make_shared< ComputePassAddBufferValues >();
+	addTwoBuffersTogetherPass->Init(m_computableDescs);
+	m_gpuPasses.push_back(std::move(addTwoBuffersTogetherPass));
 
-	auto ParticlesSimPass = std::make_shared< ComputePassParticles >();	
-	ParticlesSimPass->Init(m_renderer.get(), shaderLibrary);
-	std::weak_ptr< ComputePassParticles > ParticleSimPassWeak = ParticlesSimPass;
-	m_gpuPasses.push_back(std::move(ParticlesSimPass));
+	auto particlesSimPass = std::make_shared< ComputePassParticles >();	
+	particlesSimPass->Init(m_renderer.get(), shaderLibrary);
+	std::weak_ptr< ComputePassParticles > ParticleSimPassWeak = particlesSimPass;
+	m_gpuPasses.push_back(std::move(particlesSimPass));
 
-	auto ParticlesRenderPass = std::make_shared< GraphicsPassParticles >();
-	ParticlesRenderPass->Init(ParticleSimPassWeak, m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
-	m_gpuPasses.push_back(std::move(ParticlesRenderPass));
+	auto particlesRenderPass = std::make_shared< GraphicsPassParticles >();
+	particlesRenderPass->Init(ParticleSimPassWeak, m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
+	m_gpuPasses.push_back(std::move(particlesRenderPass));
 
-	// TODO: call Shutdown on all gpu passes
+	auto raymarchSDFScenePass = std::make_shared<ComputePassRaymarchScene>();
+	raymarchSDFScenePass->Init(m_renderer.get(), shaderLibrary, ParticleSimPassWeak);
+	m_gpuPasses.push_back(std::move(raymarchSDFScenePass));
+
 }
 
 

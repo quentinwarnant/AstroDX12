@@ -5,7 +5,7 @@
 #include <Rendering/Compute/ComputableObject.h>
 #include <directxmath.h>
 #include <Rendering/Common/StructuredBuffer.h>
-#include <Rendering\RenderData\Mesh.h >
+#include <Rendering/RenderData/Mesh.h>
 
 using Microsoft::WRL::ComPtr;
 
@@ -23,6 +23,7 @@ struct ParticleData
         , Vel(0.f,0.f,0.f)
         , Age(0.f)
         , Duration(5.f)
+		, Size(1.f)
     {
     }
     
@@ -31,8 +32,9 @@ struct ParticleData
     DirectX::XMFLOAT3 Vel;
     float Age;
     float Duration;
-    // Or add padding!
+    float Size;
 };
+
 
 
 class ComputePassParticles :
@@ -50,6 +52,7 @@ public:
     virtual void Shutdown() override;
 
     int32_t GetParticleReadBufferSRVHeapIndex() const;
+    int32_t GetParticleOutputBufferSRVHeapIndex() const;
 
 private:
     int32_t m_frameIdxModulo = 0;

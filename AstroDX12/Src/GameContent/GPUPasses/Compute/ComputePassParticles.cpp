@@ -16,6 +16,7 @@ ComputePassParticles::ComputePassParticles()
     for (auto& ParticleData : BufferDataVector)
     {
         ParticleData.Duration = 3.f + (float(rand() % 200) / 200);
+        ParticleData.Size = 2.f + (float(rand() % 200) / 200) * 2.f;
     }
 
     m_particleDataBufferPing = std::make_unique<StructuredBuffer<ParticleData>>(BufferDataVector);
@@ -99,6 +100,12 @@ void ComputePassParticles::Update(int32_t frameIdxModulo, void* /*Data*/)
 int32_t ComputePassParticles::GetParticleReadBufferSRVHeapIndex() const
 {
     auto bufferInput = m_frameIdxModulo % 2 == 0 ? m_particleDataBufferPing.get() : m_particleDataBufferPong.get();
+    return bufferInput->GetSRVIndex();
+}
+
+int32_t ComputePassParticles::GetParticleOutputBufferSRVHeapIndex() const
+{
+    auto bufferInput = m_frameIdxModulo % 2 == 1 ? m_particleDataBufferPing.get() : m_particleDataBufferPong.get();
     return bufferInput->GetSRVIndex();
 }
 

@@ -28,6 +28,7 @@ struct ParticleData
     float3 Vel;
     float Age;
     float Lifetime;
+    float Size;
 };
 
 struct VertexData

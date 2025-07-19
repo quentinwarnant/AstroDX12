@@ -75,7 +75,8 @@ void RendererDX12::Init(HWND window, int width, int height)
 		}
 	}
 
-	auto deviceCreateResult = D3D12CreateDevice(currentAdapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_device));
+	
+	auto deviceCreateResult = D3D12CreateDevice(currentAdapter, D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&m_device));
 	if (FAILED(deviceCreateResult))
 	{
 		//Create WARP device - Windows advanced rasterization platform (software renderer)
@@ -165,18 +166,12 @@ void RendererDX12::Init(HWND window, int width, int height)
 	CreateDepthStencilDescriptorHeap();
 
 	// Backbuffer Render Target
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart());
 	for (auto i = 0; i < m_swapChainBufferCount; ++i)
 	{
 		ThrowIfFailed(m_swapChain->GetBuffer(i, IID_PPV_ARGS(&m_swapchainBuffers[i])));
 
-		//Create RT view for buffer
-		m_device->CreateRenderTargetView(m_swapchainBuffers[i].Get(), nullptr, rtvHeapHandle);
-
-		//Offset heap handle for next loop 
-		rtvHeapHandle.Offset(1, m_descriptorSizeRTV);
+		CreateRenderTargetView(m_swapchainBuffers[i].Get(), nullptr);
 	}
-
 
 	ThrowIfFailed(m_commandList->Reset(m_directCommandListAllocator.Get(), nullptr));
 
@@ -212,6 +207,16 @@ void RendererDX12::FinaliseInit()
 	m_commandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
 	AddNewFence([](int) {});
+}
+
+void RendererDX12::CreateRenderTargetView(ID3D12Resource* resource, const D3D12_RENDER_TARGET_VIEW_DESC* desc)
+{
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart());
+	rtvHeapHandle.Offset(m_rtvHeapViewsCount, m_descriptorSizeRTV);
+
+	//Create RT view for buffer
+	m_device->CreateRenderTargetView(resource, desc, rtvHeapHandle);
+	m_rtvHeapViewsCount++;
 }
 
 void RendererDX12::CreateCommandObjects()
@@ -273,6 +278,8 @@ void RendererDX12::CreateRTVDescriptorHeap()
 	descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	descriptorHeapDesc.NodeMask = 0; // device/Adapter index
 	ThrowIfFailed(m_device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(m_rtvHeap.GetAddressOf())));
+
+	m_rtvHeapViewsCount = 0;
 }
 
 void RendererDX12::CreateDepthStencilDescriptorHeap()
@@ -467,6 +474,12 @@ void RendererDX12::AddNewFence(std::function<void(int)> onNewFenceValue)
 
 void RendererDX12::Shutdown()
 {
+	ComPtr<ID3D12DebugDevice> debugDevice;
+	if (SUCCEEDED(m_device->QueryInterface(IID_PPV_ARGS(&debugDevice)))) {
+		// You now have a debug device
+		debugDevice->ReportLiveDeviceObjects(D3D12_RLDO_FLAGS::D3D12_RLDO_DETAIL);
+	}
+
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE RendererDX12::CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize)
@@ -581,6 +594,17 @@ void RendererDX12::BuildFrameResources(std::vector<std::unique_ptr<FrameResource
 			i
 			));
 	}
+}
+
+void RendererDX12::InitialiseRenderTarget(
+	std::weak_ptr<RenderTarget> renderTarget,
+	LPCWSTR name,
+	UINT32 width,
+	UINT32 height,
+	DXGI_FORMAT format,
+	bool initialStateIsUAV )
+{
+	renderTarget.lock()->Initialize(this, *m_globalCBVSRVUAVDescriptorHeap.get(), name, width, height, format, initialStateIsUAV);
 }
 
 RendererContext RendererDX12::GetRendererContext()

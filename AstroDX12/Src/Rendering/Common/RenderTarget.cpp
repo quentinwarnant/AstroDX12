@@ -1,0 +1,50 @@
+#include "RenderTarget.h"
+
+#include <Rendering/IRenderer.h>
+#include <Rendering/Common/RenderingUtils.h>
+#include <Rendering/Common/DescriptorHeap.h>
+#include <Rendering/Common/RendererContext.h>
+
+void RenderTarget::Initialize(IRenderer* renderer,
+	DescriptorHeap& descriptorHeap, 
+	LPCWSTR name,
+	UINT32 width,
+	UINT32 height,
+	DXGI_FORMAT format, 
+	bool initialStateIsUAV)
+{
+	m_width = width;
+	m_height = height;
+	m_format = format;
+
+	m_renderTargetResource = AstroTools::Rendering::CreateRenderTarget(
+		renderer->GetRendererContext().Device.Get(),
+		m_width, m_height, m_format, initialStateIsUAV);
+
+	m_renderTargetResource->SetName(name);
+
+	m_uavIndex = descriptorHeap.GetCurrentDescriptorHeapHandle();
+	
+	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc;
+	uavDesc.Format = format;
+	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+	uavDesc.Texture2D.MipSlice = 0;
+	uavDesc.Texture2D.PlaneSlice = 0;
+
+	renderer->GetRendererContext().Device->CreateUnorderedAccessView(
+		m_renderTargetResource.Get(),
+		nullptr,
+		&uavDesc,
+		descriptorHeap.GetCPUDescriptorHandleByIndex(m_uavIndex));
+
+	descriptorHeap.IncreaseCurrentDescriptorHeapHandle();
+}
+
+void RenderTarget::ReleaseResources()
+{
+	if (m_renderTargetResource)
+	{
+		m_renderTargetResource = nullptr;
+	}
+	m_uavIndex = -1;
+}
