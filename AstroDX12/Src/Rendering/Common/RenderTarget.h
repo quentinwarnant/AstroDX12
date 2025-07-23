@@ -15,7 +15,8 @@ public:
             m_width(0),
             m_height(0),
             m_format(DXGI_FORMAT_UNKNOWN),
-		    m_uavIndex(-1)
+		    m_uavIndex(-1),
+		    m_srvIndex(-1)
     {
     }
 
@@ -39,6 +40,16 @@ public:
     {
         return m_uavIndex; 
     }
+    
+    int32_t GetSRVIndex() const
+    {
+        return m_srvIndex; 
+	}
+
+    ID3D12Resource* GetResource() const
+    {
+        return m_renderTargetResource.Get();
+	}
 
 private:
     ComPtr<ID3D12Resource> m_renderTargetResource = nullptr;
@@ -46,5 +57,6 @@ private:
     UINT32 m_height = 0;
     DXGI_FORMAT m_format = DXGI_FORMAT_UNKNOWN;
     int32_t m_uavIndex = -1;
+	int32_t m_srvIndex = -1;
 };
 

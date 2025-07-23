@@ -48,9 +48,6 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
     const float MaxDistancePerStep = 30.f; 
     const float WorldSize = gFarZ - gNearZ;
 
-    float3 right = float3(1, 0, 0);
-    float3 up = float3(0, 1, 0);
-
     const float2 RenderTargetPixelSize = float2(GBufferWidth, GBufferHeight);
     float2 UV = (DTid.xy / RenderTargetPixelSize) * 2.f - 1.f;
     const float AspectRatio = RenderTargetPixelSize.x / RenderTargetPixelSize.y;
@@ -99,12 +96,13 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
         
         if (Step == RaymarchStepCount - 1 || distanceTravelled >= WorldSize)
         {
-            distanceTravelled = 0.f; // No hits
+            distanceTravelled = WorldSize; // No hits
             break;
         }
     }
         
-
+    // Normalize distance to [0, 1] range
+    distanceTravelled = lerp(1.f, 0.f, distanceTravelled / WorldSize);
     RWTexture2D<float4> outputTexture = ResourceDescriptorHeap[OutputTextureDepthResourceIndex];
     outputTexture[DTid.xy] = float4(distanceTravelled, 0.f, 0.f, 0.0f);
 }

@@ -50,13 +50,12 @@ public:
 	virtual void CreateGraphicsPipelineState(
 		ComPtr<ID3D12PipelineState>& pso,
 		ComPtr<ID3D12RootSignature>& rootSignature,
-		std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout,
+		const std::vector<D3D12_INPUT_ELEMENT_DESC>* inputLayout,
 		ComPtr<IDxcBlob>& vertexShaderByteCode,
 		ComPtr<IDxcBlob>& pixelShaderByteCode) = 0;
 	virtual void CreateComputePipelineState(
 		ComPtr<ID3D12PipelineState>& pso,
 		ComPtr<ID3D12RootSignature>& rootSignature,
-		std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout,
 		ComPtr<IDxcBlob>& computeShaderByteCode) = 0;
 	virtual void BuildFrameResources(std::vector<std::unique_ptr<FrameResource>>& outFrameResourcesList, int frameResourcesCount, int renderableObjectCount, int computableObjectCount) = 0;
 	virtual void InitialiseRenderTarget(

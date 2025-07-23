@@ -23,7 +23,7 @@ void ResetParticle(inout ParticleData p, uint3 DTid)
 {
     p.Age -= p.Lifetime;
     p.Pos = Random(p.Age + DTid.x) * float3(1, 0, 1);
-    p.Vel = float3(0.f, 60.f,0.f) + (normalize(Random(p.Age + DTid.x + 1.234f)) * float3(20.f, 40.f, 20.f));
+    p.Vel = float3(0.f, 60.f, 0.f) + (normalize(Random(p.Age + DTid.x + 1.234f)) * float3(20.f, 40.f, 20.f));
 }
 
 [numthreads(20, 1, 1)]

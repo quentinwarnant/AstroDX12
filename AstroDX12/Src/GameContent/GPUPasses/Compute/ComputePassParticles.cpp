@@ -32,7 +32,6 @@ void ComputePassParticles::Init(IRenderer* renderer, AstroTools::Rendering::Shad
 
         const auto computeShaderPath = rootPath + std::wstring(L"\\Shaders\\particles.hlsl");
 
-        std::vector<D3D12_INPUT_ELEMENT_DESC> InputLayout{ D3D12_INPUT_ELEMENT_DESC{} }; // dummy input layout
         std::vector<D3D12_ROOT_PARAMETER1> slotRootParams;
         const D3D12_ROOT_PARAMETER1 rootParamCBVPerObjectBindlessResourceIndices
         {
@@ -72,7 +71,7 @@ void ComputePassParticles::Init(IRenderer* renderer, AstroTools::Rendering::Shad
         ComPtr<ID3D12RootSignature> rootSignature = nullptr;
         renderer->CreateRootSignature(serializedRootSignature, rootSignature);
 
-        ComputableDesc computableObjDesc(computeShaderPath, InputLayout);
+        ComputableDesc computableObjDesc(computeShaderPath);
         computableObjDesc.RootSignature = rootSignature;
 
         // Create shader
@@ -82,7 +81,6 @@ void ComputePassParticles::Init(IRenderer* renderer, AstroTools::Rendering::Shad
         renderer->CreateComputePipelineState(
             computableObjDesc.PipelineStateObject,
             computableObjDesc.RootSignature,
-            computableObjDesc.InputLayout,
             computableObjDesc.CS);
 
         m_particlesComputeObj = std::make_unique<ComputableObject>(computableObjDesc.RootSignature, computableObjDesc.PipelineStateObject, int16_t(0));
@@ -175,7 +173,6 @@ void GraphicsPassParticles::Init(std::weak_ptr<const ComputePassParticles>  part
     assert(meshLibrary.GetMesh(std::string("BoxGeometry"), m_boxMesh));
     const auto particleGraphicsShaderPath = rootPath + std::wstring(L"\\Shaders\\particleGraphics.hlsl");
 
-    std::vector<D3D12_INPUT_ELEMENT_DESC> inputLayout{ D3D12_INPUT_ELEMENT_DESC{} }; // dummy input layout
     auto vs = shaderLibrary.GetCompiledShader(particleGraphicsShaderPath, L"VS", {}, L"vs_6_6");
     auto ps = shaderLibrary.GetCompiledShader(particleGraphicsShaderPath, L"PS", {}, L"ps_6_6");
 
@@ -240,7 +237,7 @@ void GraphicsPassParticles::Init(std::weak_ptr<const ComputePassParticles>  part
     renderer->CreateGraphicsPipelineState(
         m_pipelineStateObject,
         m_rootSignature,
-        inputLayout,
+        nullptr,
         vs,
         ps);
 }

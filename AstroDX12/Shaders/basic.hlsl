@@ -29,11 +29,6 @@ cbuffer BindlessRenderResources : register(b1)
 
 // ---- TODO move to include file - end
 
-struct VSInput
-{
-    float3 PosL : POSITION;
-};
-
 struct PSInput
 {
     float4 PosH : SV_POSITION;

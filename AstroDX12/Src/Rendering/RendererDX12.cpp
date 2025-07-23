@@ -506,13 +506,22 @@ void RendererDX12::CreateStructuredBufferAndViews(IStructuredBuffer* structuredB
 void RendererDX12::CreateGraphicsPipelineState(
 	ComPtr<ID3D12PipelineState>& pso,
 	ComPtr<ID3D12RootSignature>& rootSignature,
-	std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout,
+	const std::vector<D3D12_INPUT_ELEMENT_DESC>* inputLayout,
 	ComPtr<IDxcBlob>& vertexShaderByteCode,
 	ComPtr<IDxcBlob>& pixelShaderByteCode)
 {
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
 	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-	psoDesc.InputLayout = { nullptr, 0 }; // Bindless rendering doesn't require us to declare input layout ahead of time. The shader takes care of it
+	if( inputLayout == nullptr )
+	{
+		// If input layout is not provided, we assume bindless rendering and don't set it
+		psoDesc.InputLayout = { nullptr, 0 };
+	}
+	else
+	{
+		// Otherwise we use the provided input layout
+		psoDesc.InputLayout = { inputLayout->data(), (UINT)inputLayout->size() };
+	}
 	psoDesc.pRootSignature = rootSignature.Get();
 	psoDesc.VS =
 	{
@@ -550,7 +559,6 @@ void RendererDX12::CreateGraphicsPipelineState(
 void RendererDX12::CreateComputePipelineState(
 	ComPtr<ID3D12PipelineState>& pso,
 	ComPtr<ID3D12RootSignature>& rootSignature,
-	std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout,
 	ComPtr<IDxcBlob>& computeShaderByteCode)
 {
 	D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc;

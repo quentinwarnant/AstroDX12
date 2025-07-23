@@ -47,6 +47,11 @@ public:
         const FrameResource& frameResources) const override;
     virtual void Shutdown() override;
 
+    int32_t GetGBufferRTViewIndex() const
+    {
+        return m_gBuffer1RT->GetSRVIndex();
+	}
+
 private:
 	std::shared_ptr<RenderTarget> m_gBuffer1RT;
     std::unique_ptr<StructuredBuffer<SDFSceneObject>> m_SDFSceneObjectsBuffer;

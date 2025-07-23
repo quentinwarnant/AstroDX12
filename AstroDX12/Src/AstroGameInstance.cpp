@@ -12,6 +12,7 @@
 #include <GameContent/GPUPasses/Compute/ComputePassAddBufferValues.h>
 #include <GameContent/GPUPasses/Compute/ComputePassParticles.h>
 #include <GameContent/GPUPasses/Compute/ComputePassRaymarchScene.h>
+#include <GameContent/GPUPasses/GraphicsPassCopyGBufferToBackbuffer.h>
 
 
 #include <GameContent/Scene/SceneLoader.h>
@@ -409,8 +410,7 @@ void AstroGameInstance::BuildComputeData()
 	const auto computeShaderPath = rootPath + std::wstring(L"\\Shaders\\computeTest1.hlsl");
 
 	m_computableDescs.emplace_back(
-		computeShaderPath,
-		AstroTools::Rendering::InputLayout::IL_CS_Test1
+		computeShaderPath
 	);
 }
 
@@ -426,7 +426,7 @@ void AstroGameInstance::BuildPipelineStateObject()
 		m_renderer->CreateGraphicsPipelineState(
 			renderableDesc.PipelineStateObject,
 			renderableDesc.RootSignature, 
-			renderableDesc.InputLayout,
+			nullptr,
 			renderableDesc.VS,
 			renderableDesc.PS);
 	}
@@ -436,7 +436,6 @@ void AstroGameInstance::BuildPipelineStateObject()
 		m_renderer->CreateComputePipelineState(
 			computableDesc.PipelineStateObject,
 			computableDesc.RootSignature,
-			computableDesc.InputLayout,
 			computableDesc.CS);
 	}
 }
@@ -463,10 +462,13 @@ void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shade
 
 	auto raymarchSDFScenePass = std::make_shared<ComputePassRaymarchScene>();
 	raymarchSDFScenePass->Init(m_renderer.get(), shaderLibrary, ParticleSimPassWeak);
+	const int32_t GBufferResourceViewIndex = raymarchSDFScenePass->GetGBufferRTViewIndex();
 	m_gpuPasses.push_back(std::move(raymarchSDFScenePass));
 
+	auto copyGbufferToBackBufferPass = std::make_shared<GraphicsPassCopyGBufferToBackbuffer>();
+	copyGbufferToBackBufferPass->Init(m_renderer.get(), shaderLibrary, GBufferResourceViewIndex);
+	m_gpuPasses.push_back(std::move(copyGbufferToBackBufferPass));
 }
-
 
 void AstroGameInstance::Update(float deltaTime)
 {

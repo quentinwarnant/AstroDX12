@@ -2,15 +2,13 @@
 
 #include <Rendering/IRenderer.h>
 #include <Rendering/Common/FrameResource.h>
-
+#include <GameContent/GPUPasses/RaymarchScene.h>
 
 using namespace AstroTools::Rendering;
 
 namespace RaymarchScenePrivates
 {
 	static const int32_t ObjectCount = 10; // Number of SDF objects in the scene
-	static const int32_t GBufferWidth = 1280;
-	static const int32_t GBufferHeight = 720;
 }
 
 void ComputePassRaymarchScene::Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, std::weak_ptr<ComputePassParticles> particleComputePass)
@@ -33,16 +31,14 @@ void ComputePassRaymarchScene::Init(IRenderer* renderer, AstroTools::Rendering::
 
     m_gBuffer1RT = std::make_shared<RenderTarget>();
     renderer->InitialiseRenderTarget(m_gBuffer1RT , L"GBuffer1",
-        RaymarchScenePrivates::GBufferWidth, RaymarchScenePrivates::GBufferHeight,
+        GBufferStatics::GBufferWidth, GBufferStatics::GBufferHeight,
         DXGI_FORMAT_R16G16B16A16_FLOAT, true);
 
     const auto rootPath = s2ws(DX::GetWorkingDirectory());
     {
         const auto computeShaderPath = rootPath + std::wstring(L"\\Shaders\\RaymarchScene.hlsl");
 
-        std::vector<D3D12_INPUT_ELEMENT_DESC> InputLayout{ D3D12_INPUT_ELEMENT_DESC{} }; // dummy input layout
         std::vector<D3D12_ROOT_PARAMETER1> slotRootParams;
-
         const D3D12_ROOT_PARAMETER1 rootParamCBVPerPass
         {
             .ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV,
@@ -94,7 +90,7 @@ void ComputePassRaymarchScene::Init(IRenderer* renderer, AstroTools::Rendering::
         ComPtr<ID3D12RootSignature> rootSignature = nullptr;
         renderer->CreateRootSignature(serializedRootSignature, rootSignature);
 
-        ComputableDesc computableObjDesc(computeShaderPath, InputLayout);
+        ComputableDesc computableObjDesc(computeShaderPath);
         computableObjDesc.RootSignature = rootSignature;
 
         // Create shader
@@ -104,7 +100,6 @@ void ComputePassRaymarchScene::Init(IRenderer* renderer, AstroTools::Rendering::
         renderer->CreateComputePipelineState(
             computableObjDesc.PipelineStateObject,
             computableObjDesc.RootSignature,
-            computableObjDesc.InputLayout,
             computableObjDesc.CS);
 
         m_raymarchRootSignature = computableObjDesc.RootSignature;
@@ -123,6 +118,15 @@ void ComputePassRaymarchScene::Execute(
     float /*deltaTime*/,
     const FrameResource& frameResources) const
 {
+
+    const auto GBufferRTPreDrawStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
+        m_gBuffer1RT->GetResource(),
+        D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+
+    std::vector<CD3DX12_RESOURCE_BARRIER> buffersPreDrawStateTransition = { GBufferRTPreDrawStateTransition };
+    cmdList->ResourceBarrier(1, buffersPreDrawStateTransition.data());
+
+
     cmdList->SetComputeRootSignature(m_raymarchRootSignature.Get());
     cmdList->SetPipelineState(m_raymarchPSO.Get());
     
@@ -131,33 +135,31 @@ void ComputePassRaymarchScene::Execute(
 
     constexpr int32_t BindlessResourceIndicesRootSigParamIndex = 1;
     const std::vector<int32_t> BindlessResourceIndices = {
-		//m_SDFSceneObjectsBuffer->GetUAVIndex(),
         m_currentParticleDataBufferSRVIdx,
         m_gBuffer1RT->GetUAVIndex(),
         RaymarchScenePrivates::ObjectCount,
-        RaymarchScenePrivates::GBufferWidth,
-		RaymarchScenePrivates::GBufferHeight    
+        GBufferStatics::GBufferWidth,
+		GBufferStatics::GBufferHeight    
     };
     cmdList->SetComputeRoot32BitConstants(
         (UINT)BindlessResourceIndicesRootSigParamIndex,
         (UINT)BindlessResourceIndices.size(), BindlessResourceIndices.data(), 0);
 
 
-	int32_t DispatchX = RaymarchScenePrivates::GBufferWidth / 8; // 8 threads per group in X
-	int32_t DispatchY = RaymarchScenePrivates::GBufferHeight / 8; // 8 threads per group in Y
+	int32_t DispatchX = GBufferStatics::GBufferWidth / 8; // 8 threads per group in X
+	int32_t DispatchY = GBufferStatics::GBufferHeight / 8; // 8 threads per group in Y
     cmdList->Dispatch(DispatchX, DispatchY, 1);
+
+    const auto GBufferRTPostDrawStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
+        m_gBuffer1RT->GetResource(),
+        D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+    std::vector<CD3DX12_RESOURCE_BARRIER> buffersPostDrawStateTransition = { GBufferRTPostDrawStateTransition };
+    cmdList->ResourceBarrier(1, buffersPostDrawStateTransition.data());
 }
 
 void ComputePassRaymarchScene::Shutdown()
 {
-    if( m_raymarchRootSignature )
-    {
-        m_raymarchRootSignature.Reset();
-	}
-    if ( m_raymarchPSO )
-    {
-        m_raymarchPSO.Reset();
-    }
     if( m_gBuffer1RT )
     {
         m_gBuffer1RT.reset();
