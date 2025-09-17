@@ -7,8 +7,8 @@ using namespace DirectX;
 struct RenderPassConstants
 {
 	XMFLOAT4X4 View = AstroTools::Maths::Identity4x4();
-	XMFLOAT4X4 Proj = AstroTools::Maths::Identity4x4();
 	XMFLOAT4X4 InvView = AstroTools::Maths::Identity4x4();
+	XMFLOAT4X4 Proj = AstroTools::Maths::Identity4x4();
 	XMFLOAT4X4 InvProj = AstroTools::Maths::Identity4x4();
 	XMFLOAT4X4 ViewProj = AstroTools::Maths::Identity4x4();
 	XMFLOAT4X4 InvViewProj = AstroTools::Maths::Identity4x4();
