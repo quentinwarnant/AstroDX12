@@ -6,5 +6,6 @@ enum KeyboardKey
 	Right,
 	Back,
 	Up,
-	Down
+	Down,
+	Reset
 };

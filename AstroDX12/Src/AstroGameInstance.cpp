@@ -14,8 +14,8 @@
 #include <GameContent/GPUPasses/Compute/ComputePassRaymarchScene.h>
 #include <GameContent/GPUPasses/GraphicsPassCopyGBufferToBackbuffer.h>
 
-
 #include <GameContent/Scene/SceneLoader.h>
+//#include <directxmath.h>
 
 namespace
 {
@@ -484,26 +484,23 @@ void AstroGameInstance::Update(float deltaTime)
 	//PIXScopedEvent(PIX_COLOR_DEFAULT, L"Update");
 
 	// Convert Spherical to Cartesian coordinates.
-	constexpr float cameraRadius = 35.0f;
 
-	float LookAtDirX = cosf(m_cameraTheta);
-	float LookAtDirY = sinf(m_cameraPhi);
-	float LookAtDirZ = sinf(m_cameraTheta) * cosf(m_cameraPhi);
-	m_lookDir = XMVector3Normalize(XMVectorSet(LookAtDirX, LookAtDirY, LookAtDirZ, 0.f));
-	float posX = XMVectorGetX(m_cameraOriginPos);
-	float posY = XMVectorGetY(m_cameraOriginPos);
-	float posZ = XMVectorGetZ(m_cameraOriginPos);
-	float LookAtX = posX + LookAtDirX * cameraRadius;
-	float LookAtY = posY + LookAtDirY * cameraRadius;
-	float LookAtZ = posZ + LookAtDirZ * cameraRadius;
-
-	XMVECTOR pos = XMVectorSet(posX, posY, posZ, 1.0f);
-	XMStoreFloat3(&m_cameraPos, pos);
+	XMStoreFloat3(&m_cameraPos, m_cameraOriginPos);
 
 	//Build View Matrix
-	XMVECTOR target = XMVectorSet(LookAtX, LookAtY, LookAtZ, 0.f);
-	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-	XMMATRIX view = XMMatrixLookAtLH(pos, target, up);
+	XMVECTOR worldUp = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+	XMMATRIX cameraRotation = XMMatrixRotationRollPitchYaw(
+		m_cameraPhi,
+		m_cameraTheta,
+		0.0f);
+	m_lookDir = XMVector3TransformNormal(
+		XMVectorSet(0.f, 0.f, 1.f, 0.0f),
+		cameraRotation);
+	XMVECTOR right = XMVector3Normalize( XMVector3Cross(worldUp, m_lookDir));
+	XMVECTOR up = XMVector3Normalize( XMVector3Cross( m_lookDir, right));
+
+	XMVECTOR LookAtPos = XMVectorAdd(m_cameraOriginPos, m_lookDir);
+	XMMATRIX view = XMMatrixLookAtLH(m_cameraOriginPos, LookAtPos, up);
 	XMStoreFloat4x4(&m_viewMat, view);
 	PIXEndEvent();
 

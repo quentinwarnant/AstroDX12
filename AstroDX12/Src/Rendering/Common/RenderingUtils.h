@@ -66,6 +66,10 @@ namespace AstroTools
 				DXC_ARG_PACK_MATRIX_COLUMN_MAJOR,
 				DXC_ARG_WARNINGS_ARE_ERRORS,
 				DXC_ARG_ALL_RESOURCES_BOUND,
+#if defined(DEBUG) || defined(_DEBUG)  
+				 L"-O0",
+#endif
+
 			};
 
 			for (const std::wstring& define : defines)

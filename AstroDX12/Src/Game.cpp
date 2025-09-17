@@ -19,7 +19,7 @@ Game::Game() noexcept(false)
     , m_screenHeight(200)
     , m_shaderLibrary()
     , m_lastMousePos()
-    , m_cameraPhi(XM_PIDIV4)
+    , m_cameraPhi(0.f)
     , m_cameraTheta(1.5f * XM_PI)
     , m_cameraOriginPos(XMVectorSet(0,0,-10, 1))
     , m_lookDir( XMVectorSet(0,0,1,0) )
@@ -178,22 +178,25 @@ void Game::OnKeyboardKey(KeyboardKey key)
     switch (key)
     {
     case KeyboardKey::Forward:
-        m_cameraOriginPos = XMVectorAdd(m_cameraOriginPos, m_lookDir * 5);
+        m_cameraOriginPos = XMVectorAdd(m_cameraOriginPos, m_lookDir * 2);
         break;
     case KeyboardKey::Left:
-        m_cameraOriginPos = XMVectorSubtract(m_cameraOriginPos, RightDir * 5);
+        m_cameraOriginPos = XMVectorSubtract(m_cameraOriginPos, RightDir * 2);
         break;
     case KeyboardKey::Right:
-        m_cameraOriginPos = XMVectorAdd(m_cameraOriginPos, RightDir * 5);
+        m_cameraOriginPos = XMVectorAdd(m_cameraOriginPos, RightDir * 2);
         break;
     case KeyboardKey::Back:
-        m_cameraOriginPos = XMVectorSubtract(m_cameraOriginPos, m_lookDir * 5);
+        m_cameraOriginPos = XMVectorSubtract(m_cameraOriginPos, m_lookDir * 2);
         break;
     case KeyboardKey::Down:
-        m_cameraOriginPos = XMVectorSubtract(m_cameraOriginPos, Up * 5);
+        m_cameraOriginPos = XMVectorSubtract(m_cameraOriginPos, Up * 2);
         break;
     case KeyboardKey::Up:
-        m_cameraOriginPos = XMVectorAdd(m_cameraOriginPos, Up * 5);
+        m_cameraOriginPos = XMVectorAdd(m_cameraOriginPos, Up * 2);
+        break;
+    case KeyboardKey::Reset:
+        m_cameraOriginPos = XMVectorSet(0, 0, 0, 0);
         break;
     default:
         DX::astro_assert(false, "Key not handled");
