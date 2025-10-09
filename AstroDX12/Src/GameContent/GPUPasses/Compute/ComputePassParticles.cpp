@@ -16,7 +16,7 @@ ComputePassParticles::ComputePassParticles()
     for (auto& ParticleData : BufferDataVector)
     {
         ParticleData.Duration = 3.f + (float(rand() % 200) / 200);
-        ParticleData.Size = 2.f + (float(rand() % 200) / 200) * 2.f;
+        ParticleData.Size = 2.f;
     }
 
     m_particleDataBufferPing = std::make_unique<StructuredBuffer<ParticleData>>(BufferDataVector);

@@ -20,7 +20,7 @@ Game::Game() noexcept(false)
     , m_shaderLibrary()
     , m_lastMousePos()
     , m_cameraPhi(0.f)
-    , m_cameraTheta(1.5f * XM_PI)
+    , m_cameraTheta(0.f * XM_PI)
     , m_cameraOriginPos(XMVectorSet(0,0,-10, 1))
     , m_lookDir( XMVectorSet(0,0,1,0) )
 {
@@ -197,6 +197,9 @@ void Game::OnKeyboardKey(KeyboardKey key)
         break;
     case KeyboardKey::Reset:
         m_cameraOriginPos = XMVectorSet(0, 0, 0, 0);
+        m_cameraPhi = 0.f;
+        m_cameraTheta = 0.f * XM_PI;
+        m_lookDir = XMVectorSet(0, 0, 1, 0);
         break;
     default:
         DX::astro_assert(false, "Key not handled");

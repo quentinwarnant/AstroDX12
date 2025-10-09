@@ -49,15 +49,18 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
     const float WorldSize = gFarZ - gNearZ;
 
     const float2 RenderTargetPixelSize = float2(GBufferWidth, GBufferHeight);
-    float2 UV = (DTid.xy / RenderTargetPixelSize) * 2.f - 1.f;
+    float2 UV = ((DTid.xy + 0.5) / RenderTargetPixelSize);
+    UV.y = 1.f - UV.y; // flip vertically so origin is in bottom left corner.
+    float2 ndc = (UV * 2.f) - 1.f; // Center origin and use -1 to 1 range
     const float AspectRatio = RenderTargetPixelSize.x / RenderTargetPixelSize.y;
-    UV.x *= AspectRatio;
-
+    ndc.x *= AspectRatio;
+    
     const float3 RayOrigin = gEyePosW;
-    const float3 RayDir = normalize( /*Right*/gView[0].xyz * UV.x + /*Up*/gView[1].xyz * UV.y + /*Forward*/gView[2].xyz * 1.f);
-
-//    const float3 RayOrigin = float3(0, 0, -10);
-//    const float3 RayDir = normalize(float3(UV.x, UV.y, 1.f));
+    float3 rayDirInCamSpace = float3(ndc.x, ndc.y, 1.0f);
+    
+    float3 RayDir = normalize(
+        mul(InvView, float4(rayDirInCamSpace, 0.f)).xyz
+    );
     
     const float minDistForCollision = 0.0001f;
     float distanceTravelled = 0.f;
@@ -71,8 +74,8 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
         // for loop over all the objects near the sampling point
         for (int objIdx = 0; objIdx < SDFObjectCount; ++objIdx)
         {
-            SDFSceneObject SDFObject = SDFSceneBuffer[objIdx];    
-
+            SDFSceneObject SDFObject = SDFSceneBuffer[objIdx];
+            
             const float3 objToSamplePos = (SDFObject.Pos.xyz - RayPos);
             float distToCenter = length(objToSamplePos);
 
@@ -80,19 +83,14 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
             DistToClosestObject = min(DistToClosestObject, distToCenter - SDFObject.Size);
         }
 
+        distanceTravelled += DistToClosestObject;
+        RayPos += (RayDir * DistToClosestObject);
+        
         if (DistToClosestObject <= minDistForCollision)
         {
             Hit = true;
             break;
         }
-
-        if (Hit)
-        {
-            break;
-        }
-
-        distanceTravelled += DistToClosestObject;
-        RayPos = RayOrigin + (RayDir * distanceTravelled);
         
         if (Step == RaymarchStepCount - 1 || distanceTravelled >= WorldSize)
         {
@@ -102,7 +100,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
     }
         
     // Normalize distance to [0, 1] range
-    distanceTravelled = lerp(1.f, 0.f, distanceTravelled / WorldSize);
+    distanceTravelled = 1.f - saturate(distanceTravelled / WorldSize);
     RWTexture2D<float4> outputTexture = ResourceDescriptorHeap[OutputTextureDepthResourceIndex];
-    outputTexture[DTid.xy] = float4(distanceTravelled, 0.f, 0.f, 0.0f);
+    outputTexture[DTid.xy] = float4(distanceTravelled,  0.f, 0.f, 0.0f);
 }
