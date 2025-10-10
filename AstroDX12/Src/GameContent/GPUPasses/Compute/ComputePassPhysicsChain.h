@@ -23,11 +23,18 @@ namespace PhysicsChain
     {
         ParticleData()
             : Pos(0.f, 0.f, 0.f)
+			, PrevPos(0.f, 0.f, 0.f)
+            , Rot(
+                1.f, 0.f, 0.f,
+                0.f, 1.f, 0.f,
+    			0.f, 0.f, 1.f)
         {
         }
 
         // Make sure to keep Input layout in sync
         DirectX::XMFLOAT3 Pos;
+        DirectX::XMFLOAT3 PrevPos;
+        DirectX::XMFLOAT3X3 Rot;
     };
 
 

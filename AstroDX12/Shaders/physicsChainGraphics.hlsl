@@ -25,6 +25,8 @@ cbuffer BindlessRenderResources : register(b1)
 struct ParticleData
 {
     float3 Pos;
+    float3 PrevPos;
+    float3x3 Rot;
 };
 
 
@@ -39,6 +41,7 @@ struct ChainElementData
 struct VertexData
 {
     float3 posLocal;
+    float3 normal;
 };
 
 struct PSInput
@@ -56,10 +59,14 @@ PSInput VS(uint VertexID : SV_VertexID, uint InstanceID : SV_InstanceID)
 
 	// Transform to homogeneous clip space.
     const float3 posL = vertexData[VertexID].posLocal;
-    const float3 posW = posL + chainElementData[InstanceID].Particle.Pos;
+    const float3x3 particleRotation = chainElementData[InstanceID].Particle.Rot;
+    const float3 posW = chainElementData[InstanceID].Particle.Pos + mul(posL, particleRotation);
     o.PosH = mul(float4(posW, 1.0f), gViewProj);
     o.Color = chainElementData[InstanceID].Pinned ? float4(1.f, 0.f, 0.f, 1.f) : float4(1.f, 1.f, 1.f, 1.f);
-
+    
+    float3 fakeLightDir = normalize(float3(1.f, -1.f, 0.5f));
+    o.Color *= saturate(dot(normalize(mul(normalize(vertexData[VertexID].normal), particleRotation)), fakeLightDir) * 0.5f + 0.5f);
+    
     return o;
 }
 

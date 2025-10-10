@@ -8,17 +8,33 @@
 #include <Rendering\Common\FrameResource.h>
 
 using namespace AstroTools::Rendering;
+using namespace DirectX;
 
 ComputePassPhysicsChain::ComputePassPhysicsChain()
     : m_frameIdxModulo(0)
 {
     auto BufferDataVector = std::vector<PhysicsChain::ChainElementData>(5);
+
+	XMVECTOR nodePos = DirectX::XMVectorSet(10.f, 0.f, 10.f, 0.f);
+	XMVECTOR nodeOffset = DirectX::XMVectorSet(0.f, -8.f, 0.f, 0.f);
+    XMMATRIX rotation = DirectX::XMMatrixRotationRollPitchYaw(0.f, 0.f, 0.f);
     for (int i = 0; i < 5; ++i)
     {
-		BufferDataVector[i].Particle.Pos = DirectX::XMFLOAT3(10.f, i * -8.f, 10.f);
+        DirectX::XMStoreFloat3( &BufferDataVector[i].Particle.Pos, nodePos);
+        DirectX::XMStoreFloat3( &BufferDataVector[i].Particle.PrevPos, nodePos);
+
+        // Compute rotation of element
+        rotation = DirectX::XMMatrixRotationRollPitchYaw(0.f, 0.f, i * 10.f * 3.14f / 180.f);
+		DirectX::XMStoreFloat3x3(&BufferDataVector[i].Particle.Rot,  DirectX::XMMatrixInverse(nullptr, rotation));
+
+        XMVECTOR nodeOffsetRotated = DirectX::XMVector3TransformNormal(nodeOffset, rotation);
+        XMVECTOR nextNodePos = DirectX::XMVectorAdd(nodePos, nodeOffsetRotated);
+        nodePos = nextNodePos;
+        
         BufferDataVector[i].RestLength = 8.0f;
         BufferDataVector[i].ParentIndex = (i > 0) ? i - 1 : -1;
         BufferDataVector[i].Pinned = (i > 0) ? false : true;
+
     }
 
     m_chainDataBufferPing = std::make_unique<StructuredBuffer<PhysicsChain::ChainElementData>>(BufferDataVector);
@@ -175,34 +191,36 @@ void GraphicsPassPhysicsChain::CreateChainElementMesh(IRenderer* renderer, MeshL
     struct ChainVertexDataPOD
     {
         DirectX::XMFLOAT3 Pos;
+        DirectX::XMFLOAT3 Normal;
         // TODO: add orientation
         ChainVertexDataPOD() = default;
-        ChainVertexDataPOD(const DirectX::XMFLOAT3& pos)
+        ChainVertexDataPOD(const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3& normal)
             : Pos(pos)
+            , Normal(normal)
         {}
 	};
 
 
     std::vector<ChainVertexDataPOD> verts;
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-1.5f, 0, -1.5f)));
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-1.5f, 0, 1.5f)));
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+1.5f, 0, 1.5f)));
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+1.5f, 0, -1.5f)));
-    
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-1.5f, -3.f, -1.5f)));
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-1.5f, -3.f, 1.5f)));
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+1.5f, -3.f, 1.5f)));
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+1.5f, -3.f, -1.5f)));
+    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-1.5f, 0, -1.5f), DirectX::XMFLOAT3(0, 1, 0))); // These are some attrocious normals, but they're enough to light and see lit geometry. surely will be fixed later!
+    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-1.5f, 0, 1.5f), DirectX::XMFLOAT3(0, 1, 0)));
+    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+1.5f, 0, 1.5f), DirectX::XMFLOAT3(0, 1, 0)));
+    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+1.5f, 0, -1.5f), DirectX::XMFLOAT3(0, 1, 0)));
 
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-2.5f, -3.f, -2.5f)));
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-2.5f, -3.f, +2.5f)));
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+2.5f, -3.f, +2.5f)));
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+2.5f, -3.f, -2.5f)));
+    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-1.5f, -3.f, -1.5f), DirectX::XMFLOAT3(-1, 0, -1)));
+    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-1.5f, -3.f, 1.5f), DirectX::XMFLOAT3(-1, 0, 1)));
+    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+1.5f, -3.f, 1.5f), DirectX::XMFLOAT3(1, 0, 1)));
+    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+1.5f, -3.f, -1.5f), DirectX::XMFLOAT3(1, 0, -1)));
 
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-2.5f, -8.f, -2.5f)));
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-2.5f, -8.f, +2.5f)));
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+2.5f, -8.f, +2.5f)));
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+2.5f, -8.f, -2.5f)));
+    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-2.5f, -3.f, -2.5f), DirectX::XMFLOAT3(0, 1, 0)));
+    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-2.5f, -3.f, +2.5f), DirectX::XMFLOAT3(0, 1, 0)));
+    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+2.5f, -3.f, +2.5f), DirectX::XMFLOAT3(0, 1, 0)));
+    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+2.5f, -3.f, -2.5f), DirectX::XMFLOAT3(0, 1, 0)));
+
+    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-2.5f, -8.f, -2.5f), DirectX::XMFLOAT3(0, -1, 0)));
+    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-2.5f, -8.f, +2.5f), DirectX::XMFLOAT3(0, -1, 0)));
+    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+2.5f, -8.f, +2.5f), DirectX::XMFLOAT3(0, -1, 0)));
+    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+2.5f, -8.f, -2.5f), DirectX::XMFLOAT3(0, -1, 0)));
 
     const std::vector<std::uint32_t> indices =
     {
