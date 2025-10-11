@@ -10,15 +10,21 @@
 using namespace AstroTools::Rendering;
 using namespace DirectX;
 
+namespace Privates
+{
+    static const size_t NumChainElements = 15; // Keep in sync with hlsl file
+}
+
 ComputePassPhysicsChain::ComputePassPhysicsChain()
     : m_frameIdxModulo(0)
+	, m_simNeedsReset(false)
 {
-    auto BufferDataVector = std::vector<PhysicsChain::ChainElementData>(5);
+    auto BufferDataVector = std::vector<PhysicsChain::ChainElementData>(Privates::NumChainElements);
 
 	XMVECTOR nodePos = DirectX::XMVectorSet(10.f, 0.f, 10.f, 0.f);
 	XMVECTOR nodeOffset = DirectX::XMVectorSet(0.f, -8.f, 0.f, 0.f);
     XMMATRIX rotation = DirectX::XMMatrixRotationRollPitchYaw(0.f, 0.f, 0.f);
-    for (int i = 0; i < 5; ++i)
+    for (int i = 0; i < Privates::NumChainElements; ++i)
     {
         DirectX::XMStoreFloat3( &BufferDataVector[i].Particle.Pos, nodePos);
         DirectX::XMStoreFloat3( &BufferDataVector[i].Particle.PrevPos, nodePos);
@@ -111,6 +117,8 @@ void ComputePassPhysicsChain::Init(IRenderer* renderer, AstroTools::Rendering::S
 void ComputePassPhysicsChain::Update(int32_t frameIdxModulo, void* /*Data*/)
 {
     m_frameIdxModulo = frameIdxModulo;
+
+    m_simNeedsReset.Tick();
 }
 
 int32_t ComputePassPhysicsChain::GetParticleReadBufferSRVHeapIndex() const
@@ -140,7 +148,8 @@ void ComputePassPhysicsChain::Execute(
     constexpr int32_t BindlessResourceIndicesRootSigParamIndex = 0;
     const std::vector<int32_t> BindlessResourceIndices = {
         bufferInput->GetSRVIndex(),
-        bufferOutput->GetUAVIndex()
+        bufferOutput->GetUAVIndex(),
+        m_simNeedsReset.NeedsReset() ? 1 : 0
     };
     cmdList->SetComputeRoot32BitConstants(
         (UINT)BindlessResourceIndicesRootSigParamIndex,
@@ -390,7 +399,7 @@ void GraphicsPassPhysicsChain::Execute(
         (UINT)GraphicsBindlessResourceIndicesRootSigParamIndex,
         (UINT)GraphicsBindlessResourceIndices.size(), GraphicsBindlessResourceIndices.data(), 0);
 
-    const int instanceCount = 5; // TODO: this is the maximum - the GPU will need to set the size of the mesh to zero for particles that are not alive
+    const int instanceCount = Privates::NumChainElements; // TODO: this is the maximum - the GPU will need to set the size of the mesh to zero for particles that are not alive
     cmdList->DrawIndexedInstanced((UINT)m_chainElementMesh.lock()->GetVertexIndicesCount(), instanceCount, 0, 0, 0);
 }
 

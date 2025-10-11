@@ -444,9 +444,9 @@ void AstroGameInstance::BuildPipelineStateObject()
 void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shaderLibrary)
 {
 	// Base Geo PASS
-	auto baseGeoPass = std::make_shared< BasePassSceneGeometry>();
-	baseGeoPass->Init(m_renderer.get(), m_renderablesDesc, NumFrameResources);
-	m_gpuPasses.push_back(std::move(baseGeoPass));
+	//auto baseGeoPass = std::make_shared< BasePassSceneGeometry>();
+	//baseGeoPass->Init(m_renderer.get(), m_renderablesDesc, NumFrameResources);
+	//m_gpuPasses.push_back(std::move(baseGeoPass));
 
 	auto addTwoBuffersTogetherPass = std::make_shared< ComputePassAddBufferValues >();
 	addTwoBuffersTogetherPass->Init(m_computableDescs);
@@ -559,6 +559,14 @@ void AstroGameInstance::Render(float /*deltaTime*/)
 		});
 
 	PIXEndEvent();
+}
+
+void AstroGameInstance::OnSimReset()
+{
+	for (auto& pass : m_gpuPasses)
+	{
+		pass->OnSimReset();
+	}
 }
 
 void AstroGameInstance::Shutdown()

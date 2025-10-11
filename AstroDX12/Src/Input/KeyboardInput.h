@@ -7,5 +7,6 @@ enum KeyboardKey
 	Back,
 	Up,
 	Down,
-	Reset
+	ResetCamera,
+	ResetSim
 };

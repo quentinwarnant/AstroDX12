@@ -48,6 +48,28 @@ namespace PhysicsChain
 
 }
 
+struct SimNeedsResetData
+{
+
+    bool FlaggedForReset = false;
+    bool NeedsResetting = false;
+
+	void FlagForReset() { FlaggedForReset = true; }
+    void Tick() 
+    {
+        if (FlaggedForReset)
+        {
+			FlaggedForReset = false;
+            NeedsResetting = true;
+        }
+        else
+        {
+            NeedsResetting = false;
+        }
+    };
+
+	bool NeedsReset() const { return NeedsResetting; }
+};
 
 class ComputePassPhysicsChain :
     public ComputePass
@@ -63,11 +85,17 @@ public:
         const FrameResource& frameResources) const override;
     virtual void Shutdown() override;
 
+    virtual void OnSimReset() override
+    {
+        m_simNeedsReset.FlagForReset();
+    }
+
     int32_t GetParticleReadBufferSRVHeapIndex() const;
     int32_t GetParticleOutputBufferSRVHeapIndex() const;
 
 private:
     int32_t m_frameIdxModulo = 0;
+    SimNeedsResetData m_simNeedsReset;
 
     std::unique_ptr<StructuredBuffer<PhysicsChain::ChainElementData>> m_chainDataBufferPing;
     std::unique_ptr<StructuredBuffer<PhysicsChain::ChainElementData>> m_chainDataBufferPong;

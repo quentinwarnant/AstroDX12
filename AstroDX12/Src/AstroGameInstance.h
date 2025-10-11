@@ -73,6 +73,7 @@ private:
     virtual void CreatePasses(AstroTools::Rendering::ShaderLibrary& shaderLibrary) override;
     virtual void Update(float deltaTime) override;
     virtual void Render(float deltaTime) override;
+	virtual void OnSimReset() override;
 
 };
 

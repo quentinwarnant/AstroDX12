@@ -195,11 +195,14 @@ void Game::OnKeyboardKey(KeyboardKey key)
     case KeyboardKey::Up:
         m_cameraOriginPos = XMVectorAdd(m_cameraOriginPos, Up * 2);
         break;
-    case KeyboardKey::Reset:
+    case KeyboardKey::ResetCamera:
         m_cameraOriginPos = XMVectorSet(0, 0, 0, 0);
         m_cameraPhi = 0.f;
         m_cameraTheta = 0.f * XM_PI;
         m_lookDir = XMVectorSet(0, 0, 1, 0);
+        break;
+    case KeyboardKey::ResetSim:
+        OnSimReset();
         break;
     default:
         DX::astro_assert(false, "Key not handled");

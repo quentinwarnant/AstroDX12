@@ -67,7 +67,8 @@ protected:
     virtual void CreatePasses(AstroTools::Rendering::ShaderLibrary& shaderLibrary) = 0;
     virtual void Update(float deltaTime) = 0;
     virtual void Render(float deltaTime) = 0;
-   
+    virtual void OnSimReset() = 0;
+
     std::unique_ptr<IRenderer> m_renderer;
 
 private:

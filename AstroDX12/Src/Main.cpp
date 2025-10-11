@@ -319,8 +319,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case 0x65:   // Up
             game->OnKeyboardKey(KeyboardKey::Up);
             break;
-        case 0x20:   // Reset
-            game->OnKeyboardKey(KeyboardKey::Reset);
+        case 0x20:   // Reset Camera
+            game->OnKeyboardKey(KeyboardKey::ResetCamera);
+        case 0x72:   // Sim Reset
+            game->OnKeyboardKey(KeyboardKey::ResetSim);
             break;
         }
 
