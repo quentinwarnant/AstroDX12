@@ -105,6 +105,8 @@ void GraphicsPassCopyGBufferToBackbuffer::Update(int32_t frameIdxModulo, void* D
 
 void GraphicsPassCopyGBufferToBackbuffer::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float deltaTime, const FrameResource& frameResources) const
 {
+    PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "GraphicsPassCopyGBufferToBackbuffer");
+
 	cmdList->SetGraphicsRootSignature(m_rootSignature.Get());
 	cmdList->SetPipelineState(m_pso.Get());
 

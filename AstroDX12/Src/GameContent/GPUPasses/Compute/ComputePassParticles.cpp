@@ -112,6 +112,8 @@ void ComputePassParticles::Execute(
     float /*deltaTime*/,
     const FrameResource& /*frameResources*/) const
 {
+    PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "ComputePassParticles");
+
     // Dispatch Particle update
     auto bufferInput = m_frameIdxModulo % 2 == 0 ? m_particleDataBufferPing.get() : m_particleDataBufferPong.get();
     auto bufferOutput = m_frameIdxModulo % 2 == 1 ? m_particleDataBufferPing.get() : m_particleDataBufferPong.get();
@@ -251,6 +253,8 @@ void GraphicsPassParticles::Execute(
     float /*deltaTime*/,
     const FrameResource& frameResources) const
 {
+    PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "GraphicsPassParticles");
+
     const auto indexBuffer = m_boxMesh.lock()->IndexBufferView();
     cmdList->IASetIndexBuffer(&indexBuffer);
     cmdList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

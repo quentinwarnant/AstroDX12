@@ -25,6 +25,8 @@ void ComputePassAddBufferValues::Execute(
 	float /*deltaTime*/,
 	const FrameResource& frameResources) const
 {
+	PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "ComputePassAddBufferValues");
+
 	m_computeGroup->ForEach([&](const std::shared_ptr<IComputable>& computableObj)
 	{
 		cmdList->SetComputeRootSignature(computableObj->GetRootSignature().Get());

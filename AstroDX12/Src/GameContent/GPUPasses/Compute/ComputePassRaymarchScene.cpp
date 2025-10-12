@@ -118,6 +118,7 @@ void ComputePassRaymarchScene::Execute(
     float /*deltaTime*/,
     const FrameResource& frameResources) const
 {
+    PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "ComputePassRaymarchScene");
 
     const auto GBufferRTPreDrawStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
         m_gBuffer1RT->GetResource(),

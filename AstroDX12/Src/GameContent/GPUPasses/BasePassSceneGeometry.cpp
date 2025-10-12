@@ -81,6 +81,8 @@ void BasePassSceneGeometry::Update(int32_t frameIdxModulo, void* /*Data*/)
 
 void BasePassSceneGeometry::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float /*deltaTime*/, const FrameResource& frameResources) const
 {
+    PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "BasePassSceneGeometry");
+
     auto& currentFrameObjectConstantsDataBuffer = *m_renderableObjectConstantsDataBufferPerFrameResources[m_frameIdxModulo].get();
 
     const auto frameResourceCBVBufferGPUAddress = frameResources.PassConstantBuffer->Resource()->GetGPUVirtualAddress();

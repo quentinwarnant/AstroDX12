@@ -7,6 +7,8 @@
 #include <Rendering\Renderable\IRenderable.h>
 #include <Rendering\Common\FrameResource.h>
 
+#include <pix3.h>
+
 using namespace AstroTools::Rendering;
 using namespace DirectX;
 
@@ -138,6 +140,8 @@ void ComputePassPhysicsChain::Execute(
     float /*deltaTime*/,
     const FrameResource& /*frameResources*/) const
 {
+    PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "ComputePassPhysicsChain");
+
     // Dispatch Particle update
     auto bufferInput = m_frameIdxModulo % 2 == 0 ? m_chainDataBufferPing.get() : m_chainDataBufferPong.get();
     auto bufferOutput = m_frameIdxModulo % 2 == 1 ? m_chainDataBufferPing.get() : m_chainDataBufferPong.get();
@@ -380,6 +384,8 @@ void GraphicsPassPhysicsChain::Execute(
     float /*deltaTime*/,
     const FrameResource& frameResources) const
 {
+    PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "GraphicsPassPhysicsChain");
+
     const auto indexBuffer = m_chainElementMesh.lock()->IndexBufferView();
     cmdList->IASetIndexBuffer(&indexBuffer);
     cmdList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
