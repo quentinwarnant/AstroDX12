@@ -1,3 +1,5 @@
+#include "Shaders/ParticlesCommon.hlsli"
+
 cbuffer cbPass : register(b0)
 {
     float4x4 gView;
@@ -20,15 +22,6 @@ cbuffer BindlessRenderResources : register(b1)
 {
     int particlesBufferIndex;
     int modelVertexDataBufferIdx;
-};
-
-struct ParticleData
-{
-    float3 Pos;
-    float3 Vel;
-    float Age;
-    float Lifetime;
-    float Size;
 };
 
 struct VertexData

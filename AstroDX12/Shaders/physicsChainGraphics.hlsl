@@ -1,3 +1,5 @@
+#include "Shaders/physicsChainCommon.hlsli"
+
 cbuffer cbPass : register(b0)
 {
     float4x4 gView;
@@ -20,22 +22,6 @@ cbuffer BindlessRenderResources : register(b1)
 {
     int chainElementBufferIndex;
     int modelVertexDataBufferIdx;
-};
-
-struct ParticleData
-{
-    float3 Pos;
-    float3 PrevPos;
-    float3x3 Rot;
-};
-
-
-struct ChainElementData
-{
-    ParticleData Particle;
-    int ParentIndex;
-    float RestLength;
-    bool Pinned;
 };
 
 struct VertexData

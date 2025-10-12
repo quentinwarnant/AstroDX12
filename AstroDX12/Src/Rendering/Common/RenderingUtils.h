@@ -23,6 +23,56 @@ namespace AstroTools
 			return (dataSize + 255) & ~255;
 		}
 
+		struct ShaderIncludeHandler : public IDxcIncludeHandler
+		{
+		private:
+			ComPtr<IDxcUtils> m_utils;
+		public:
+			ShaderIncludeHandler(ComPtr<IDxcUtils> utils) : m_utils(utils), refCount(0) {}
+
+			virtual HRESULT LoadSource(LPCWSTR pFilename, IDxcBlob** ppIncludeSource) override
+			{
+				// move string pointer one character further. 
+				// first character is a . , from a ".\filename" string, we want to get rid of that to append to the rest of the working directory path
+				pFilename++;
+
+				auto filePath = s2ws(DX::GetWorkingDirectory());
+				filePath.append(pFilename);
+
+				ComPtr<IDxcBlobEncoding> sourceBlob;
+				{
+					const HRESULT hr = m_utils->LoadFile(filePath.c_str(), nullptr, &sourceBlob);
+					DX::ThrowIfFailed(hr);
+
+				}
+
+				ComPtr<IDxcBlobEncoding> pTextBlob;
+				{
+					const HRESULT hr = m_utils->CreateBlobFromPinned(sourceBlob->GetBufferPointer(), (UINT32)sourceBlob->GetBufferSize(), 0, &pTextBlob);
+					DX::ThrowIfFailed(hr);
+				}
+				
+				*ppIncludeSource = pTextBlob.Detach();
+				return S_OK;
+			}
+
+			ULONG refCount = 0;
+			// IUnknown methods (essential for COM objects)
+			ULONG STDMETHODCALLTYPE AddRef() override { return  InterlockedIncrement(&refCount); }
+			ULONG STDMETHODCALLTYPE Release() override { return InterlockedDecrement(&refCount); }
+			HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override
+			{
+				if (riid == __uuidof(IDxcIncludeHandler) || riid == __uuidof(IUnknown))
+				{
+					*ppvObject = this;
+					return S_OK;
+				}
+				*ppvObject = nullptr;
+				return E_NOINTERFACE;
+			}
+		};
+
+
 		static ComPtr<IDxcBlob> CompileShader(
 			const std::wstring& filename,
 			const std::vector<std::wstring>& defines,
@@ -86,10 +136,12 @@ namespace AstroTools
 			
 			ComPtr<IDxcResult> compiledShaderBuffer{};
 			{
+				ShaderIncludeHandler includeHandler(utils);
+
 				const HRESULT hr = compiler->Compile(&sourceBuffer,
 					compilationArguments.data(),
 					static_cast<uint32_t>(compilationArguments.size()),
-					nullptr,
+					&includeHandler,
 					IID_PPV_ARGS(&compiledShaderBuffer));
 				DX::ThrowIfFailed(hr);
 

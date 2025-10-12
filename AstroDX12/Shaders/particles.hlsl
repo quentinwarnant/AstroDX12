@@ -1,12 +1,4 @@
-
-struct ParticleData
-{
-    float3 Pos;
-    float3 Vel;
-    float Age;
-    float Lifetime;
-    float Size;
-};
+#include "Shaders/ParticlesCommon.hlsli"
 
 cbuffer BindlessRenderResources : register(b0)
 {
