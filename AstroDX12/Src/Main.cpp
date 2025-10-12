@@ -232,12 +232,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             if (LOWORD(wParam) == WA_INACTIVE)
             {
-                g_gameTimer->Stop();
+                if (g_gameTimer)
+                {
+                    g_gameTimer->Stop();
+                }
                 game->OnDeactivated();
             }
             else
             {
-                g_gameTimer->Start();
+                if (g_gameTimer)
+                {
+                    g_gameTimer->Start();
+                }
                 game->OnActivated();
             }
         }
