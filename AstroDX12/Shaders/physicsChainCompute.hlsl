@@ -1,5 +1,19 @@
 #include "Shaders/physicsChainCommon.hlsli"
 
+
+struct CollisionElement
+{
+    float3 Pos;
+    float Radius;
+};
+
+#define MAX_COLLISION_ELEMENTS 8
+struct CollisionCollectionData
+{
+    CollisionElement Elements[MAX_COLLISION_ELEMENTS];
+    int ElementCount;
+};
+
 cbuffer BindlessRenderResources : register(b0)
 {
     int BindlessIndexChainElementBufferInput;
@@ -15,8 +29,61 @@ groupshared bool Pinned[GROUP_SIZE];
 groupshared float RestLengths[GROUP_SIZE];
 groupshared int ParentIndex[GROUP_SIZE];
 
+CollisionCollectionData MakeCollisionData()
+{
+    CollisionCollectionData data;
+    data.Elements[0].Pos = float3(16.f, -24.f, 9.f);
+    data.Elements[0].Radius = 5.f;
+    
+    data.Elements[1].Pos = float3(18.f, -35.f, 10.f);
+    data.Elements[1].Radius = 3.f;
+    
+    data.Elements[2].Pos = float3(10.f, -47.f, 10.f);
+    data.Elements[2].Radius = 3.5f;
+
+    data.ElementCount = 3;
+    return data;
+}
+
+void HandleConstraints(inout float3 nodePos, inout float3 parentNodePos, in float restLength, in bool isParentPinned)
+{
+    // Only length constraint for now
+    const float3 NodeToParent = parentNodePos - nodePos;
+    const float distanceToParent = length(NodeToParent);
+    const float lengthCorrection = distanceToParent - restLength;
+    if (abs(lengthCorrection) > 0.0001f)
+    {
+        const float3 correctionDir = normalize(NodeToParent) * lengthCorrection;
+        float w1 = isParentPinned ? 1.f : 0.5f;
+        float w2 = 1.f - w1;
+        nodePos += correctionDir * w1;
+        parentNodePos -= correctionDir * w2;
+    }
+}
+
+void HandleCollisions(inout float3 nodePos, in CollisionCollectionData collisionData)
+{
+    for (int i = 0; i < collisionData.ElementCount; ++i)
+    {
+        const CollisionElement element = collisionData.Elements[i];
+        const float3 toElement = element.Pos - nodePos;
+        const float distance = length(toElement);
+        const float nodeRadius = 2.f; // TODO: should be a parameter in the particle data
+        if (distance < element.Radius + nodeRadius)
+        {
+            // Simple collision response - push the node out of the element
+            const float3 pushDir = normalize(toElement);
+            float diff = (element.Radius + nodeRadius) - distance;
+            nodePos += -pushDir * diff;
+        }
+    }
+}
+
 void PBDSolver(float dt, float3 externalForces, uint elementCount)
 {
+    // Tmp - create collision data in shader for now
+    const CollisionCollectionData collisionData = MakeCollisionData();
+    
     const uint iterationCount = 30;
     const float dtIt = dt / iterationCount;
     const float dtItSqr = dtIt * dtIt;
@@ -40,18 +107,9 @@ void PBDSolver(float dt, float3 externalForces, uint elementCount)
 
                 const uint parentIdx = ParentIndex[i];
                 
-                const float3 NodeToParent = Pos[parentIdx] - newPos;
-                const float distanceToParent = length(NodeToParent);
-                const float lengthCorrection = distanceToParent - RestLengths[i];
-                if (abs(lengthCorrection) > 0.0001f)
-                {
-                    const float3 correctionDir = normalize(NodeToParent) * lengthCorrection;
-                    const bool isParentPinned = Pinned[parentIdx];
-                    float w1 = isParentPinned ? 1.f : 0.5f;
-                    float w2 = 1.f - w1;
-                    newPos += correctionDir * w1;
-                    Pos[parentIdx] -= correctionDir * w2;
-                }
+                HandleCollisions(newPos, collisionData);
+                HandleConstraints(newPos, Pos[parentIdx], RestLengths[i], Pinned[parentIdx]);
+                
             
                 Pos[i] = newPos;
             }
