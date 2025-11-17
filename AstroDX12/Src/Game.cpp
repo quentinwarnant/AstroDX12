@@ -44,18 +44,13 @@ Game::~Game()
 void Game::Initialize(HWND window, int width, int height)
 {
     OnWindowSizeChanged(width, height);
+    
+    InitCamera();
+
     m_renderer->Init( window, width, height);
-
     Create_const_uav_srv_BufferDescriptorHeaps();
-    LoadSceneData();
-
     BuildFrameResources();
     CreateConstantBufferViews();
-    CreateComputableObjectsStructuredBufferViews();
-    BuildRootSignature();
-    BuildShaders(m_shaderLibrary);
-    BuildPipelineStateObject();
-
 
     CreatePasses(m_shaderLibrary);
 

@@ -297,8 +297,12 @@
     <ClInclude Include="Src\External\Math\Common.h" />
     <ClInclude Include="Src\GameContent\Compute\ComputeObjectConstantData.h" />
     <ClInclude Include="Src\GameContent\GPUPasses\BasePassSceneGeometry.h" />
-    <ClInclude Include="Src\GameContent\GPUPasses\Compute\ComputePassAddBufferValues.h" />
     <ClInclude Include="Src\GameContent\GPUPasses\Compute\ComputePassParticles.h" />
+    <ClInclude Include="Src\GameContent\GPUPasses\Compute\ComputePassPhysicsChain.h" />
+    <ClInclude Include="Src\GameContent\GPUPasses\Compute\ComputePassRaymarchScene.h" />
+    <ClInclude Include="Src\GameContent\GPUPasses\Debugging\GraphicsPassDebugDraw.h" />
+    <ClInclude Include="Src\GameContent\GPUPasses\GraphicsPassCopyGBufferToBackbuffer.h" />
+    <ClInclude Include="Src\GameContent\GPUPasses\RaymarchScene.h" />
     <ClInclude Include="Src\GameContent\Scene\SceneDescription.h" />
     <ClInclude Include="Src\GameContent\Scene\SceneLoader.h" />
     <ClInclude Include="Src\Input\KeyboardInput.h" />
@@ -314,6 +318,7 @@
     <ClInclude Include="Src\Rendering\Common\PipelineStateObjectLibrary.h" />
     <ClInclude Include="Src\Rendering\Common\RendererContext.h" />
     <ClInclude Include="Src\Rendering\Common\RenderingUtils.h" />
+    <ClInclude Include="Src\Rendering\Common\RenderTarget.h" />
     <ClInclude Include="Src\Rendering\Common\ShaderLibrary.h" />
     <ClInclude Include="Src\Rendering\Common\StructuredBuffer.h" />
     <ClInclude Include="Src\Rendering\Common\UploadBuffer.h" />
@@ -355,13 +360,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Src\GameContent\GPUPasses\BasePassSceneGeometry.cpp" />
-    <ClCompile Include="Src\GameContent\GPUPasses\Compute\ComputePassAddBufferValues.cpp" />
     <ClCompile Include="Src\GameContent\GPUPasses\Compute\ComputePassParticles.cpp" />
+    <ClCompile Include="Src\GameContent\GPUPasses\Compute\ComputePassPhysicsChain.cpp" />
+    <ClCompile Include="Src\GameContent\GPUPasses\Compute\ComputePassRaymarchScene.cpp" />
+    <ClCompile Include="Src\GameContent\GPUPasses\Debugging\GraphicsPassDebugDraw.cpp" />
+    <ClCompile Include="Src\GameContent\GPUPasses\GraphicsPassCopyGBufferToBackbuffer.cpp" />
     <ClCompile Include="Src\GameContent\Scene\SceneLoader.cpp" />
     <ClCompile Include="Src\Rendering\Common\FrameResource.cpp" />
     <ClCompile Include="Src\AstroGameInstance.cpp" />
     <ClCompile Include="Src\Game.cpp" />
     <ClCompile Include="Src\Main.cpp" />
+    <ClCompile Include="Src\Rendering\Common\RenderTarget.cpp" />
     <ClCompile Include="Src\Rendering\RendererDX12.cpp" />
     <ClCompile Include="Src\Timing\GameTimer.cpp" />
   </ItemGroup>
@@ -393,6 +402,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\packages\Microsoft.Direct3D.D3D12.1.614.1\build\native\Microsoft.Direct3D.D3D12.targets" Condition="Exists('..\packages\Microsoft.Direct3D.D3D12.1.614.1\build\native\Microsoft.Direct3D.D3D12.targets')" />
+    <Import Project="..\packages\WinPixEventRuntime.1.0.240308001\build\WinPixEventRuntime.targets" Condition="Exists('..\packages\WinPixEventRuntime.1.0.240308001\build\WinPixEventRuntime.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -400,5 +410,6 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Microsoft.Direct3D.D3D12.1.614.1\build\native\Microsoft.Direct3D.D3D12.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Direct3D.D3D12.1.614.1\build\native\Microsoft.Direct3D.D3D12.props'))" />
     <Error Condition="!Exists('..\packages\Microsoft.Direct3D.D3D12.1.614.1\build\native\Microsoft.Direct3D.D3D12.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Direct3D.D3D12.1.614.1\build\native\Microsoft.Direct3D.D3D12.targets'))" />
+    <Error Condition="!Exists('..\packages\WinPixEventRuntime.1.0.240308001\build\WinPixEventRuntime.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\WinPixEventRuntime.1.0.240308001\build\WinPixEventRuntime.targets'))" />
   </Target>
 </Project>

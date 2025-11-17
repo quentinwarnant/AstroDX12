@@ -58,7 +58,7 @@ public:
 		ComPtr<ID3D12PipelineState>& pso,
 		ComPtr<ID3D12RootSignature>& rootSignature,
 		ComPtr<IDxcBlob>& computeShaderByteCode) = 0;
-	virtual void BuildFrameResources(std::vector<std::unique_ptr<FrameResource>>& outFrameResourcesList, int frameResourcesCount, int renderableObjectCount, int computableObjectCount) = 0;
+	virtual void BuildFrameResources(std::vector<std::unique_ptr<FrameResource>>& outFrameResourcesList, int frameResourcesCount) = 0;
 	virtual void InitialiseRenderTarget(
 		std::weak_ptr<RenderTarget> renderTarget,
 		LPCWSTR name,

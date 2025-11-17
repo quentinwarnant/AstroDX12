@@ -1,0 +1,3 @@
+TODO: add barrier on GBuffer RT before reading it in copy pass
+
+Sort out Shader includes to avoid duplicating particle data & risking getting out of sync

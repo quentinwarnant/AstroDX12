@@ -1,21 +1,34 @@
 #include "BasePassSceneGeometry.h"
 
-#include <Rendering/Renderable/IRenderable.h>
-#include <Rendering/Renderable/RenderableStaticObject.h>
-#include <Rendering/Renderable/RenderableGroup.h>
 #include <Common.h>
+#include <Rendering/Common/FrameResource.h>
 #include <Rendering/Common/UploadBuffer.h>
 #include <Rendering/IRenderer.h>
-#include <Rendering/Common/FrameResource.h>
+#include <Rendering/Renderable/IRenderable.h>
+#include <Rendering/Renderable/RenderableGroup.h>
+#include <Rendering/Renderable/RenderableStaticObject.h>
+#include <Rendering/RenderData/RenderConstants.h>
+#include <Rendering/RenderData/VertexData.h>
+#include <Rendering/RenderData/VertexDataFactory.h>
+#include <Rendering/Common/VertexDataInputLayoutLibrary.h>
+#include <Rendering/Common/MeshLibrary.h>
+#include <Rendering/Common/ShaderLibrary.h>
 
 
-void BasePassSceneGeometry::Init(IRenderer* renderer, const std::vector<IRenderableDesc>& renderablesDesc, int16_t numFrameResources)
+using namespace AstroTools::Rendering;
+
+void BasePassSceneGeometry::Init(IRenderer* renderer, ShaderLibrary& shaderLibrary, MeshLibrary& meshLibrary, int16_t numFrameResources)
 {
+    BuildSceneGeometry(renderer, meshLibrary);
+    BuildShaders(shaderLibrary);
+    BuildRootSignature(renderer);
+    BuildPipelineStateObject(renderer);
+
     // We need a buffer for each frames we may have in flight, as we don't want to modify a buffer whilst it's used for rendering in another frame.
-    auto BufferDataVector = std::vector<RenderableObjectConstantData>(renderablesDesc.size());
-    for (int32_t idx = 0; idx < renderablesDesc.size(); ++idx)
+    auto BufferDataVector = std::vector<RenderableObjectConstantData>(m_renderablesDesc.size());
+    for (int32_t idx = 0; idx < m_renderablesDesc.size(); ++idx)
     {
-        BufferDataVector[idx].WorldTransform = renderablesDesc[idx].InitialTransform;
+        BufferDataVector[idx].WorldTransform = m_renderablesDesc[idx].InitialTransform;
     }
 
     for (int16_t frameIdx = 0; frameIdx < numFrameResources; ++frameIdx)
@@ -26,7 +39,7 @@ void BasePassSceneGeometry::Init(IRenderer* renderer, const std::vector<IRendera
     }
 
     int16_t index = 0;
-    for (auto& renderableDesc : renderablesDesc)
+    for (auto& renderableDesc : m_renderablesDesc)
     {
         auto renderableObj = std::make_shared<RenderableStaticObject>(
             renderableDesc,
@@ -50,6 +63,230 @@ void BasePassSceneGeometry::Init(IRenderer* renderer, const std::vector<IRendera
         }
     }
 }
+
+void BasePassSceneGeometry::BuildPipelineStateObject(IRenderer* renderer)
+{
+    for (auto& renderableDesc : m_renderablesDesc)
+    {
+        renderer->CreateGraphicsPipelineState(
+            renderableDesc.PipelineStateObject,
+            renderableDesc.RootSignature,
+            nullptr,
+            renderableDesc.VS,
+            renderableDesc.PS);
+    }
+
+}
+
+SceneData BasePassSceneGeometry::LoadSceneGeometry()
+{
+    return SceneLoader::LoadScene(1);
+}
+
+void BasePassSceneGeometry::BuildSceneGeometry(IRenderer* renderer, MeshLibrary& meshLibrary)
+{
+    auto rendererContext = renderer->GetRendererContext();
+
+    std::vector<VertexData_Short> verts;
+    verts.emplace_back(VertexData_Short(DirectX::XMFLOAT3(-1.5f, -1.5f, -1.5f), DirectX::XMFLOAT4(Colors::White)));
+    verts.emplace_back(VertexData_Short(DirectX::XMFLOAT3(-1.5f, +1.5f, -1.5f), DirectX::XMFLOAT4(Colors::Black)));
+    verts.emplace_back(VertexData_Short(DirectX::XMFLOAT3(+1.5f, +1.5f, -1.5f), DirectX::XMFLOAT4(Colors::Red)));
+    verts.emplace_back(VertexData_Short(DirectX::XMFLOAT3(+1.5f, -1.5f, -1.5f), DirectX::XMFLOAT4(Colors::Green)));
+    verts.emplace_back(VertexData_Short(DirectX::XMFLOAT3(-1.5f, -1.5f, +1.5f), DirectX::XMFLOAT4(Colors::Blue)));
+    verts.emplace_back(VertexData_Short(DirectX::XMFLOAT3(-1.5f, +1.5f, +1.5f), DirectX::XMFLOAT4(Colors::Yellow)));
+    verts.emplace_back(VertexData_Short(DirectX::XMFLOAT3(+1.5f, +1.5f, +1.5f), DirectX::XMFLOAT4(Colors::Cyan)));
+    verts.emplace_back(VertexData_Short(DirectX::XMFLOAT3(+1.5f, -1.5f, +1.5f), DirectX::XMFLOAT4(Colors::Magenta)));
+
+    const std::vector<std::uint32_t> indices =
+    {
+        // Front face
+        0, 1, 2,
+        0, 2, 3,
+
+        // Back face
+        4, 6, 5,
+        4, 7, 6,
+
+        // Left face
+        4, 5, 1,
+        4, 1, 0,
+
+        // Right face
+        3, 2, 6,
+        3, 6, 7,
+
+        // Top face
+        1, 5, 6,
+        1, 6, 2,
+
+        // Bottom face
+        4, 0, 3,
+        4, 3, 7
+    };
+
+
+    const auto vertsPODList = VertexDataFactory::Convert(verts);
+    auto boxMesh = meshLibrary.AddMesh(rendererContext, std::string("BoxGeometry"), vertsPODList, indices);
+
+    const auto rootPath = s2ws(DX::GetWorkingDirectory());
+    const auto basicShaderPath = rootPath + std::wstring(L"\\Shaders\\basic.hlsl");
+    const auto vertexColorShaderPath = rootPath + std::wstring(L"\\Shaders\\color.hlsl");
+    const auto simpleNormalUVAndLightingShaderPath = rootPath + std::wstring(L"\\Shaders\\simpleNormalUVLighting.hlsl");
+    const auto texturedShaderPath = rootPath + std::wstring(L"\\Shaders\\Textured.hlsl");
+
+    // Box 1
+    auto transformBox1 = XMFLOAT4X4(
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f);
+    m_renderablesDesc.emplace_back(
+        boxMesh,
+        vertexColorShaderPath,
+        vertexColorShaderPath,
+        AstroTools::Rendering::InputLayout::IL_Pos_Color,
+        transformBox1,
+        false);
+
+    // Box 2
+    auto transformBox2 = XMFLOAT4X4(
+        1.0f, 0.0f, 0.0f, 10.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f);
+    m_renderablesDesc.emplace_back(
+        boxMesh,
+        vertexColorShaderPath,
+        vertexColorShaderPath,
+        AstroTools::Rendering::InputLayout::IL_Pos_Color,
+        transformBox2,
+        false);
+
+    // Box 3
+    auto transformBox3 = XMFLOAT4X4(
+        4.0f, 0.0f, 0.0f, 20.0f,
+        0.0f, 4.0f, 0.0f, 20.0f,
+        0.0f, 0.0f, 4.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f);
+    m_renderablesDesc.emplace_back(
+        boxMesh,
+        vertexColorShaderPath,
+        vertexColorShaderPath,
+        AstroTools::Rendering::InputLayout::IL_Pos_Color,
+        transformBox3,
+        false);
+
+
+    // .Obj load
+    const auto SceneData = LoadSceneGeometry();
+    for (const auto& SceneMeshObj : SceneData.SceneMeshObjects_VD_PosNormUV)
+    {
+        std::weak_ptr<IMesh> mesh;
+        // Either find an existing mesh with the unique name or add a new one to the library
+        if (!meshLibrary.GetMesh(SceneMeshObj.meshName, mesh))
+        {
+            const auto newMeshvertsPODList = VertexDataFactory::Convert(SceneMeshObj.verts);
+            mesh = meshLibrary.AddMesh(
+                rendererContext,
+                SceneMeshObj.meshName,
+                newMeshvertsPODList,
+                SceneMeshObj.indices
+            );
+        }
+
+        m_renderablesDesc.emplace_back(
+            mesh,
+            simpleNormalUVAndLightingShaderPath,
+            simpleNormalUVAndLightingShaderPath,
+            AstroTools::Rendering::InputLayout::IL_Pos_Normal_UV,
+            SceneMeshObj.transform,
+            false);
+    }
+}
+
+void BasePassSceneGeometry::BuildShaders(AstroTools::Rendering::ShaderLibrary& shaderLibrary)
+{
+    for (auto& renderableDesc : m_renderablesDesc)
+    {
+        renderableDesc.VS = shaderLibrary.GetCompiledShader(renderableDesc.VertexShaderPath, L"VS", {}, L"vs_6_6");
+        renderableDesc.PS = shaderLibrary.GetCompiledShader(renderableDesc.PixelShaderPath, L"PS", {}, L"ps_6_6");
+    }
+}
+
+void BasePassSceneGeometry::BuildRootSignature(IRenderer* renderer)
+{
+    for (auto& renderableDesc : m_renderablesDesc) // TODO: move to BasePassSceneGeometry Pass 
+    {
+        std::vector<D3D12_ROOT_PARAMETER1> slotRootParams;
+
+        // Descriptor table of 3 CBV:
+        // one per pass,
+        // one per object (transform) (object transform - to be depricated in favor of next one),
+        // one for the object's bindless resource indices 
+
+        const D3D12_ROOT_PARAMETER1 rootParamCBVPerPass
+        {
+            .ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV,
+            .Descriptor
+            {
+                .ShaderRegister = 0,
+                .RegisterSpace = 0,
+                .Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC
+            }
+        };
+        slotRootParams.push_back(rootParamCBVPerPass);
+
+        const D3D12_ROOT_PARAMETER1 rootParamCBVPerObjectBindlessResourceIndices
+        {
+            .ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS,
+            .Constants
+            {
+                .ShaderRegister = 1,
+                .RegisterSpace = 0,
+                .Num32BitValues = 3
+            }
+        };
+        slotRootParams.push_back(rootParamCBVPerObjectBindlessResourceIndices);
+
+        //if (renderableDesc.GetSupportsTextures())
+        //{
+        //	CD3DX12_DESCRIPTOR_RANGE textureDescriptorRangeTable0;
+        //	textureDescriptorRangeTable0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, BINDLESS_TEXTURE2D_TABLE_SIZE, 0, TEXTURE2D_DESCRIPTOR_SPACE);
+        //	slotRootParams.push_back(CD3DX12_ROOT_PARAMETER());
+        //	slotRootParams[slotRootParams.size() - 1].InitAsDescriptorTable(1, & textureDescriptorRangeTable0, D3D12_SHADER_VISIBILITY_ALL);
+        //}
+
+        // Root signature is an array of root parameters
+        CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc(
+            (UINT)slotRootParams.size(),
+            slotRootParams.data(),
+            0,
+            nullptr,
+            D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
+            | D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED
+        );
+
+        // Create the root signature
+        ComPtr<ID3DBlob> serializedRootSignature = nullptr;
+        ComPtr<ID3DBlob> errorBlob = nullptr;
+        HRESULT hr = D3D12SerializeVersionedRootSignature(
+            &rootSignatureDesc,
+            serializedRootSignature.GetAddressOf(),
+            errorBlob.GetAddressOf());
+
+        if (errorBlob)
+        {
+            ::OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+        }
+        ThrowIfFailed(hr);
+
+        ComPtr<ID3D12RootSignature> rootSignature = nullptr;
+        renderer->CreateRootSignature(serializedRootSignature, rootSignature);
+
+        renderableDesc.RootSignature = rootSignature;
+    }
+}
+
 
 void BasePassSceneGeometry::Update(int32_t frameIdxModulo, void* /*Data*/)
 {

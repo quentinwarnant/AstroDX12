@@ -54,16 +54,12 @@ public:
     virtual void BuildFrameResources() = 0;
     virtual void Create_const_uav_srv_BufferDescriptorHeaps() = 0;
     virtual void CreateConstantBufferViews() = 0;
-    virtual void CreateComputableObjectsStructuredBufferViews() = 0;
-    virtual void BuildRootSignature() = 0;
-    virtual void BuildShaders(AstroTools::Rendering::ShaderLibrary& shaderLibrary) = 0;
-    virtual void BuildPipelineStateObject() = 0;
 
     virtual void Shutdown() = 0;
 
 protected:
     // Triggered after Initialise, meant for initial state configuration 
-    virtual void LoadSceneData() = 0;
+    virtual void InitCamera() = 0;
     virtual void CreatePasses(AstroTools::Rendering::ShaderLibrary& shaderLibrary) = 0;
     virtual void Update(float deltaTime) = 0;
     virtual void Render(float deltaTime) = 0;

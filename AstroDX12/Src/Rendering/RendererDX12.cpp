@@ -592,15 +592,13 @@ void RendererDX12::CreateComputePipelineState(
 	}
 }
 
-void RendererDX12::BuildFrameResources(std::vector<std::unique_ptr<FrameResource>>& outFrameResourcesList, int frameResourcesCount, int renderableObjectCount, int computableObjectCount)
+void RendererDX12::BuildFrameResources(std::vector<std::unique_ptr<FrameResource>>& outFrameResourcesList, int frameResourcesCount)
 {
 	for (int16_t i = 0; i < frameResourcesCount; ++i)
 	{
 		outFrameResourcesList.push_back(std::make_unique<FrameResource>(
 			m_device.Get(),
 			1,
-			renderableObjectCount,
-			computableObjectCount,
 			i
 			));
 	}

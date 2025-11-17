@@ -62,8 +62,12 @@
     </ClCompile>
     <ClCompile Include="Src\GameContent\Scene\SceneLoader.cpp" />
     <ClCompile Include="Src\GameContent\GPUPasses\BasePassSceneGeometry.cpp" />
-    <ClCompile Include="Src\GameContent\GPUPasses\Compute\ComputePassAddBufferValues.cpp" />
     <ClCompile Include="Src\GameContent\GPUPasses\Compute\ComputePassParticles.cpp" />
+    <ClCompile Include="Src\GameContent\GPUPasses\Compute\ComputePassRaymarchScene.cpp" />
+    <ClCompile Include="Src\Rendering\Common\RenderTarget.cpp" />
+    <ClCompile Include="Src\GameContent\GPUPasses\GraphicsPassCopyGBufferToBackbuffer.cpp" />
+    <ClCompile Include="Src\GameContent\GPUPasses\Compute\ComputePassPhysicsChain.cpp" />
+    <ClCompile Include="Src\GameContent\GPUPasses\Debugging\GraphicsPassDebugDraw.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\AstroGameInstance.h">
@@ -162,8 +166,13 @@
     <ClInclude Include="Src\GameContent\Scene\SceneDescription.h" />
     <ClInclude Include="Src\Rendering\Common\GPUPass.h" />
     <ClInclude Include="Src\GameContent\GPUPasses\BasePassSceneGeometry.h" />
-    <ClInclude Include="Src\GameContent\GPUPasses\Compute\ComputePassAddBufferValues.h" />
     <ClInclude Include="Src\GameContent\GPUPasses\Compute\ComputePassParticles.h" />
+    <ClInclude Include="Src\GameContent\GPUPasses\Compute\ComputePassRaymarchScene.h" />
+    <ClInclude Include="Src\Rendering\Common\RenderTarget.h" />
+    <ClInclude Include="Src\GameContent\GPUPasses\GraphicsPassCopyGBufferToBackbuffer.h" />
+    <ClInclude Include="Src\GameContent\GPUPasses\RaymarchScene.h" />
+    <ClInclude Include="Src\GameContent\GPUPasses\Compute\ComputePassPhysicsChain.h" />
+    <ClInclude Include="Src\GameContent\GPUPasses\Debugging\GraphicsPassDebugDraw.h" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="GraphicsLogo.png" />

@@ -7,6 +7,13 @@
 #include <Rendering/Common/GPUPass.h>
 #include <Rendering/Renderable/IRenderable.h>
 #include <Rendering/Common/StructuredBuffer.h>
+#include <Rendering/Common/MeshLibrary.h>
+#include <GameContent/Scene/SceneLoader.h>
+
+namespace AstroTools::Rendering
+{
+    class ShaderLibrary;
+}
 
 class RenderableGroup;
 class IRenderer;
@@ -28,14 +35,22 @@ public:
 	
     }
 
-    void Init(IRenderer* renderer, const std::vector<IRenderableDesc>& renderablesDesc, int16_t numFrameResources);
+    void Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, MeshLibrary& meshLibrary, int16_t numFrameResources);
     virtual void Update(int32_t frameIdxModulo, void* Data) override;
     virtual void Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float deltaTime, const FrameResource& frameResources) const override;
     virtual void Shutdown() override;
 
 private:
+    SceneData LoadSceneGeometry();
+    void BuildPipelineStateObject(IRenderer* renderer);
+    void BuildSceneGeometry(IRenderer* renderer, MeshLibrary& meshLibrary);
+    void BuildShaders(AstroTools::Rendering::ShaderLibrary& shaderLibrary);
+    void BuildRootSignature(IRenderer* renderer);
+
+
     int32_t m_frameIdxModulo;
     std::vector<std::unique_ptr<StructuredBuffer<RenderableObjectConstantData>>> m_renderableObjectConstantsDataBufferPerFrameResources;
+    std::vector<IRenderableDesc> m_renderablesDesc;
 
     RenderableGroupMap m_renderableGroupMap;
 };

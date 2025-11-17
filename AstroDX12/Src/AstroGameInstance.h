@@ -7,12 +7,8 @@
 #include <Rendering/Common/GPUPass.h>
 #include <Rendering/Common/MeshLibrary.h>
 #include <Rendering/Common/UploadBuffer.h>
-#include <Rendering/Compute/IComputable.h>
-#include <Rendering/Renderable/RenderableStaticObject.h>
-#include <Rendering/RenderData/Mesh.h>
 
 using Microsoft::WRL::ComPtr;
-class IRenderableDesc;
 struct SceneData;
 
 namespace AstroTools::Rendering
@@ -26,31 +22,19 @@ class AstroGameInstance final :
 public:
     AstroGameInstance();
     virtual ~AstroGameInstance();
-    virtual void LoadSceneData() override;
+    virtual void InitCamera() override;
     // Scene renderable objects building
     virtual void BuildFrameResources() override;
     virtual void Create_const_uav_srv_BufferDescriptorHeaps() override;
     virtual void CreateConstantBufferViews() override;
-    virtual void CreateComputableObjectsStructuredBufferViews() override;
-    virtual void BuildRootSignature() override;
-    virtual void BuildShaders(AstroTools::Rendering::ShaderLibrary& shaderLibrary) override;
-    virtual void BuildPipelineStateObject() override;
     
     virtual void Shutdown() override;
 
 private:
-    void BuildSceneGeometry();
     void UpdateFrameResource();
     void UpdateMainRenderPassConstantBuffer(float deltaTime);
 
-    void BuildComputeData();
-
-    SceneData LoadSceneGeometry();
-
     uint32_t m_frameIdx = 0;
-
-    std::vector<IRenderableDesc> m_renderablesDesc;
-    std::vector<ComputableDesc> m_computableDescs;
 
     XMFLOAT3 m_cameraPos;
 
@@ -74,6 +58,4 @@ private:
     virtual void Update(float deltaTime) override;
     virtual void Render(float deltaTime) override;
 	virtual void OnSimReset() override;
-
 };
-

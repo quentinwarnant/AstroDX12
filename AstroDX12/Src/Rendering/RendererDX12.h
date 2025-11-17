@@ -50,7 +50,7 @@ public:
         ComPtr<ID3D12PipelineState>& pso,
         ComPtr<ID3D12RootSignature>& rootSignature,
         ComPtr<IDxcBlob>& computeShaderByteCode);
-    virtual void BuildFrameResources(std::vector<std::unique_ptr<FrameResource>>& outFrameResourcesList, int frameResourcesCount, int renderableObjectCount, int computableObjectCount) override;
+    virtual void BuildFrameResources(std::vector<std::unique_ptr<FrameResource>>& outFrameResourcesList, int frameResourcesCount) override;
     
     virtual void InitialiseRenderTarget(
         std::weak_ptr<RenderTarget> renderTarget,
