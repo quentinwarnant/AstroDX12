@@ -364,3 +364,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/AstroDX12/AstroDX12.vcxproj.filters
+/AstroDX12/AstroDX12.vcxproj

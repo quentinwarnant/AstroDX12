@@ -65,7 +65,7 @@ public:
 		UINT32 width,
 		UINT32 height,
 		DXGI_FORMAT format,
-		bool initialStateIsUAV = true) = 0; 
+		D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_RENDER_TARGET) = 0;
 	virtual UINT64 GetLastCompletedFence() = 0;
 	virtual void WaitForFence(UINT64 fenceValue) = 0;
 };

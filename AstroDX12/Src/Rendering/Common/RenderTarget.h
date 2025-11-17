@@ -32,7 +32,7 @@ public:
         UINT32 width,
         UINT32 height,
         DXGI_FORMAT format,
-        bool initialStateIsUAV = true);
+        D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_RENDER_TARGET);
 
     void ReleaseResources();
 
@@ -51,6 +51,16 @@ public:
         return m_renderTargetResource.Get();
 	}
 
+    D3D12_GPU_DESCRIPTOR_HANDLE GetSRVGPUDescriptorHandle() const
+    {
+        return m_srvDescriptorHandle;
+	}
+
+    D3D12_GPU_DESCRIPTOR_HANDLE GetUAVGPUDescriptorHandle() const
+    {
+        return m_uavDescriptorHandle;
+	}
+
 private:
     ComPtr<ID3D12Resource> m_renderTargetResource = nullptr;
     UINT32 m_width = 0;
@@ -58,5 +68,7 @@ private:
     DXGI_FORMAT m_format = DXGI_FORMAT_UNKNOWN;
     int32_t m_uavIndex = -1;
 	int32_t m_srvIndex = -1;
+    D3D12_GPU_DESCRIPTOR_HANDLE m_srvDescriptorHandle = {};
+    D3D12_GPU_DESCRIPTOR_HANDLE m_uavDescriptorHandle = {};
 };
 

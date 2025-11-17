@@ -58,7 +58,7 @@ public:
         UINT32 width,
         UINT32 height,
         DXGI_FORMAT format,
-        bool initialStateIsUAV = true) override;
+        D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_RENDER_TARGET) override;
     virtual UINT64 GetLastCompletedFence() override;
     virtual void WaitForFence(UINT64 fenceValue) override;
     // IRenderer - END

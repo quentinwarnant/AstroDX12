@@ -68,7 +68,7 @@ void ComputePassPhysicsChain::Init(IRenderer* renderer, AstroTools::Rendering::S
             {
                 .ShaderRegister = 0,
                 .RegisterSpace = 0,
-                .Num32BitValues = 3
+                .Num32BitValues = 4
             },
             .ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL
         };
@@ -111,7 +111,7 @@ void ComputePassPhysicsChain::Init(IRenderer* renderer, AstroTools::Rendering::S
             computableObjDesc.RootSignature,
             computableObjDesc.CS);
 
-        m_particlesComputeObj = std::make_unique<ComputableObject>(computableObjDesc.RootSignature, computableObjDesc.PipelineStateObject, int16_t(0));
+        m_particlesComputeObj = std::make_unique<ComputableObject>(computableObjDesc.RootSignature, computableObjDesc.PipelineStateObject);
 
     }
 

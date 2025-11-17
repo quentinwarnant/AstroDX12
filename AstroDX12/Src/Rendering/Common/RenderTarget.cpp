@@ -11,7 +11,7 @@ void RenderTarget::Initialize(IRenderer* renderer,
 	UINT32 width,
 	UINT32 height,
 	DXGI_FORMAT format, 
-	bool initialStateIsUAV)
+	D3D12_RESOURCE_STATES initialState)
 {
 	m_width = width;
 	m_height = height;
@@ -19,7 +19,7 @@ void RenderTarget::Initialize(IRenderer* renderer,
 
 	m_renderTargetResource = AstroTools::Rendering::CreateRenderTarget(
 		renderer->GetRendererContext().Device.Get(),
-		m_width, m_height, m_format, initialStateIsUAV);
+		m_width, m_height, m_format, initialState);
 
 	m_renderTargetResource->SetName(name);
 
@@ -31,6 +31,7 @@ void RenderTarget::Initialize(IRenderer* renderer,
 	uavDesc.Texture2D.MipSlice = 0;
 	uavDesc.Texture2D.PlaneSlice = 0;
 
+	m_uavDescriptorHandle = descriptorHeap.GetGPUDescriptorHandleByIndex(m_uavIndex);
 	renderer->GetRendererContext().Device->CreateUnorderedAccessView(
 		m_renderTargetResource.Get(),
 		nullptr,
@@ -50,6 +51,7 @@ void RenderTarget::Initialize(IRenderer* renderer,
 	srvDesc.Texture2D.ResourceMinLODClamp = 0.f;
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
+	m_srvDescriptorHandle = descriptorHeap.GetGPUDescriptorHandleByIndex(m_srvIndex);
 	renderer->GetRendererContext().Device->CreateShaderResourceView(
 		m_renderTargetResource.Get(),
 		&srvDesc,

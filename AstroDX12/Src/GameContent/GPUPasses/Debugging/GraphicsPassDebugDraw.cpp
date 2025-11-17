@@ -58,7 +58,7 @@ void GraphicsPassDebugDraw::CreateRootSignature(IRenderer* renderer)
 		{
 			.ShaderRegister = 1,
 			.RegisterSpace = 0,
-			.Num32BitValues = 1 // index to the structured buffer containing the debug objects data
+			.Num32BitValues = 2 // index to the structured buffer containing the debug objects data
 		}
 	};
 	slotRootParams.push_back(rootParamCBVPerObjectBindlessResourceIndices);

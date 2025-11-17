@@ -270,7 +270,7 @@ namespace AstroTools
 			UINT64 width,
 			UINT64 height,
 			DXGI_FORMAT format,
-			bool initialStateIsUAV = true
+			D3D12_RESOURCE_STATES initialState
 		)
 		{
 			Microsoft::WRL::ComPtr<ID3D12Resource> renderTargetResource;
@@ -283,7 +283,7 @@ namespace AstroTools
 				&defaultHeapProps,
 				D3D12_HEAP_FLAG_NONE,
 				&bufferDesc,
-				initialStateIsUAV ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : D3D12_RESOURCE_STATE_RENDER_TARGET,
+				initialState,
 				nullptr,
 				IID_PPV_ARGS(renderTargetResource.GetAddressOf())));
 

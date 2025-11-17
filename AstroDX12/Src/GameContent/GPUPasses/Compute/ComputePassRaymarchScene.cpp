@@ -32,7 +32,7 @@ void ComputePassRaymarchScene::Init(IRenderer* renderer, AstroTools::Rendering::
     m_gBuffer1RT = std::make_shared<RenderTarget>();
     renderer->InitialiseRenderTarget(m_gBuffer1RT , L"GBuffer1",
         GBufferStatics::GBufferWidth, GBufferStatics::GBufferHeight,
-        DXGI_FORMAT_R16G16B16A16_FLOAT, true);
+        DXGI_FORMAT_R16G16B16A16_FLOAT, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
     const auto rootPath = s2ws(DX::GetWorkingDirectory());
     {

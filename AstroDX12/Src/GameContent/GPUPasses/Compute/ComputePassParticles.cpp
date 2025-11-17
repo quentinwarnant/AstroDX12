@@ -83,7 +83,7 @@ void ComputePassParticles::Init(IRenderer* renderer, AstroTools::Rendering::Shad
             computableObjDesc.RootSignature,
             computableObjDesc.CS);
 
-        m_particlesComputeObj = std::make_unique<ComputableObject>(computableObjDesc.RootSignature, computableObjDesc.PipelineStateObject, int16_t(0));
+        m_particlesComputeObj = std::make_unique<ComputableObject>(computableObjDesc.RootSignature, computableObjDesc.PipelineStateObject);
 
     }
 

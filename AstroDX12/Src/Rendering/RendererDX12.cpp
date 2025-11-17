@@ -610,9 +610,9 @@ void RendererDX12::InitialiseRenderTarget(
 	UINT32 width,
 	UINT32 height,
 	DXGI_FORMAT format,
-	bool initialStateIsUAV )
+	D3D12_RESOURCE_STATES initialState)
 {
-	renderTarget.lock()->Initialize(this, *m_globalCBVSRVUAVDescriptorHeap.get(), name, width, height, format, initialStateIsUAV);
+	renderTarget.lock()->Initialize(this, *m_globalCBVSRVUAVDescriptorHeap.get(), name, width, height, format, initialState);
 }
 
 RendererContext RendererDX12::GetRendererContext()

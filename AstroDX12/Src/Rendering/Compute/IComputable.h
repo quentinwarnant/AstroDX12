@@ -35,7 +35,6 @@ public:
 class IComputable
 {
 public:
-	virtual int16_t GetObjectBufferIndex() const = 0;
 	virtual ComPtr<ID3D12RootSignature> GetRootSignature() const = 0;
 	virtual ComPtr<ID3D12PipelineState> GetPSO() const = 0;
 };
