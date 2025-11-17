@@ -120,6 +120,7 @@ void BasePassSceneGeometry::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, f
                 (UINT)BindlessResourceIndicesRootSigParamIndex,
                 (UINT)BindlessResourceIndices.size(), BindlessResourceIndices.data(), 0);
 
+            // TODO: use instancing correctly
             cmdList->DrawIndexedInstanced((UINT)renderableObj->GetIndexCount(), 1, 0, 0, 0);
         });
     }

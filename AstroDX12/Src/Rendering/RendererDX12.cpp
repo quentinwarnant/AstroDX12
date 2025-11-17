@@ -508,7 +508,8 @@ void RendererDX12::CreateGraphicsPipelineState(
 	ComPtr<ID3D12RootSignature>& rootSignature,
 	const std::vector<D3D12_INPUT_ELEMENT_DESC>* inputLayout,
 	ComPtr<IDxcBlob>& vertexShaderByteCode,
-	ComPtr<IDxcBlob>& pixelShaderByteCode)
+	ComPtr<IDxcBlob>& pixelShaderByteCode,
+	bool wireframeEnabled /*= false*/)
 {
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
 	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
@@ -534,6 +535,7 @@ void RendererDX12::CreateGraphicsPipelineState(
 		pixelShaderByteCode->GetBufferSize()
 	};
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	psoDesc.RasterizerState.FillMode = wireframeEnabled ? D3D12_FILL_MODE_WIREFRAME : D3D12_FILL_MODE_SOLID;
 	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 	psoDesc.SampleMask = UINT_MAX;

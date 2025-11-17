@@ -13,4 +13,5 @@ struct ChainElementData
     int ParentIndex;
     float RestLength;
     bool Pinned;
+    float Radius;
 };

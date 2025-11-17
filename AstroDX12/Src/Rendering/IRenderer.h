@@ -52,7 +52,8 @@ public:
 		ComPtr<ID3D12RootSignature>& rootSignature,
 		const std::vector<D3D12_INPUT_ELEMENT_DESC>* inputLayout,
 		ComPtr<IDxcBlob>& vertexShaderByteCode,
-		ComPtr<IDxcBlob>& pixelShaderByteCode) = 0;
+		ComPtr<IDxcBlob>& pixelShaderByteCode,
+		bool wireframeEnabled = false) = 0;
 	virtual void CreateComputePipelineState(
 		ComPtr<ID3D12PipelineState>& pso,
 		ComPtr<ID3D12RootSignature>& rootSignature,

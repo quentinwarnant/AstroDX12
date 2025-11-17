@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Rendering/Common/GPUPass.h>
-#include <Rendering\Common\ShaderLibrary.h>
+#include <Rendering/Common/ShaderLibrary.h>
 
 class IRenderer;
 using Microsoft::WRL::ComPtr;

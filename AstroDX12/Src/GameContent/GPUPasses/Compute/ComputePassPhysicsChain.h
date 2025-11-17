@@ -44,6 +44,7 @@ namespace PhysicsChain
 	    int32_t ParentIndex;
 	    float RestLength;
         bool Pinned;
+        float Radius;
     };
 
 }
@@ -77,7 +78,7 @@ class ComputePassPhysicsChain :
 public:
     ComputePassPhysicsChain();
 
-    void Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary);
+    void Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, int32_t debugDrawBufferUAVIndex);
     virtual void Update(int32_t frameIdxModulo, void* Data) override;
     virtual void Execute(
         ComPtr<ID3D12GraphicsCommandList> cmdList,
@@ -96,6 +97,8 @@ public:
 private:
     int32_t m_frameIdxModulo = 0;
     SimNeedsResetData m_simNeedsReset;
+
+	int32_t m_debugDrawBufferUAVIndex = -1;
 
     std::unique_ptr<StructuredBuffer<PhysicsChain::ChainElementData>> m_chainDataBufferPing;
     std::unique_ptr<StructuredBuffer<PhysicsChain::ChainElementData>> m_chainDataBufferPong;

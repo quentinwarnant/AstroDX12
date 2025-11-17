@@ -283,6 +283,6 @@ void GraphicsPassParticles::Shutdown()
     m_boxMesh.reset();
     m_particlesComputePass.reset();
     m_pipelineStateObject = nullptr;
-    m_pipelineStateObject = nullptr;
+    m_rootSignature = nullptr;
 }
 

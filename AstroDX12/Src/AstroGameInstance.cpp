@@ -14,6 +14,7 @@
 #include <GameContent/GPUPasses/Compute/ComputePassRaymarchScene.h>
 #include <GameContent/GPUPasses/GraphicsPassCopyGBufferToBackbuffer.h>
 #include <GameContent/GPUPasses/Compute/ComputePassPhysicsChain.h>
+#include <GameContent/GPUPasses/Debugging/GraphicsPassDebugDraw.h>
 
 #include <GameContent/Scene/SceneLoader.h>
 //#include <directxmath.h>
@@ -452,6 +453,9 @@ void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shade
 	addTwoBuffersTogetherPass->Init(m_computableDescs);
 	m_gpuPasses.push_back(std::move(addTwoBuffersTogetherPass));
 
+	auto debugDrawRenderPass = std::make_shared< GraphicsPassDebugDraw >();
+	debugDrawRenderPass->Init(m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
+
 	// Particle System Passes
 	auto particlesSimPass = std::make_shared< ComputePassParticles >();	
 	particlesSimPass->Init(m_renderer.get(), shaderLibrary);
@@ -464,7 +468,7 @@ void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shade
 
 	// Physics chain passes
 	auto physicsChainSimPass = std::make_shared< ComputePassPhysicsChain >();
-	physicsChainSimPass->Init(m_renderer.get(), shaderLibrary);
+	physicsChainSimPass->Init(m_renderer.get(), shaderLibrary, debugDrawRenderPass->GetDebugObjectsBufferUAVIndex());
 	std::weak_ptr< ComputePassPhysicsChain > physicsChainSimPassWeak = physicsChainSimPass;
 	m_gpuPasses.push_back(std::move(physicsChainSimPass));
 
@@ -473,6 +477,9 @@ void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shade
 	m_gpuPasses.push_back(std::move(physicsChainRenderPass));
 
 
+	m_gpuPasses.push_back(std::move(debugDrawRenderPass));
+	
+	
 
 	//auto raymarchSDFScenePass = std::make_shared<ComputePassRaymarchScene>();
 	//raymarchSDFScenePass->Init(m_renderer.get(), shaderLibrary, ParticleSimPassWeak);

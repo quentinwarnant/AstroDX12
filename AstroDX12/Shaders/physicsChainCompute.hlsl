@@ -1,4 +1,5 @@
 #include "Shaders/physicsChainCommon.hlsli"
+#include "Shaders/Inc/DebugDrawData.hlsli"
 
 
 struct CollisionElement
@@ -19,6 +20,7 @@ cbuffer BindlessRenderResources : register(b0)
     int BindlessIndexChainElementBufferInput;
     int BindlessIndexChainElementBufferOutput;
     int SimNeedsReset;
+    int DebugDrawBufferUAVIndex;
 }
 
 #define GROUP_SIZE 32
@@ -28,6 +30,7 @@ groupshared float3 PrevPos[GROUP_SIZE];
 groupshared bool Pinned[GROUP_SIZE];
 groupshared float RestLengths[GROUP_SIZE];
 groupshared int ParentIndex[GROUP_SIZE];
+groupshared float NodeRadii[GROUP_SIZE];
 
 CollisionCollectionData MakeCollisionData()
 {
@@ -61,14 +64,13 @@ void HandleConstraints(inout float3 nodePos, inout float3 parentNodePos, in floa
     }
 }
 
-void HandleCollisions(inout float3 nodePos, in CollisionCollectionData collisionData)
+void HandleCollisions(inout float3 nodePos, in float nodeRadius, in CollisionCollectionData collisionData)
 {
     for (int i = 0; i < collisionData.ElementCount; ++i)
     {
         const CollisionElement element = collisionData.Elements[i];
         const float3 toElement = element.Pos - nodePos;
         const float distance = length(toElement);
-        const float nodeRadius = 2.f; // TODO: should be a parameter in the particle data
         if (distance < element.Radius + nodeRadius)
         {
             // Simple collision response - push the node out of the element
@@ -79,10 +81,8 @@ void HandleCollisions(inout float3 nodePos, in CollisionCollectionData collision
     }
 }
 
-void PBDSolver(float dt, float3 externalForces, uint elementCount)
+void PBDSolver(float dt, float3 externalForces, uint elementCount, in CollisionCollectionData collisionData)
 {
-    // Tmp - create collision data in shader for now
-    const CollisionCollectionData collisionData = MakeCollisionData();
     
     const uint iterationCount = 30;
     const float dtIt = dt / iterationCount;
@@ -107,7 +107,7 @@ void PBDSolver(float dt, float3 externalForces, uint elementCount)
 
                 const uint parentIdx = ParentIndex[i];
                 
-                HandleCollisions(newPos, collisionData);
+                HandleCollisions(newPos, NodeRadii[i], collisionData);
                 HandleConstraints(newPos, Pos[parentIdx], RestLengths[i], Pinned[parentIdx]);
                 
             
@@ -145,6 +145,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
 {
     StructuredBuffer<ChainElementData> chainDataBufferIn = ResourceDescriptorHeap[BindlessIndexChainElementBufferInput];
     RWStructuredBuffer<ChainElementData> chainDataBufferOut = ResourceDescriptorHeap[BindlessIndexChainElementBufferOutput];
+    RWStructuredBuffer<DebugObjectData> drawDebugBufferOut = ResourceDescriptorHeap[DebugDrawBufferUAVIndex];
     
     ChainElementData Data = chainDataBufferIn[DTid.x];
     
@@ -162,11 +163,15 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
     Pinned[DTid.x] = Data.Pinned;
     RestLengths[DTid.x] = Data.RestLength;
     ParentIndex[DTid.x] = Data.ParentIndex;
+    NodeRadii[DTid.x] = Data.Radius;
     
     GroupMemoryBarrierWithGroupSync();
+        // Tmp - create collision data in shader for now
+    const CollisionCollectionData collisionData = MakeCollisionData();
+
     if (DTid.x == 0)
     {
-        PBDSolver(dt, gravity, elementCount);
+        PBDSolver(dt, gravity, elementCount, collisionData);
     }
     GroupMemoryBarrierWithGroupSync();
     
@@ -184,4 +189,36 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
     Data.Particle.Rot = CalculateRotationMatrix(Pos[RotationRefNodeTopIndex] - Pos[RotationRefNodeBottomIndex]);
 
     chainDataBufferOut[DTid.x] = Data;
+    
+    //--------------------------------------
+    // Debug visualsiation
+    // Visualise the Chain Nodes
+    const float size = Data.Radius * 3.f;
+    drawDebugBufferOut[DTid.x].Transform = float4x4(
+        float4(size, 0.f, 0.f, 0.f),
+        float4(0.f, size, 0.f, 0.f),
+        float4(0.f, 0.f, size, 0.f),
+        float4(Data.Particle.Pos.x, Data.Particle.Pos.y, Data.Particle.Pos.z, 1.f)
+    );
+    drawDebugBufferOut[DTid.x].Color = float3(0.f, 0.f, 1.f);
+    
+    //Visualise the collision elements
+    if (DTid.x == 0)
+    {
+        for(int i = 0; i < collisionData.ElementCount; ++i)
+        {
+            const float3 pos = collisionData.Elements[i].Pos;
+            const float radius = collisionData.Elements[i].Radius;
+            
+            drawDebugBufferOut[LANECOUNT + i].Transform = float4x4(
+                float4(radius * 2.f, 0.f, 0.f, 0.f),
+                float4(0.f, radius * 2.f, 0.f, 0.f),
+                float4(0.f, 0.f, radius * 2.f, 0.f),
+                float4(pos.x, pos.y, pos.z, 1.f)
+            );
+            drawDebugBufferOut[LANECOUNT + i].Color = float3(1.f, 1.f, 0.f);
+
+        }
+    }
+    //--------------------------------------
 }

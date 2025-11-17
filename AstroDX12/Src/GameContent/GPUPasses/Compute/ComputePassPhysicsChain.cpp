@@ -42,6 +42,8 @@ ComputePassPhysicsChain::ComputePassPhysicsChain()
         BufferDataVector[i].RestLength = 8.0f;
         BufferDataVector[i].ParentIndex = (i > 0) ? i - 1 : -1;
         BufferDataVector[i].Pinned = (i > 0) ? false : true;
+        BufferDataVector[i].Radius = 2.f;
+
 
     }
 
@@ -49,7 +51,7 @@ ComputePassPhysicsChain::ComputePassPhysicsChain()
     m_chainDataBufferPong = std::make_unique<StructuredBuffer<PhysicsChain::ChainElementData>>(BufferDataVector);
 }
 
-void ComputePassPhysicsChain::Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary)
+void ComputePassPhysicsChain::Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, int32_t debugDrawBufferUAVIndex)
 {
     const auto rootPath = s2ws(DX::GetWorkingDirectory());
     {
@@ -114,6 +116,8 @@ void ComputePassPhysicsChain::Init(IRenderer* renderer, AstroTools::Rendering::S
     }
 
     // TODO (schedule init particles pass)
+
+    m_debugDrawBufferUAVIndex = debugDrawBufferUAVIndex;
 }
 
 void ComputePassPhysicsChain::Update(int32_t frameIdxModulo, void* /*Data*/)
@@ -153,7 +157,8 @@ void ComputePassPhysicsChain::Execute(
     const std::vector<int32_t> BindlessResourceIndices = {
         bufferInput->GetSRVIndex(),
         bufferOutput->GetUAVIndex(),
-        m_simNeedsReset.NeedsReset() ? 1 : 0
+        m_simNeedsReset.NeedsReset() ? 1 : 0,
+        m_debugDrawBufferUAVIndex
     };
     cmdList->SetComputeRoot32BitConstants(
         (UINT)BindlessResourceIndicesRootSigParamIndex,
