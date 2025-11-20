@@ -421,6 +421,13 @@ void RendererDX12::StartNewFrame( FrameResource* frameResources )
 
 	// Set buffer we're rendering to (output merger)
 	m_commandList->OMSetRenderTargets(1, &currentBackBufferView, true, &currentDepthStencilView);
+
+	ID3D12DescriptorHeap* renderableDescriptorHeaps[] =
+	{
+		m_globalCBVSRVUAVDescriptorHeap->GetHeapPtr()
+	};
+	m_commandList->SetDescriptorHeaps(_countof(renderableDescriptorHeaps), renderableDescriptorHeaps);
+
 }
 
 void RendererDX12::EndNewFrame(std::function<void(int)> onNewFenceValue)
@@ -453,12 +460,6 @@ void RendererDX12::ProcessGPUPass(
 	const GPUPass& pass,
 	const FrameResource& frameResources )
 {
-	ID3D12DescriptorHeap* renderableDescriptorHeaps[] =
-	{
-		m_globalCBVSRVUAVDescriptorHeap->GetHeapPtr()
-	};
-	m_commandList->SetDescriptorHeaps(_countof(renderableDescriptorHeaps), renderableDescriptorHeaps);
-
 	pass.Execute(m_commandList, 0.f, frameResources);
 }
 
