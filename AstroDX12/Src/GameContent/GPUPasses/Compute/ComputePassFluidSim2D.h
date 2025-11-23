@@ -31,6 +31,7 @@ private:
     int32_t m_frameIdxModulo = 0;
     //SimNeedsResetData m_simNeedsReset;
 
+    void RunSim(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
     void FluidStepInput(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
     void FluidStepAdvect(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
     void FluidStepDiv(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
@@ -38,7 +39,7 @@ private:
     void FluidStepDiffuse(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
     void FluidStepPressure(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
     void FluidStepProject(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
-    void RunSim(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
+    void CopySimOutputToDisplayTexture(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
 
     std::unique_ptr<RenderTargetPair> m_gridVelocityTexPair;
     std::unique_ptr<RenderTargetPair> m_gridDivergenceTexPair;

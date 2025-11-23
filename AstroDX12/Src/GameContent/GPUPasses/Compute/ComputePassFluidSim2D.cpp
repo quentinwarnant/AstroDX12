@@ -200,43 +200,11 @@ void ComputePassFluidSim2D::FluidStepInput(ComPtr<ID3D12GraphicsCommandList> cmd
 
     cmdList->SetComputeRootDescriptorTable(0, bufferInput->GetSRVGPUDescriptorHandle());
     cmdList->SetComputeRootDescriptorTable(1, bufferOutput->GetUAVGPUDescriptorHandle());
-	cmdList->SetComputeRoot32BitConstant(2, Privates::GridDimensions.x, 0); // GridWidth
+    cmdList->SetComputeRoot32BitConstant(2, Privates::GridDimensions.x, 0); // GridWidth
 
 
     constexpr ivec2 dispatchSize = Privates::ComputeDispatchSize(Privates::GridDimensions, Privates::ThreadGroupSize);
     cmdList->Dispatch(dispatchSize.x, dispatchSize.y, 1);
-
-
-	// resource barrier to copy to image render target
-    const auto imageRTTransitionToCopyDest = CD3DX12_RESOURCE_BARRIER::Transition(m_imageRenderTarget->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
-    const auto simBufferOutputTransitionToCopySrc = CD3DX12_RESOURCE_BARRIER::Transition(bufferOutput->GetResource(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE);
-    std::vector<CD3DX12_RESOURCE_BARRIER> prepForCopyTransition = { imageRTTransitionToCopyDest , simBufferOutputTransitionToCopySrc };
-    cmdList->ResourceBarrier(2, prepForCopyTransition.data());
-
-    D3D12_TEXTURE_COPY_LOCATION sourceLoc{
-        .pResource = bufferOutput->GetResource(),
-            .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
-            .SubresourceIndex = 0
-    };
-
-    D3D12_TEXTURE_COPY_LOCATION destLoc{
-    .pResource = m_imageRenderTarget->GetResource(),
-        .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
-        .SubresourceIndex = 0
-    };
-    cmdList->CopyTextureRegion(
-        &destLoc,
-        0, 0, 0,
-        &sourceLoc,
-		nullptr);
-
-	//Resource barrier to transition back to original states
-    const auto imageRTTransitionToSrv =  CD3DX12_RESOURCE_BARRIER::Transition(m_imageRenderTarget->GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE );
-    const auto simBufferOutputTransitionToUAV = CD3DX12_RESOURCE_BARRIER::Transition(bufferOutput->GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-
-    std::vector<CD3DX12_RESOURCE_BARRIER> returnResourcesToOriginalStateTransition = { imageRTTransitionToSrv , simBufferOutputTransitionToUAV };
-    cmdList->ResourceBarrier(2, returnResourcesToOriginalStateTransition.data());
-
 
 }
 
@@ -296,6 +264,9 @@ void ComputePassFluidSim2D::FluidStepProject(ComPtr<ID3D12GraphicsCommandList> c
 
 void ComputePassFluidSim2D::FluidStepAdvect(ComPtr<ID3D12GraphicsCommandList> cmdList) const
 {
+    m_gridVelocityTexPair->Swap();
+
+
     PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "FluidStepAdvect");
 
     auto bufferInput = m_gridVelocityTexPair->GetInput();
@@ -305,6 +276,7 @@ void ComputePassFluidSim2D::FluidStepAdvect(ComPtr<ID3D12GraphicsCommandList> cm
 
     cmdList->SetComputeRootDescriptorTable(0, bufferInput->GetSRVGPUDescriptorHandle());
     cmdList->SetComputeRootDescriptorTable(1, bufferOutput->GetUAVGPUDescriptorHandle());
+    cmdList->SetComputeRoot32BitConstant(2, Privates::GridDimensions.x, 0); // GridWidth
 
     constexpr ivec2 dispatchSize = Privates::ComputeDispatchSize(Privates::GridDimensions, Privates::ThreadGroupSize);
     cmdList->Dispatch(dispatchSize.x, dispatchSize.y, 1);
@@ -333,6 +305,46 @@ void ComputePassFluidSim2D::FluidStepDiffuse(ComPtr<ID3D12GraphicsCommandList> c
 }
 
 
+void ComputePassFluidSim2D::CopySimOutputToDisplayTexture(ComPtr<ID3D12GraphicsCommandList> cmdList) const
+{
+    PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "Copy Sim output texture");
+
+    auto bufferOutput = m_gridVelocityTexPair->GetOutput();
+
+    // resource barrier to copy to image render target
+    const auto imageRTTransitionToCopyDest = CD3DX12_RESOURCE_BARRIER::Transition(m_imageRenderTarget->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
+    const auto simBufferOutputTransitionToCopySrc = CD3DX12_RESOURCE_BARRIER::Transition(bufferOutput->GetResource(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE);
+    std::vector<CD3DX12_RESOURCE_BARRIER> prepForCopyTransition = { imageRTTransitionToCopyDest , simBufferOutputTransitionToCopySrc };
+    cmdList->ResourceBarrier(2, prepForCopyTransition.data());
+
+    D3D12_TEXTURE_COPY_LOCATION sourceLoc{
+        .pResource = bufferOutput->GetResource(),
+            .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
+            .SubresourceIndex = 0
+    };
+
+    D3D12_TEXTURE_COPY_LOCATION destLoc{
+    .pResource = m_imageRenderTarget->GetResource(),
+        .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
+        .SubresourceIndex = 0
+    };
+    cmdList->CopyTextureRegion(
+        &destLoc,
+        0, 0, 0,
+        &sourceLoc,
+        nullptr);
+
+    //Resource barrier to transition back to original states
+    const auto imageRTTransitionToSrv = CD3DX12_RESOURCE_BARRIER::Transition(m_imageRenderTarget->GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    const auto simBufferOutputTransitionToUAV = CD3DX12_RESOURCE_BARRIER::Transition(bufferOutput->GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+
+    std::vector<CD3DX12_RESOURCE_BARRIER> returnResourcesToOriginalStateTransition = { imageRTTransitionToSrv , simBufferOutputTransitionToUAV };
+    cmdList->ResourceBarrier(2, returnResourcesToOriginalStateTransition.data());
+
+
+}
+
+
 void ComputePassFluidSim2D::RunSim(ComPtr<ID3D12GraphicsCommandList> cmdList) const
 {
     FluidStepInput(cmdList);
@@ -340,8 +352,10 @@ void ComputePassFluidSim2D::RunSim(ComPtr<ID3D12GraphicsCommandList> cmdList) co
     //FluidStepPressure(cmdList);
     //FluidStepProject(cmdList);
     ////Gradient?
-    //FluidStepAdvect(cmdList);
+    FluidStepAdvect(cmdList);
     //FluidStepDiffuse(cmdList);
+
+    CopySimOutputToDisplayTexture(cmdList);
 }
 
 void ComputePassFluidSim2D::Execute(

@@ -17,5 +17,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
     uv -= 0.5f;
     uv *= 0.5f;
     
-    VelocityGridOutput[DTid.xy] = VelocityGridInput[DTid.xy] + (0.01f * step(0.1f, length(uv)) );
+    const float2 addedVelocityDir = normalize(float2(1.f, 0.5f));
+    const float addedVelocityStrength = 0.1f;
+    VelocityGridOutput[DTid.xy] += addedVelocityDir * addedVelocityStrength * step(length(uv), 0.05f);
 }
