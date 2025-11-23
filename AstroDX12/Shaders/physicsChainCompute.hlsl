@@ -21,7 +21,7 @@ cbuffer BindlessRenderResources : register(b0)
     int BindlessIndexChainElementBufferOutput;
     int SimNeedsReset;
     int DebugDrawBufferUAVIndex;
-}
+};
 
 #define GROUP_SIZE 32
 

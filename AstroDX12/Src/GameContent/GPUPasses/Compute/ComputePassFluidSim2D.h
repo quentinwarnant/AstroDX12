@@ -9,6 +9,7 @@
 
 #include <Rendering/Compute/ComputableObject.h>
 #include <Rendering/Common/RenderTarget.h>
+#include <Rendering/Common/RenderTargetPair.h>
 
 class ComputePassFluidSim2D :
     public ComputePass
@@ -20,6 +21,10 @@ public:
     virtual void Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float deltaTime, const FrameResource& frameResources) const override;
     virtual void Shutdown() override;
 
+    int32_t GetImageRTSRVIndex() const
+    {
+        return m_imageRenderTarget->GetSRVIndex();
+	}
 
 private:
     
@@ -35,9 +40,10 @@ private:
     void FluidStepProject(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
     void RunSim(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
 
-
-    std::shared_ptr<RenderTarget> m_gridPing;
-    std::shared_ptr<RenderTarget> m_gridPong;
+    std::unique_ptr<RenderTargetPair> m_gridVelocityTexPair;
+    std::unique_ptr<RenderTargetPair> m_gridDivergenceTexPair;
+    std::unique_ptr<RenderTargetPair> m_gridPressureTexPair;
+	std::unique_ptr<RenderTarget> m_imageRenderTarget;
 
     std::unique_ptr<ComputableObject> m_computeObjInput;
     std::unique_ptr<ComputableObject> m_computeObjAdvect;
@@ -50,5 +56,24 @@ private:
 };
 
 // Graphics
+class GraphicsPassFluidSim2D : public GraphicsPass
+{
+public: 
+    void Init(std::weak_ptr<const ComputePassFluidSim2D> fluidSimComputePass, IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, MeshLibrary& meshLibrary);
+    virtual void Update(int32_t frameIdxModulo, void* Data) override;
+    virtual void Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float deltaTime, const FrameResource& frameResources) const override;
+    virtual void Shutdown() override;
+
+private:
+    int32_t m_imageSRVIndex;
+    int32_t m_imageSamplerIndex;
+    D3D12_GPU_DESCRIPTOR_HANDLE m_imageSamplerGpuHandle;
+
+    std::weak_ptr<IMesh> m_quadMesh;
+    ComPtr<ID3D12PipelineState> m_pipelineStateObject;
+    ComPtr<ID3D12RootSignature> m_rootSignature;
+
+
+};
 //ComPtr<ID3D12PipelineState> m_pipelineStateObject;
 //ComPtr<ID3D12RootSignature> m_rootSignature;

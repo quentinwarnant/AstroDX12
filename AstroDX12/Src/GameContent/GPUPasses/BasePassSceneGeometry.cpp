@@ -85,8 +85,6 @@ SceneData BasePassSceneGeometry::LoadSceneGeometry()
 
 void BasePassSceneGeometry::BuildSceneGeometry(IRenderer* renderer, MeshLibrary& meshLibrary)
 {
-    auto rendererContext = renderer->GetRendererContext();
-
     std::vector<VertexData_Short> verts;
     verts.emplace_back(VertexData_Short(DirectX::XMFLOAT3(-1.5f, -1.5f, -1.5f), DirectX::XMFLOAT4(Colors::White)));
     verts.emplace_back(VertexData_Short(DirectX::XMFLOAT3(-1.5f, +1.5f, -1.5f), DirectX::XMFLOAT4(Colors::Black)));
@@ -126,7 +124,7 @@ void BasePassSceneGeometry::BuildSceneGeometry(IRenderer* renderer, MeshLibrary&
 
 
     const auto vertsPODList = VertexDataFactory::Convert(verts);
-    auto boxMesh = meshLibrary.AddMesh(rendererContext, std::string("BoxGeometry"), vertsPODList, indices);
+    auto boxMesh = meshLibrary.AddMesh(renderer->GetRendererContext(), std::string("BoxGeometry"), vertsPODList, indices);
 
     const auto rootPath = s2ws(DX::GetWorkingDirectory());
     const auto basicShaderPath = rootPath + std::wstring(L"\\Shaders\\basic.hlsl");
@@ -187,7 +185,7 @@ void BasePassSceneGeometry::BuildSceneGeometry(IRenderer* renderer, MeshLibrary&
         {
             const auto newMeshvertsPODList = VertexDataFactory::Convert(SceneMeshObj.verts);
             mesh = meshLibrary.AddMesh(
-                rendererContext,
+                renderer->GetRendererContext(),
                 SceneMeshObj.meshName,
                 newMeshvertsPODList,
                 SceneMeshObj.indices

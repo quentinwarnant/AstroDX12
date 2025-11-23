@@ -33,6 +33,25 @@ struct VertexData_Short_POD
 	XMFLOAT4 Color;
 };
 
+
+struct VertexData_Position_UV_POD
+{
+	VertexData_Position_UV_POD()
+		: Position(0, 0, 0)
+		, UV(0, 0)
+	{
+	}
+
+	VertexData_Position_UV_POD(const XMFLOAT3& inPos, const XMFLOAT2& inUV)
+		: Position(inPos)
+		, UV(inUV)
+	{
+	}
+
+	XMFLOAT3 Position;
+	XMFLOAT2 UV;
+};
+
 struct VertexData_Position_Normal_UV_POD
 {
 	VertexData_Position_Normal_UV_POD()

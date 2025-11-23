@@ -80,8 +80,7 @@ namespace PassPrivates
 
 void GraphicsPassCopyGBufferToBackbuffer::Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, int32_t GBufferRTViewIndex)
 {
-    RendererContext rendererContext = renderer->GetRendererContext();
-
+    RendererContext& rendererContext = renderer->GetRendererContext();
 	const UINT64 IndexBufferByteSize = PassPrivates::VertexIndices.size() * sizeof(uint32_t);
 
 	m_indexBufferGPU = AstroTools::Rendering::CreateDefaultBuffer(rendererContext.Device.Get(), rendererContext.CommandList.Get(),
@@ -98,12 +97,12 @@ void GraphicsPassCopyGBufferToBackbuffer::Init(IRenderer* renderer, AstroTools::
 
 
 
-void GraphicsPassCopyGBufferToBackbuffer::Update(int32_t frameIdxModulo, void* Data)
+void GraphicsPassCopyGBufferToBackbuffer::Update(int32_t /*frameIdxModulo*/, void* /*Data*/)
 {
 
 }
 
-void GraphicsPassCopyGBufferToBackbuffer::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float deltaTime, const FrameResource& frameResources) const
+void GraphicsPassCopyGBufferToBackbuffer::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float /*deltaTime*/, const FrameResource& /*frameResources*/) const
 {
     PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "GraphicsPassCopyGBufferToBackbuffer");
 

@@ -4,7 +4,6 @@
 #include <Rendering/Common/UploadBuffer.h>
 #include <Rendering/Common/RenderTarget.h>
 #include <Rendering/Renderable/RenderableGroup.h>
-#include <Rendering/RendererProcessedObjectType.h>
 #include <functional>
 #include <map>
 using Microsoft::WRL::ComPtr;
@@ -31,13 +30,13 @@ public:
 	virtual void Shutdown() = 0;
 	virtual void CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature, ComPtr<ID3D12RootSignature>& outRootSignature) = 0;
 	
-	virtual RendererContext GetRendererContext() = 0;
+	virtual RendererContext& GetRendererContext() = 0;
 protected:
 	virtual ComPtr<ID3D12Device> GetDevice() const = 0;
 	virtual void CreateRenderTargetView(ID3D12Resource* resource, const D3D12_RENDER_TARGET_VIEW_DESC* desc) = 0;
+	virtual void CreateGlobalDescriptorHeaps() = 0;
 
 public:
-	virtual void Create_const_uav_srv_BufferDescriptorHeaps() = 0;
 
 	template<typename T>
 	std::unique_ptr<UploadBuffer<T>> CreateConstantBuffer(UINT elementCount)
@@ -60,7 +59,7 @@ public:
 		ComPtr<IDxcBlob>& computeShaderByteCode) = 0;
 	virtual void BuildFrameResources(std::vector<std::unique_ptr<FrameResource>>& outFrameResourcesList, int frameResourcesCount) = 0;
 	virtual void InitialiseRenderTarget(
-		std::weak_ptr<RenderTarget> renderTarget,
+		RenderTarget* renderTarget,
 		LPCWSTR name,
 		UINT32 width,
 		UINT32 height,
@@ -68,4 +67,5 @@ public:
 		D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_RENDER_TARGET) = 0;
 	virtual UINT64 GetLastCompletedFence() = 0;
 	virtual void WaitForFence(UINT64 fenceValue) = 0;
+	virtual D3D12_GPU_DESCRIPTOR_HANDLE GetSamplerGPUHandle(int32_t samplerID) = 0;
 };

@@ -5,6 +5,7 @@
 #include <Rendering/Common/DescriptorHeap.h>
 #include <Rendering/Common/PipelineStateObjectLibrary.h>
 #include <Rendering/IRenderer.h>
+#include <Rendering/Common/RendererContext.h>
 
 using namespace Microsoft::WRL;
 
@@ -29,13 +30,13 @@ public:
     virtual void AddNewFence(std::function<void(int)> onNewFenceValue) override;
     virtual void Shutdown() override;
     virtual void CreateRootSignature(ComPtr<ID3DBlob>& serializedRootSignature, ComPtr<ID3D12RootSignature>& outRootSignature) override;
-    virtual RendererContext GetRendererContext() override;
+    virtual RendererContext& GetRendererContext() override;
 
 protected:
     virtual ComPtr<ID3D12Device>  GetDevice() const override { return m_device; };
     virtual void CreateRenderTargetView(ID3D12Resource* resource, const D3D12_RENDER_TARGET_VIEW_DESC* desc) override;
+    virtual void CreateGlobalDescriptorHeaps() override;
 public:
-    virtual void Create_const_uav_srv_BufferDescriptorHeaps() override;
     virtual D3D12_GPU_DESCRIPTOR_HANDLE CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize) override;
 
     virtual void CreateStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav) override;
@@ -53,7 +54,7 @@ public:
     virtual void BuildFrameResources(std::vector<std::unique_ptr<FrameResource>>& outFrameResourcesList, int frameResourcesCount) override;
     
     virtual void InitialiseRenderTarget(
-        std::weak_ptr<RenderTarget> renderTarget,
+        RenderTarget* renderTarget,
         LPCWSTR name,
         UINT32 width,
         UINT32 height,
@@ -61,6 +62,7 @@ public:
         D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_RENDER_TARGET) override;
     virtual UINT64 GetLastCompletedFence() override;
     virtual void WaitForFence(UINT64 fenceValue) override;
+    virtual D3D12_GPU_DESCRIPTOR_HANDLE GetSamplerGPUHandle(int32_t samplerID) override;
     // IRenderer - END
 
 private:
@@ -69,11 +71,12 @@ private:
     void CreateRTVDescriptorHeap();
     void CreateDepthStencilDescriptorHeap();
     void CreateDepthStencilBuffer();
+    void CreateDefaultGlobalSamplers();
 
     ComPtr<ID3D12Resource> GetCurrentBackBuffer() const;
     D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentBackBufferView() const;
     D3D12_CPU_DESCRIPTOR_HANDLE GetDepthStencilView() const;
-    D3D12_CPU_DESCRIPTOR_HANDLE GetUAVDescriptorHandleCPU(ERendererProcessedObjectType objectHeapType) const;
+    D3D12_CPU_DESCRIPTOR_HANDLE GetUAVDescriptorHandleCPU() const;
 
 private:
     int m_width = 32;
@@ -104,6 +107,7 @@ private:
     ComPtr<ID3D12DescriptorHeap> m_rtvHeap; // Render Target
     ComPtr<ID3D12DescriptorHeap> m_dsvHeap; // Depth/Stencil 
     std::shared_ptr<DescriptorHeap> m_globalCBVSRVUAVDescriptorHeap; // UAV/SRV/CBV Buffers heap for everything including bindless resources
+	std::shared_ptr<DescriptorHeap> m_globalSamplerDescriptorHeap; // Sampler heap for everything including bindless resources
 
 	int32_t m_rtvHeapViewsCount = 0; // Count of RTV views in the heap
 
@@ -114,5 +118,7 @@ private:
     D3D12_RECT m_scissorRect{};
 
     std::unique_ptr<AstroTools::Rendering::PipelineStateObjectLibrary> PSOLibrary;
+
+	RendererContext m_rendererContext;
 };
 

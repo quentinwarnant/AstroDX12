@@ -204,8 +204,6 @@ GraphicsPassPhysicsChain::GraphicsPassPhysicsChain()
 
 void GraphicsPassPhysicsChain::CreateChainElementMesh(IRenderer* renderer, MeshLibrary& meshLibrary)
 {
-    auto rendererContext = renderer->GetRendererContext();
-
     struct ChainVertexDataPOD
     {
         DirectX::XMFLOAT3 Pos;
@@ -220,25 +218,25 @@ void GraphicsPassPhysicsChain::CreateChainElementMesh(IRenderer* renderer, MeshL
 
 
     std::vector<ChainVertexDataPOD> verts;
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-1.5f, 0, -1.5f), DirectX::XMFLOAT3(0, 1, 0))); // These are some attrocious normals, but they're enough to light and see lit geometry. surely will be fixed later!
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-1.5f, 0, 1.5f), DirectX::XMFLOAT3(0, 1, 0)));
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+1.5f, 0, 1.5f), DirectX::XMFLOAT3(0, 1, 0)));
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+1.5f, 0, -1.5f), DirectX::XMFLOAT3(0, 1, 0)));
+    verts.emplace_back(DirectX::XMFLOAT3(-1.5f, 0, -1.5f), DirectX::XMFLOAT3(0, 1, 0)); // These are some attrocious normals, but they're enough to light and see lit geometry. surely will be fixed later!
+    verts.emplace_back(DirectX::XMFLOAT3(-1.5f, 0, 1.5f), DirectX::XMFLOAT3(0, 1, 0));
+    verts.emplace_back(DirectX::XMFLOAT3(+1.5f, 0, 1.5f), DirectX::XMFLOAT3(0, 1, 0));
+    verts.emplace_back(DirectX::XMFLOAT3(+1.5f, 0, -1.5f), DirectX::XMFLOAT3(0, 1, 0));
 
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-1.5f, -3.f, -1.5f), DirectX::XMFLOAT3(-1, 0, -1)));
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-1.5f, -3.f, 1.5f), DirectX::XMFLOAT3(-1, 0, 1)));
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+1.5f, -3.f, 1.5f), DirectX::XMFLOAT3(1, 0, 1)));
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+1.5f, -3.f, -1.5f), DirectX::XMFLOAT3(1, 0, -1)));
+    verts.emplace_back(DirectX::XMFLOAT3(-1.5f, -3.f, -1.5f), DirectX::XMFLOAT3(-1, 0, -1));
+    verts.emplace_back(DirectX::XMFLOAT3(-1.5f, -3.f, 1.5f), DirectX::XMFLOAT3(-1, 0, 1));
+    verts.emplace_back(DirectX::XMFLOAT3(+1.5f, -3.f, 1.5f), DirectX::XMFLOAT3(1, 0, 1));
+    verts.emplace_back(DirectX::XMFLOAT3(+1.5f, -3.f, -1.5f), DirectX::XMFLOAT3(1, 0, -1));
 
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-2.5f, -3.f, -2.5f), DirectX::XMFLOAT3(0, 1, 0)));
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-2.5f, -3.f, +2.5f), DirectX::XMFLOAT3(0, 1, 0)));
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+2.5f, -3.f, +2.5f), DirectX::XMFLOAT3(0, 1, 0)));
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+2.5f, -3.f, -2.5f), DirectX::XMFLOAT3(0, 1, 0)));
+    verts.emplace_back(DirectX::XMFLOAT3(-2.5f, -3.f, -2.5f), DirectX::XMFLOAT3(0, 1, 0));
+    verts.emplace_back(DirectX::XMFLOAT3(-2.5f, -3.f, +2.5f), DirectX::XMFLOAT3(0, 1, 0));
+    verts.emplace_back(DirectX::XMFLOAT3(+2.5f, -3.f, +2.5f), DirectX::XMFLOAT3(0, 1, 0));
+    verts.emplace_back(DirectX::XMFLOAT3(+2.5f, -3.f, -2.5f), DirectX::XMFLOAT3(0, 1, 0));
 
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-2.5f, -8.f, -2.5f), DirectX::XMFLOAT3(0, -1, 0)));
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(-2.5f, -8.f, +2.5f), DirectX::XMFLOAT3(0, -1, 0)));
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+2.5f, -8.f, +2.5f), DirectX::XMFLOAT3(0, -1, 0)));
-    verts.emplace_back(ChainVertexDataPOD(DirectX::XMFLOAT3(+2.5f, -8.f, -2.5f), DirectX::XMFLOAT3(0, -1, 0)));
+    verts.emplace_back(DirectX::XMFLOAT3(-2.5f, -8.f, -2.5f), DirectX::XMFLOAT3(0, -1, 0));
+    verts.emplace_back(DirectX::XMFLOAT3(-2.5f, -8.f, +2.5f), DirectX::XMFLOAT3(0, -1, 0));
+    verts.emplace_back(DirectX::XMFLOAT3(+2.5f, -8.f, +2.5f), DirectX::XMFLOAT3(0, -1, 0));
+    verts.emplace_back(DirectX::XMFLOAT3(+2.5f, -8.f, -2.5f), DirectX::XMFLOAT3(0, -1, 0));
 
     const std::vector<std::uint32_t> indices =
     {
@@ -291,7 +289,7 @@ void GraphicsPassPhysicsChain::CreateChainElementMesh(IRenderer* renderer, MeshL
     };
 
 
-    meshLibrary.AddMesh(rendererContext, Private::ChainElementMeshName, verts, indices);
+    meshLibrary.AddMesh(renderer->GetRendererContext(), Private::ChainElementMeshName, verts, indices);
 
 }
 

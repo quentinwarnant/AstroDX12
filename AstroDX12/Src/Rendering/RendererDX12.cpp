@@ -7,6 +7,7 @@
 #include <Rendering/RenderData/VertexData.h>
 #include <Rendering/Compute/ComputeGroup.h>
 #include <Rendering/Common/GPUPass.h>
+#include <Rendering/Common/SamplerIDs.h>
 
 using namespace Microsoft::WRL;
 using namespace DX;
@@ -159,6 +160,15 @@ void RendererDX12::Init(HWND window, int width, int height)
 	// Command Queue
 	CreateCommandObjects();
 
+	CreateGlobalDescriptorHeaps();
+	CreateDefaultGlobalSamplers();
+
+	m_rendererContext = {
+		.Device = m_device,
+		.CommandList = m_commandList,
+		.GlobalCBVSRVUAVDescriptorHeap = m_globalCBVSRVUAVDescriptorHeap
+	};
+
 	// Swap Chain
 	CreateSwapChain(window);
 
@@ -292,10 +302,8 @@ void RendererDX12::CreateDepthStencilDescriptorHeap()
 	ThrowIfFailed(m_device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(m_dsvHeap.GetAddressOf())));
 }
 
-void RendererDX12::Create_const_uav_srv_BufferDescriptorHeaps()
+void RendererDX12::CreateGlobalDescriptorHeaps()
 {
-	// Renderables
-
 	// Let's just make a bunch!
 	size_t descriptorCount = 10'000u;
 
@@ -308,6 +316,17 @@ void RendererDX12::Create_const_uav_srv_BufferDescriptorHeaps()
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> renderablesCBVSRVUAVHeap;
 	ThrowIfFailed(m_device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(renderablesCBVSRVUAVHeap.GetAddressOf())));
 	m_globalCBVSRVUAVDescriptorHeap = std::make_shared<DescriptorHeap>( renderablesCBVSRVUAVHeap, m_descriptorSizeCBV );
+
+	size_t samplerDescriptorCount = 1000u;
+	D3D12_DESCRIPTOR_HEAP_DESC samplerDescriptorHeapDesc{};
+	samplerDescriptorHeapDesc.NumDescriptors = (UINT)samplerDescriptorCount;
+	samplerDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+	samplerDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	samplerDescriptorHeapDesc.NodeMask = 0; // device/Adapter index
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> samplerHeap;
+	ThrowIfFailed(m_device->CreateDescriptorHeap(&samplerDescriptorHeapDesc, IID_PPV_ARGS(samplerHeap.GetAddressOf())));
+	m_globalSamplerDescriptorHeap = std::make_shared<DescriptorHeap>(samplerHeap, m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER));
+
 }
 
 void RendererDX12::CreateDepthStencilBuffer()
@@ -377,7 +396,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE RendererDX12::GetDepthStencilView() const
 	return m_dsvHeap->GetCPUDescriptorHandleForHeapStart();
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE RendererDX12::GetUAVDescriptorHandleCPU(ERendererProcessedObjectType objectHeapType) const
+D3D12_CPU_DESCRIPTOR_HANDLE RendererDX12::GetUAVDescriptorHandleCPU() const
 {
 	// UAV & SRV are created on the same heap as CBV since they're the same size
 	return m_globalCBVSRVUAVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
@@ -422,11 +441,12 @@ void RendererDX12::StartNewFrame( FrameResource* frameResources )
 	// Set buffer we're rendering to (output merger)
 	m_commandList->OMSetRenderTargets(1, &currentBackBufferView, true, &currentDepthStencilView);
 
-	ID3D12DescriptorHeap* renderableDescriptorHeaps[] =
+	ID3D12DescriptorHeap* globalDescriptorHeaps[] =
 	{
-		m_globalCBVSRVUAVDescriptorHeap->GetHeapPtr()
+		m_globalCBVSRVUAVDescriptorHeap->GetHeapPtr(),
+		m_globalSamplerDescriptorHeap->GetHeapPtr(),
 	};
-	m_commandList->SetDescriptorHeaps(_countof(renderableDescriptorHeaps), renderableDescriptorHeaps);
+	m_commandList->SetDescriptorHeaps(_countof(globalDescriptorHeaps), globalDescriptorHeaps);
 
 }
 
@@ -606,24 +626,19 @@ void RendererDX12::BuildFrameResources(std::vector<std::unique_ptr<FrameResource
 }
 
 void RendererDX12::InitialiseRenderTarget(
-	std::weak_ptr<RenderTarget> renderTarget,
+	RenderTarget* renderTarget,
 	LPCWSTR name,
 	UINT32 width,
 	UINT32 height,
 	DXGI_FORMAT format,
 	D3D12_RESOURCE_STATES initialState)
 {
-	renderTarget.lock()->Initialize(this, *m_globalCBVSRVUAVDescriptorHeap.get(), name, width, height, format, initialState);
+	renderTarget->Initialize(this, *m_globalCBVSRVUAVDescriptorHeap.get(), name, width, height, format, initialState);
 }
 
-RendererContext RendererDX12::GetRendererContext()
+RendererContext& RendererDX12::GetRendererContext()
 {
-	return
-	{
-		.Device = m_device,
-		.CommandList = m_commandList,
-		.GlobalCBVSRVUAVDescriptorHeap = m_globalCBVSRVUAVDescriptorHeap
-	};
+	return m_rendererContext;
 }
 
 UINT64 RendererDX12::GetLastCompletedFence()
@@ -637,4 +652,32 @@ void RendererDX12::WaitForFence(UINT64 fenceValue)
 	ThrowIfFailed(m_fence->SetEventOnCompletion(fenceValue, eventHandle));
 	WaitForSingleObject(eventHandle, INFINITE);
 	CloseHandle(eventHandle);
+}
+
+void RendererDX12::CreateDefaultGlobalSamplers()
+{
+	// 1. AstroTools::Rendering::SamplerIDs::LinearClamp
+	D3D12_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	samplerDesc.MipLODBias = 0.0f;
+	samplerDesc.MaxAnisotropy = 1;
+	samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+	samplerDesc.BorderColor[0] = samplerDesc.BorderColor[1] = samplerDesc.BorderColor[2] = samplerDesc.BorderColor[3] = 0.0f;
+	samplerDesc.MinLOD = 0.0f;
+	samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
+
+	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = m_globalSamplerDescriptorHeap->GetCPUDescriptorHandleByIndex(m_globalSamplerDescriptorHeap->GetCurrentDescriptorHeapHandle());
+	m_device->CreateSampler(&samplerDesc, cpuHandle);
+	m_globalSamplerDescriptorHeap->IncreaseCurrentDescriptorHeapHandle();
+}
+
+D3D12_GPU_DESCRIPTOR_HANDLE RendererDX12::GetSamplerGPUHandle(int32_t samplerID)
+{
+	DX::astro_assert(samplerID < m_globalSamplerDescriptorHeap->GetCurrentDescriptorHeapHandle(), "Requested sampler ID is out of bounds");
+
+	return m_globalSamplerDescriptorHeap->GetGPUDescriptorHandleByIndex(samplerID);
+	
 }

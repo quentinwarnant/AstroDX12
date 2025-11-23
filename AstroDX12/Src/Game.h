@@ -52,7 +52,6 @@ public:
 
     // Scene renderable objects building
     virtual void BuildFrameResources() = 0;
-    virtual void Create_const_uav_srv_BufferDescriptorHeaps() = 0;
     virtual void CreateConstantBufferViews() = 0;
 
     virtual void Shutdown() = 0;

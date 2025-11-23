@@ -1,7 +1,6 @@
 #include <AstroGameInstance.h>
 
 #include <Rendering/Renderable/RenderableGroup.h>
-#include <Rendering/RendererProcessedObjectType.h>
 #include <Rendering/RenderData/VertexData.h>
 #include <Rendering/RenderData/VertexDataFactory.h>
 #include <Rendering/Common/ShaderLibrary.h>
@@ -50,11 +49,6 @@ void AstroGameInstance::InitCamera()
 {
 	XMMATRIX proj = XMMatrixPerspectiveFovLH(0.25f * DirectX::XM_PI, GetAspectRatio(), 1.0f, 1000.0f);
 	XMStoreFloat4x4(&m_projMat, proj);
-}
-
-void AstroGameInstance::Create_const_uav_srv_BufferDescriptorHeaps()
-{
-	m_renderer->Create_const_uav_srv_BufferDescriptorHeaps();
 }
 
 void AstroGameInstance::CreateConstantBufferViews()
@@ -125,42 +119,46 @@ void AstroGameInstance::UpdateMainRenderPassConstantBuffer(float deltaTime)
 
 void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shaderLibrary)
 {
-	// Base Geo PASS
-	auto baseGeoPass = std::make_shared< BasePassSceneGeometry>();
-	baseGeoPass->Init(m_renderer.get(),shaderLibrary, *m_meshLibrary, NumFrameResources);
-	m_gpuPasses.push_back(std::move(baseGeoPass));
+	 //Base Geo PASS
+	//auto baseGeoPass = std::make_shared< BasePassSceneGeometry>();
+	//baseGeoPass->Init(m_renderer.get(),shaderLibrary, *m_meshLibrary, NumFrameResources);
+	//m_gpuPasses.push_back(std::move(baseGeoPass));
 
-	auto debugDrawRenderPass = std::make_shared< GraphicsPassDebugDraw >();
-	debugDrawRenderPass->Init(m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
+	//auto debugDrawRenderPass = std::make_shared< GraphicsPassDebugDraw >();
+	//debugDrawRenderPass->Init(m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
 
-	// Particle System Passes
-	auto particlesSimPass = std::make_shared< ComputePassParticles >();	
-	particlesSimPass->Init(m_renderer.get(), shaderLibrary);
-	std::weak_ptr< ComputePassParticles > ParticleSimPassWeak = particlesSimPass;
-	m_gpuPasses.push_back(std::move(particlesSimPass));
+	// //Particle System Passes
+	//auto particlesSimPass = std::make_shared< ComputePassParticles >();	
+	//particlesSimPass->Init(m_renderer.get(), shaderLibrary);
+	//std::weak_ptr< ComputePassParticles > ParticleSimPassWeak = particlesSimPass;
+	//m_gpuPasses.push_back(std::move(particlesSimPass));
 
-	auto particlesRenderPass = std::make_shared< GraphicsPassParticles >();
-	particlesRenderPass->Init(ParticleSimPassWeak, m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
-	m_gpuPasses.push_back(std::move(particlesRenderPass));
+	//auto particlesRenderPass = std::make_shared< GraphicsPassParticles >();
+	//particlesRenderPass->Init(ParticleSimPassWeak, m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
+	//m_gpuPasses.push_back(std::move(particlesRenderPass));
 
-	// Physics chain passes
-	auto physicsChainSimPass = std::make_shared< ComputePassPhysicsChain >();
-	physicsChainSimPass->Init(m_renderer.get(), shaderLibrary, debugDrawRenderPass->GetDebugObjectsBufferUAVIndex());
-	std::weak_ptr< ComputePassPhysicsChain > physicsChainSimPassWeak = physicsChainSimPass;
-	m_gpuPasses.push_back(std::move(physicsChainSimPass));
+	//// Physics chain passes
+	//auto physicsChainSimPass = std::make_shared< ComputePassPhysicsChain >();
+	//physicsChainSimPass->Init(m_renderer.get(), shaderLibrary, debugDrawRenderPass->GetDebugObjectsBufferUAVIndex());
+	//std::weak_ptr< ComputePassPhysicsChain > physicsChainSimPassWeak = physicsChainSimPass;
+	//m_gpuPasses.push_back(std::move(physicsChainSimPass));
 
-	auto physicsChainRenderPass = std::make_shared< GraphicsPassPhysicsChain >();
-	physicsChainRenderPass->Init(physicsChainSimPassWeak, m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
-	m_gpuPasses.push_back(std::move(physicsChainRenderPass));
+	//auto physicsChainRenderPass = std::make_shared< GraphicsPassPhysicsChain >();
+	//physicsChainRenderPass->Init(physicsChainSimPassWeak, m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
+	//m_gpuPasses.push_back(std::move(physicsChainRenderPass));
 
-	auto FluidSim2DPass = std::make_shared< ComputePassFluidSim2D >();
-	FluidSim2DPass->Init(m_renderer.get(), shaderLibrary);
-	m_gpuPasses.push_back(std::move(FluidSim2DPass));
+	auto fluidSim2DComputePass = std::make_shared< ComputePassFluidSim2D >();
+	fluidSim2DComputePass->Init(m_renderer.get(), shaderLibrary);
 
-	
+	auto fluidSim2DGraphicsPass = std::make_shared< GraphicsPassFluidSim2D >();
+	fluidSim2DGraphicsPass->Init(fluidSim2DComputePass,m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
 
-	// Debug draw is the last pass to render debug objects on top of everything else
-	m_gpuPasses.push_back(std::move(debugDrawRenderPass));
+	m_gpuPasses.push_back(std::move(fluidSim2DComputePass));
+	m_gpuPasses.push_back(std::move(fluidSim2DGraphicsPass));
+
+
+	 //Debug draw is the last pass to render debug objects on top of everything else
+	//m_gpuPasses.push_back(std::move(debugDrawRenderPass));
 	
 	//auto raymarchSDFScenePass = std::make_shared<ComputePassRaymarchScene>();
 	//raymarchSDFScenePass->Init(m_renderer.get(), shaderLibrary, ParticleSimPassWeak);

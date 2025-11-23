@@ -26,8 +26,7 @@ void GraphicsPassDebugDraw::Init(IRenderer* renderer, AstroTools::Rendering::Sha
 
 	CreateRootSignature(renderer);
 	CreatePipelineState(renderer, shaderLibrary);
-	auto rendererContext = renderer->GetRendererContext();
-	CreateMesh(rendererContext, meshLibrary);
+	CreateMesh(renderer->GetRendererContext(), meshLibrary);
 }
 
 void GraphicsPassDebugDraw::CreateRootSignature(IRenderer* renderer)
@@ -157,11 +156,11 @@ void GraphicsPassDebugDraw::CreatePipelineState(IRenderer* renderer, AstroTools:
 		/*wireframe*/ true);
 }
 
-void GraphicsPassDebugDraw::Update(int32_t frameIdxModulo, void* Data)
+void GraphicsPassDebugDraw::Update(int32_t /*frameIdxModulo*/, void* /*Data*/)
 {
 }
 
-void GraphicsPassDebugDraw::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float deltaTime, const FrameResource& frameResources) const
+void GraphicsPassDebugDraw::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float /*deltaTime*/, const FrameResource& frameResources) const
 {
 	PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "GraphicsPassDebugDraw");
 

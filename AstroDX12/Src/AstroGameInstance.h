@@ -25,7 +25,6 @@ public:
     virtual void InitCamera() override;
     // Scene renderable objects building
     virtual void BuildFrameResources() override;
-    virtual void Create_const_uav_srv_BufferDescriptorHeaps() override;
     virtual void CreateConstantBufferViews() override;
     
     virtual void Shutdown() override;
