@@ -40,9 +40,10 @@ private:
     void FluidStepPressure(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
     void FluidStepProject(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
     void CopySimOutputToDisplayTexture(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
+    void SwapVelocityTexturesStates(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
 
     std::unique_ptr<RenderTargetPair> m_gridVelocityTexPair;
-    std::unique_ptr<RenderTargetPair> m_gridDivergenceTexPair;
+    std::unique_ptr<RenderTarget> m_gridDivergenceTex;
     std::unique_ptr<RenderTargetPair> m_gridPressureTexPair;
 	std::unique_ptr<RenderTarget> m_imageRenderTarget;
 
