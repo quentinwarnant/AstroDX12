@@ -18,7 +18,11 @@ namespace AstroTools::Rendering
 			const std::vector<std::wstring>& defines,
 			const std::wstring& target )
 		{
-			const auto key = path + target;
+			auto key = path + target + entryPoint;
+			for(auto& define : defines)
+			{
+				key += define;
+			}
 			if ( const auto& shaderIt = m_compiledShaders.find(key); shaderIt != m_compiledShaders.end())
 			{
 				return (*shaderIt).second;
