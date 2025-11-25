@@ -32,11 +32,12 @@ void RenderTarget::Initialize(IRenderer* renderer,
 	uavDesc.Texture2D.PlaneSlice = 0;
 
 	m_uavDescriptorHandle = descriptorHeap.GetGPUDescriptorHandleByIndex(m_uavIndex);
+	m_uavCPUDescriptorHandle = descriptorHeap.GetCPUDescriptorHandleByIndex(m_uavIndex);
 	renderContext.Device->CreateUnorderedAccessView(
 		m_renderTargetResource.Get(),
 		nullptr,
 		&uavDesc,
-		descriptorHeap.GetCPUDescriptorHandleByIndex(m_uavIndex));
+		m_uavCPUDescriptorHandle);
 
 	descriptorHeap.IncreaseCurrentDescriptorHeapHandle();
 

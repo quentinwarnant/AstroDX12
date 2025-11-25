@@ -61,6 +61,11 @@ public:
         return m_uavDescriptorHandle;
 	}
 
+    D3D12_CPU_DESCRIPTOR_HANDLE GetUAVCPUDescriptorHandle() const
+    {
+        return m_uavCPUDescriptorHandle;
+	}
+
 private:
     ComPtr<ID3D12Resource> m_renderTargetResource = nullptr;
     UINT32 m_width = 0;
@@ -70,5 +75,6 @@ private:
 	int32_t m_srvIndex = -1;
     D3D12_GPU_DESCRIPTOR_HANDLE m_srvDescriptorHandle = {};
     D3D12_GPU_DESCRIPTOR_HANDLE m_uavDescriptorHandle = {};
+    D3D12_CPU_DESCRIPTOR_HANDLE m_uavCPUDescriptorHandle = {};
 };
 
