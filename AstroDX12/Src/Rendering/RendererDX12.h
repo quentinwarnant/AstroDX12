@@ -63,6 +63,7 @@ public:
     virtual UINT64 GetLastCompletedFence() override;
     virtual void WaitForFence(UINT64 fenceValue) override;
     virtual D3D12_GPU_DESCRIPTOR_HANDLE GetSamplerGPUHandle(int32_t samplerID) override;
+    virtual D3D12_GPU_DESCRIPTOR_HANDLE GetDummySRVGPUHandle() const override;
     // IRenderer - END
 
 private:
@@ -121,5 +122,8 @@ private:
     std::unique_ptr<AstroTools::Rendering::PipelineStateObjectLibrary> PSOLibrary;
 
 	RendererContext m_rendererContext;
+
+    std::unique_ptr<RenderTarget> m_dummyTex;
+
 };
 

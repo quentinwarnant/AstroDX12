@@ -207,6 +207,9 @@ void RendererDX12::Init(HWND window, int width, int height)
 
 	// Create Pipeline State Object Library for caching
 	PSOLibrary = std::make_unique<AstroTools::Rendering::PipelineStateObjectLibrary>();
+
+	m_dummyTex = std::make_unique<RenderTarget>();
+	InitialiseRenderTarget(m_dummyTex.get(), L"DummyTex2D", 1, 1, DXGI_FORMAT_R32_FLOAT, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 }
 
 void RendererDX12::FinaliseInit()
@@ -694,4 +697,9 @@ D3D12_GPU_DESCRIPTOR_HANDLE RendererDX12::GetSamplerGPUHandle(int32_t samplerID)
 
 	return m_globalSamplerDescriptorHeap->GetGPUDescriptorHandleByIndex(samplerID);
 	
+}
+
+D3D12_GPU_DESCRIPTOR_HANDLE RendererDX12::GetDummySRVGPUHandle() const
+{
+	return m_dummyTex->GetSRVGPUDescriptorHandle
 }

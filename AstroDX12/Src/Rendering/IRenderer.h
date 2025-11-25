@@ -68,4 +68,6 @@ public:
 	virtual UINT64 GetLastCompletedFence() = 0;
 	virtual void WaitForFence(UINT64 fenceValue) = 0;
 	virtual D3D12_GPU_DESCRIPTOR_HANDLE GetSamplerGPUHandle(int32_t samplerID) = 0;
+	virtual D3D12_GPU_DESCRIPTOR_HANDLE GetDummySRVGPUHandle() const = 0;
+
 };
