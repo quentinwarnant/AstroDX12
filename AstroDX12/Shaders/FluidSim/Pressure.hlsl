@@ -32,3 +32,19 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
     float newPressure = (pressureNeighbours - (h2 * div)) * 0.25f; 
     PressureTexOut[DTid.xy] = newPressure;
 }
+
+
+[numthreads(THREAD_GROUP_SIZE_X, THREAD_GROUP_SIZE_Y, 1)]
+void CSMain_FixEdges(uint3 DTid : SV_DispatchThreadID)
+{
+    //TODO - only dispatch for edge cells
+    if(DTid.x == 0 || DTid.x == GridResolution - 1 || DTid.y == 0 || DTid.y == GridResolution - 1)
+    {
+        PressureTexOut[DTid.xy] = 0.0f;
+    }
+    else
+    {
+        PressureTexOut[DTid.xy] = PressureTexIn[DTid.xy];
+    }
+}
+

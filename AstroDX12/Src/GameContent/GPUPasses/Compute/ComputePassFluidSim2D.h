@@ -52,9 +52,10 @@ private:
     std::unique_ptr<ComputableObject> m_computeObjDiffuse;
     std::unique_ptr<ComputableObject> m_computeObjDivergence;
     std::unique_ptr<ComputableObject> m_computeObjPressure;
+    std::unique_ptr<ComputableObject> m_computeObjPressureFixEdges;
     std::unique_ptr<ComputableObject> m_computeObjProject;
     //std::unique_ptr<ComputableObject> m_computeObjGradient;
-
+	D3D12_GPU_DESCRIPTOR_HANDLE m_dummySRVGPUHandle;
 };
 
 // Graphics

@@ -14,6 +14,7 @@ namespace Privates
         IRenderer* renderer,
         AstroTools::Rendering::ShaderLibrary& shaderLibrary,
         const std::wstring& computeShaderPath,
+        const std::wstring& entryPoint,
         UINT numRenderTargetInputs,
         UINT numBindlessConstants)
     {
@@ -108,7 +109,7 @@ namespace Privates
         computableObjDesc.RootSignature = rootSignature;
 
         // Create shader
-        computableObjDesc.CS = shaderLibrary.GetCompiledShader(computableObjDesc.ComputeShaderPath, L"CSMain", {}, L"cs_6_6");
+        computableObjDesc.CS = shaderLibrary.GetCompiledShader(computableObjDesc.ComputeShaderPath, entryPoint, {}, L"cs_6_6");
 
         // Compile PSO
         renderer->CreateComputePipelineState(
@@ -135,6 +136,8 @@ namespace Privates
 
 void ComputePassFluidSim2D::Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary)
 {
+    m_dummySRVGPUHandle = renderer->GetDummySRVGPUHandle();
+
     m_gridVelocityTexPair = std::make_unique<RenderTargetPair>(
         std::make_unique<RenderTarget>(),
 		std::make_unique<RenderTarget>());
@@ -155,32 +158,31 @@ void ComputePassFluidSim2D::Init(IRenderer* renderer, AstroTools::Rendering::Sha
 
     const auto rootPath = s2ws(DX::GetWorkingDirectory());
     const auto computeShaderPathInput = rootPath + std::wstring(L"\\Shaders\\FluidSim\\Input.hlsl");
-    m_computeObjInput = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathInput,1, 1 );
+    m_computeObjInput = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathInput, L"CSMain", 1, 1 );
 
     const auto computeShaderPathAdvect = rootPath + std::wstring(L"\\Shaders\\FluidSim\\Advect.hlsl");
-    m_computeObjAdvect = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathAdvect, 1, 1);
+    m_computeObjAdvect = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathAdvect, L"CSMain", 1, 1);
 
     const auto computeShaderPathDivergence = rootPath + std::wstring(L"\\Shaders\\FluidSim\\Div.hlsl");
-    m_computeObjDivergence = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathDivergence, 1, 1);
+    m_computeObjDivergence = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathDivergence, L"CSMain", 1, 1);
 
     //const auto computeShaderPathGradient = rootPath + std::wstring(L"\\Shaders\\FluidSim\\Grad.hlsl");
     //m_computeObjGradient = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathGradient);
 
     const auto computeShaderPathDiffuse = rootPath + std::wstring(L"\\Shaders\\FluidSim\\Diffuse.hlsl");
-    m_computeObjDiffuse = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathDiffuse, 1, 1);
+    m_computeObjDiffuse = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathDiffuse, L"CSMain", 1, 1);
 
     const auto computeShaderPathPressure = rootPath + std::wstring(L"\\Shaders\\FluidSim\\Pressure.hlsl");
-    m_computeObjPressure = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathPressure, 2, 1);
+    m_computeObjPressure = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathPressure, L"CSMain", 2, 1);
+    m_computeObjPressureFixEdges = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathPressure, L"CSMain_FixEdges", 2, 1);
 
     const auto computeShaderPathProject = rootPath + std::wstring(L"\\Shaders\\FluidSim\\Project.hlsl");
-    m_computeObjProject = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathProject, 1, 1);
+    m_computeObjProject = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathProject, L"CSMain", 1, 1);
 }
 
 void ComputePassFluidSim2D::Update(int32_t /*frameIdxModulo*/, void* /*Data*/)
 {
     m_gridVelocityTexPair->Swap();
-
-    //m_simNeedsReset.Tick();
 }
 
 void ComputePassFluidSim2D::FluidStepInput(ComPtr<ID3D12GraphicsCommandList> cmdList) const
@@ -293,6 +295,34 @@ void ComputePassFluidSim2D::FluidStepPressure(ComPtr<ID3D12GraphicsCommandList> 
         cmdList->Dispatch(dispatchSize.x, dispatchSize.y, 1);
 
         // Swap input and output for next iteration
+        const auto bufferInStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
+            pressureTexInput->GetResource(),
+            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        const auto bufferOutStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
+            pressureTexOutput->GetResource(),
+            D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+
+        std::vector<CD3DX12_RESOURCE_BARRIER> buffersStateTransition = { bufferInStateTransition , bufferOutStateTransition };
+        cmdList->ResourceBarrier(2, buffersStateTransition.data());
+
+        m_gridPressureTexPair->Swap();
+	}
+
+
+	// - Fix edges
+    {
+
+        Privates::ApplyRootSignatureAndPSO(cmdList, m_computeObjPressureFixEdges.get());
+
+        auto pressureTexInput = m_gridPressureTexPair->GetInput();
+        auto pressureTexOutput = m_gridPressureTexPair->GetOutput();
+
+        cmdList->SetComputeRootDescriptorTable(0, m_dummySRVGPUHandle);
+        cmdList->SetComputeRootDescriptorTable(1, pressureTexInput->GetSRVGPUDescriptorHandle());
+        cmdList->SetComputeRootDescriptorTable(2, pressureTexOutput->GetUAVGPUDescriptorHandle());
+        cmdList->SetComputeRoot32BitConstant(3, Privates::GridDimensions.x, 0); // GridWidth
+        cmdList->Dispatch(dispatchSize.x, dispatchSize.y, 1);
+
 
         const auto bufferInStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
             pressureTexInput->GetResource(),
@@ -305,8 +335,8 @@ void ComputePassFluidSim2D::FluidStepPressure(ComPtr<ID3D12GraphicsCommandList> 
         cmdList->ResourceBarrier(2, buffersStateTransition.data());
 
         m_gridPressureTexPair->Swap();
-//        std::swap(bufferInput, bufferOutput);
-	}
+    }
+
 }
 
 void ComputePassFluidSim2D::FluidStepProject(ComPtr<ID3D12GraphicsCommandList> cmdList) const
