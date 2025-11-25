@@ -701,5 +701,5 @@ D3D12_GPU_DESCRIPTOR_HANDLE RendererDX12::GetSamplerGPUHandle(int32_t samplerID)
 
 D3D12_GPU_DESCRIPTOR_HANDLE RendererDX12::GetDummySRVGPUHandle() const
 {
-	return m_dummyTex->GetSRVGPUDescriptorHandle
+	return m_dummyTex->GetSRVGPUDescriptorHandle();
 }
