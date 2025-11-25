@@ -27,7 +27,8 @@ public:
 
     void Initialize(
         IRenderer* renderer,
-        DescriptorHeap& descriptorHeap, 
+        DescriptorHeap& gpuVisibleDescriptorHeap, 
+        DescriptorHeap& cpuVisibleDescriptorHeap,
         LPCWSTR name,
         UINT32 width,
         UINT32 height,

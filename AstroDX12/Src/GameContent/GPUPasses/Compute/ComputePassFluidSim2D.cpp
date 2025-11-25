@@ -30,7 +30,7 @@ namespace Privates
         for (size_t i = 0; i < numRenderTargetInputs; ++i)
         {
             ranges.push_back(srvRange);
-            ranges[i].BaseShaderRegister = i;
+            ranges[i].BaseShaderRegister = (UINT)i;
         }
 
         // UAV descriptor table for RWTexture2D (BufferOut)
@@ -271,8 +271,6 @@ void ComputePassFluidSim2D::FluidStepPressure(ComPtr<ID3D12GraphicsCommandList> 
         clearValues,
         0,
 		nullptr);
-
-
 
     auto divTex = m_gridDivergenceTex.get();
 

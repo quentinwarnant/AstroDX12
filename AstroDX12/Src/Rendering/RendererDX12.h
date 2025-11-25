@@ -108,6 +108,7 @@ private:
     ComPtr<ID3D12DescriptorHeap> m_dsvHeap; // Depth/Stencil 
     std::shared_ptr<DescriptorHeap> m_globalCBVSRVUAVDescriptorHeap; // UAV/SRV/CBV Buffers heap for everything including bindless resources
 	std::shared_ptr<DescriptorHeap> m_globalSamplerDescriptorHeap; // Sampler heap for everything including bindless resources
+    std::shared_ptr<DescriptorHeap> m_cpuGlobalUAVDescriptorHeap; // useful to clear render targets, when a CPU handle is needed
 
 	int32_t m_rtvHeapViewsCount = 0; // Count of RTV views in the heap
 

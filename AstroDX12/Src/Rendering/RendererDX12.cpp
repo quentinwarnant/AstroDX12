@@ -317,6 +317,20 @@ void RendererDX12::CreateGlobalDescriptorHeaps()
 	ThrowIfFailed(m_device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(renderablesCBVSRVUAVHeap.GetAddressOf())));
 	m_globalCBVSRVUAVDescriptorHeap = std::make_shared<DescriptorHeap>( renderablesCBVSRVUAVHeap, m_descriptorSizeCBV );
 
+	// ----------------------------------------
+
+	D3D12_DESCRIPTOR_HEAP_DESC cpuDescriptorHeapDesc{};
+	cpuDescriptorHeapDesc.NumDescriptors = (UINT)descriptorCount;
+	cpuDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	cpuDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	cpuDescriptorHeapDesc.NodeMask = 0; // device/Adapter index
+
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> cpuRTVHeap;
+	ThrowIfFailed(m_device->CreateDescriptorHeap(&cpuDescriptorHeapDesc, IID_PPV_ARGS(cpuRTVHeap.GetAddressOf())));
+	m_cpuGlobalUAVDescriptorHeap = std::make_shared<DescriptorHeap>(cpuRTVHeap, m_descriptorSizeCBV);
+
+	// ----------------------------------------
+
 	size_t samplerDescriptorCount = 1000u;
 	D3D12_DESCRIPTOR_HEAP_DESC samplerDescriptorHeapDesc{};
 	samplerDescriptorHeapDesc.NumDescriptors = (UINT)samplerDescriptorCount;
@@ -633,7 +647,7 @@ void RendererDX12::InitialiseRenderTarget(
 	DXGI_FORMAT format,
 	D3D12_RESOURCE_STATES initialState)
 {
-	renderTarget->Initialize(this, *m_globalCBVSRVUAVDescriptorHeap.get(), name, width, height, format, initialState);
+	renderTarget->Initialize(this, *m_globalCBVSRVUAVDescriptorHeap.get(), *m_cpuGlobalUAVDescriptorHeap.get(), name, width, height, format, initialState);
 }
 
 RendererContext& RendererDX12::GetRendererContext()
