@@ -58,6 +58,9 @@ float4 PS(PSInput i) : SV_Target
     Texture2D<float2> simTexture = ResourceDescriptorHeap[imageIndex];
     float2 sampledCol = simTexture.Sample(g_BindlessSamplers[samplerIndex], i.uv);
     
+    sampledCol = sampledCol * 0.5f + 0.5f; // map from [-1,1] to [0,1]
+    sampledCol *= 1.f; // scale for better visibility
+    
     
     float borderCol = 0.f;
     

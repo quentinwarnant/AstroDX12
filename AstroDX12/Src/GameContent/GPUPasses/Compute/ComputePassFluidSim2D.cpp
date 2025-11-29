@@ -145,7 +145,7 @@ void ComputePassFluidSim2D::Init(IRenderer* renderer, AstroTools::Rendering::Sha
     renderer->InitialiseRenderTarget(m_gridVelocityTexPair->GetOutput(), L"FluidSim2D::VelocityGrid::Pong", Privates::GridDimensions.x, Privates::GridDimensions.y, DXGI_FORMAT_R32G32_FLOAT, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
     m_gridDivergenceTex = std::make_unique<RenderTarget>();
-    renderer->InitialiseRenderTarget(m_gridDivergenceTex.get(), L"FluidSim2D::DivergenceGrid", Privates::GridDimensions.x, Privates::GridDimensions.y, DXGI_FORMAT_R32_FLOAT, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    renderer->InitialiseRenderTarget(m_gridDivergenceTex.get(), L"FluidSim2D::DivergenceGrid", Privates::GridDimensions.x, Privates::GridDimensions.y, DXGI_FORMAT_R32_FLOAT, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
     m_gridPressureTexPair = std::make_unique<RenderTargetPair>(
         std::make_unique<RenderTarget>(),
@@ -177,7 +177,8 @@ void ComputePassFluidSim2D::Init(IRenderer* renderer, AstroTools::Rendering::Sha
     m_computeObjPressureFixEdges = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathPressure, L"CSMain_FixEdges", 2, 1);
 
     const auto computeShaderPathProject = rootPath + std::wstring(L"\\Shaders\\FluidSim\\Project.hlsl");
-    m_computeObjProject = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathProject, L"CSMain", 1, 1);
+    m_computeObjProject = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathProject, L"CSMain", 2, 1);
+    m_computeObjReflectEdgeVelocity = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathProject, L"CSMain_ReflectEdgeVelocity", 2, 1);
 }
 
 void ComputePassFluidSim2D::Update(int32_t /*frameIdxModulo*/, void* /*Data*/)
@@ -194,16 +195,17 @@ void ComputePassFluidSim2D::FluidStepInput(ComPtr<ID3D12GraphicsCommandList> cmd
     auto bufferOutput = m_gridVelocityTexPair->GetOutput();
 
     // Transition resources into their next correct state
-    const auto bufferInStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
-        bufferInput->GetResource(),
-        D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    const auto bufferOutStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
-        bufferOutput->GetResource(),
-        D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    {    
+        const auto bufferInStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
+            bufferInput->GetResource(),
+            D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+        const auto bufferOutStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
+            bufferOutput->GetResource(),
+            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-    std::vector<CD3DX12_RESOURCE_BARRIER> buffersStateTransition = { bufferInStateTransition , bufferOutStateTransition };
-    cmdList->ResourceBarrier(2, buffersStateTransition.data());
-
+        std::vector<CD3DX12_RESOURCE_BARRIER> buffersStateTransition = { bufferInStateTransition , bufferOutStateTransition };
+        cmdList->ResourceBarrier(buffersStateTransition.size(), buffersStateTransition.data());
+    }
     Privates::ApplyRootSignatureAndPSO(cmdList, m_computeObjInput.get());
 
     cmdList->SetComputeRootDescriptorTable(0, bufferInput->GetSRVGPUDescriptorHandle());
@@ -214,6 +216,21 @@ void ComputePassFluidSim2D::FluidStepInput(ComPtr<ID3D12GraphicsCommandList> cmd
     constexpr ivec2 dispatchSize = Privates::ComputeDispatchSize(Privates::GridDimensions, Privates::ThreadGroupSize);
     cmdList->Dispatch(dispatchSize.x, dispatchSize.y, 1);
 
+
+    // Transition resources into their next correct state
+    {
+
+        const auto bufferInStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
+            bufferInput->GetResource(),
+            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        const auto bufferOutStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
+            bufferOutput->GetResource(),
+            D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+
+        std::vector<CD3DX12_RESOURCE_BARRIER> buffersStateTransition = { bufferInStateTransition , bufferOutStateTransition };
+        cmdList->ResourceBarrier(buffersStateTransition.size(), buffersStateTransition.data());
+    }
+	m_gridVelocityTexPair->Swap();
 }
 
 void ComputePassFluidSim2D::FluidStepDiv(ComPtr<ID3D12GraphicsCommandList> cmdList) const
@@ -221,43 +238,24 @@ void ComputePassFluidSim2D::FluidStepDiv(ComPtr<ID3D12GraphicsCommandList> cmdLi
     PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "FluidStepDiv");
 
     auto velocityInput = m_gridVelocityTexPair->GetInput();
-    auto velocityOutput = m_gridVelocityTexPair->GetOutput();
-    auto bufferOutput = m_gridDivergenceTex.get();
-
-    // Transition resources into their next correct state
-    {
-        const auto bufferInStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
-            velocityOutput->GetResource(),
-            D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-        const auto bufferOutStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
-            bufferOutput->GetResource(),
-            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-
-        std::vector<CD3DX12_RESOURCE_BARRIER> buffersStateTransition = { bufferInStateTransition , bufferOutStateTransition };
-        cmdList->ResourceBarrier(2, buffersStateTransition.data());
-    }
-
-
+    auto divergenceTex= m_gridDivergenceTex.get();
 
     Privates::ApplyRootSignatureAndPSO(cmdList, m_computeObjDivergence.get());
 
-    cmdList->SetComputeRootDescriptorTable(0, velocityOutput->GetSRVGPUDescriptorHandle());
-    cmdList->SetComputeRootDescriptorTable(1, bufferOutput->GetUAVGPUDescriptorHandle());
+    cmdList->SetComputeRootDescriptorTable(0, velocityInput->GetSRVGPUDescriptorHandle());
+    cmdList->SetComputeRootDescriptorTable(1, divergenceTex->GetUAVGPUDescriptorHandle());
     cmdList->SetComputeRoot32BitConstant(2, Privates::GridDimensions.x, 0); // GridWidth
 
     constexpr ivec2 dispatchSize = Privates::ComputeDispatchSize(Privates::GridDimensions, Privates::ThreadGroupSize);
     cmdList->Dispatch(dispatchSize.x, dispatchSize.y, 1);
 
     {
-        const auto bufferInStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
-            velocityInput->GetResource(),
-            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-        const auto bufferOutStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
-            bufferOutput->GetResource(),
+        const auto divergenceBufferStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
+            divergenceTex->GetResource(),
             D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
-        std::vector<CD3DX12_RESOURCE_BARRIER> buffersStateTransition = { bufferInStateTransition , bufferOutStateTransition };
-        cmdList->ResourceBarrier(2, buffersStateTransition.data());
+        std::vector<CD3DX12_RESOURCE_BARRIER> buffersStateTransition = { divergenceBufferStateTransition };
+        cmdList->ResourceBarrier(buffersStateTransition.size(), buffersStateTransition.data());
     }
 }
 
@@ -279,6 +277,7 @@ void ComputePassFluidSim2D::FluidStepPressure(ComPtr<ID3D12GraphicsCommandList> 
     Privates::ApplyRootSignatureAndPSO(cmdList, m_computeObjPressure.get());
     constexpr ivec2 dispatchSize = Privates::ComputeDispatchSize(Privates::GridDimensions, Privates::ThreadGroupSize);
 	constexpr int32_t pressureIterations = 60;
+    cmdList->SetComputeRootDescriptorTable(0, divTex->GetSRVGPUDescriptorHandle());
     cmdList->SetComputeRoot32BitConstant(3, Privates::GridDimensions.x, 0); // GridWidth
 
     for (int32_t i = 0; i < pressureIterations; ++i)
@@ -286,11 +285,8 @@ void ComputePassFluidSim2D::FluidStepPressure(ComPtr<ID3D12GraphicsCommandList> 
         auto pressureTexInput = m_gridPressureTexPair->GetInput();
         auto pressureTexOutput = m_gridPressureTexPair->GetOutput();
 
-        cmdList->SetComputeRootDescriptorTable(0, divTex->GetSRVGPUDescriptorHandle());
         cmdList->SetComputeRootDescriptorTable(1, pressureTexInput->GetSRVGPUDescriptorHandle());
         cmdList->SetComputeRootDescriptorTable(2, pressureTexOutput->GetUAVGPUDescriptorHandle());
-        cmdList->SetComputeRoot32BitConstant(3, Privates::GridDimensions.x, 0); // GridWidth
-
 
         cmdList->Dispatch(dispatchSize.x, dispatchSize.y, 1);
 
@@ -301,9 +297,9 @@ void ComputePassFluidSim2D::FluidStepPressure(ComPtr<ID3D12GraphicsCommandList> 
         const auto bufferOutStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
             pressureTexOutput->GetResource(),
             D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-
+        
         std::vector<CD3DX12_RESOURCE_BARRIER> buffersStateTransition = { bufferInStateTransition , bufferOutStateTransition };
-        cmdList->ResourceBarrier(2, buffersStateTransition.data());
+        cmdList->ResourceBarrier(buffersStateTransition.size(), buffersStateTransition.data());
 
         m_gridPressureTexPair->Swap();
 	}
@@ -330,9 +326,14 @@ void ComputePassFluidSim2D::FluidStepPressure(ComPtr<ID3D12GraphicsCommandList> 
         const auto bufferOutStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
             pressureTexOutput->GetResource(),
             D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+        const auto divergenceStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
+            divTex->GetResource(),
+            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-        std::vector<CD3DX12_RESOURCE_BARRIER> buffersStateTransition = { bufferInStateTransition , bufferOutStateTransition };
-        cmdList->ResourceBarrier(2, buffersStateTransition.data());
+
+
+        std::vector<CD3DX12_RESOURCE_BARRIER> buffersStateTransition = { bufferInStateTransition , bufferOutStateTransition, divergenceStateTransition };
+        cmdList->ResourceBarrier(buffersStateTransition.size(), buffersStateTransition.data());
 
         m_gridPressureTexPair->Swap();
     }
@@ -343,23 +344,53 @@ void ComputePassFluidSim2D::FluidStepProject(ComPtr<ID3D12GraphicsCommandList> c
 {
     PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "FluidStepProject");
 
-    auto bufferInput = m_gridVelocityTexPair->GetInput();
-    auto bufferOutput = m_gridVelocityTexPair->GetOutput();
+    auto velocityInTex = m_gridVelocityTexPair->GetInput();
+    auto velocityOutTex = m_gridVelocityTexPair->GetOutput();
+    auto pressureTex = m_gridPressureTexPair->GetInput();
 
-    Privates::ApplyRootSignatureAndPSO(cmdList, m_computeObjProject.get());
+    {
+        Privates::ApplyRootSignatureAndPSO(cmdList, m_computeObjProject.get());
 
-    cmdList->SetComputeRootDescriptorTable(0, bufferInput->GetSRVGPUDescriptorHandle());
-    cmdList->SetComputeRootDescriptorTable(1, bufferOutput->GetUAVGPUDescriptorHandle());
-    cmdList->SetComputeRoot32BitConstant(2, Privates::GridDimensions.x, 0); // GridWidth
+        cmdList->SetComputeRootDescriptorTable(0, velocityInTex->GetSRVGPUDescriptorHandle());
+        cmdList->SetComputeRootDescriptorTable(1, pressureTex->GetSRVGPUDescriptorHandle());
+        cmdList->SetComputeRootDescriptorTable(2, velocityOutTex->GetUAVGPUDescriptorHandle());
+        cmdList->SetComputeRoot32BitConstant(3, Privates::GridDimensions.x, 0); // GridWidth
+
+        constexpr ivec2 dispatchSize = Privates::ComputeDispatchSize(Privates::GridDimensions, Privates::ThreadGroupSize);
+        cmdList->Dispatch(dispatchSize.x, dispatchSize.y, 1);
+    }
+
+
+    // Fix velocity at edges
+    {
+
+    Privates::ApplyRootSignatureAndPSO(cmdList, m_computeObjReflectEdgeVelocity.get());
+
+    cmdList->SetComputeRootDescriptorTable(0, m_dummySRVGPUHandle);
+    cmdList->SetComputeRootDescriptorTable(1, m_dummySRVGPUHandle);
+    cmdList->SetComputeRootDescriptorTable(2, velocityOutTex->GetUAVGPUDescriptorHandle());
+    cmdList->SetComputeRoot32BitConstant(3, Privates::GridDimensions.x, 0); // GridWidth
 
     constexpr ivec2 dispatchSize = Privates::ComputeDispatchSize(Privates::GridDimensions, Privates::ThreadGroupSize);
     cmdList->Dispatch(dispatchSize.x, dispatchSize.y, 1);
+    }
+
+    const auto bufferInStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
+        velocityInTex->GetResource(),
+        D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    const auto bufferOutStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
+        velocityOutTex->GetResource(),
+        D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+
+    std::vector<CD3DX12_RESOURCE_BARRIER> buffersStateTransition = { bufferInStateTransition , bufferOutStateTransition };
+    cmdList->ResourceBarrier(buffersStateTransition.size(), buffersStateTransition.data());
+
+    m_gridVelocityTexPair->Swap();
+
 }
 
 void ComputePassFluidSim2D::FluidStepAdvect(ComPtr<ID3D12GraphicsCommandList> cmdList) const
 {
-    m_gridVelocityTexPair->Swap();
-
     PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "FluidStepAdvect");
 
     auto bufferInput = m_gridVelocityTexPair->GetInput();
@@ -409,7 +440,7 @@ void ComputePassFluidSim2D::CopySimOutputToDisplayTexture(ComPtr<ID3D12GraphicsC
     const auto imageRTTransitionToCopyDest = CD3DX12_RESOURCE_BARRIER::Transition(m_imageRenderTarget->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
     const auto simBufferOutputTransitionToCopySrc = CD3DX12_RESOURCE_BARRIER::Transition(bufferOutput->GetResource(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE);
     std::vector<CD3DX12_RESOURCE_BARRIER> prepForCopyTransition = { imageRTTransitionToCopyDest , simBufferOutputTransitionToCopySrc };
-    cmdList->ResourceBarrier(2, prepForCopyTransition.data());
+    cmdList->ResourceBarrier(prepForCopyTransition.size(), prepForCopyTransition.data());
 
     D3D12_TEXTURE_COPY_LOCATION sourceLoc{
         .pResource = bufferOutput->GetResource(),
@@ -433,7 +464,7 @@ void ComputePassFluidSim2D::CopySimOutputToDisplayTexture(ComPtr<ID3D12GraphicsC
     const auto simBufferOutputTransitionToUAV = CD3DX12_RESOURCE_BARRIER::Transition(bufferOutput->GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
     std::vector<CD3DX12_RESOURCE_BARRIER> returnResourcesToOriginalStateTransition = { imageRTTransitionToSrv , simBufferOutputTransitionToUAV };
-    cmdList->ResourceBarrier(2, returnResourcesToOriginalStateTransition.data());
+    cmdList->ResourceBarrier(returnResourcesToOriginalStateTransition.size(), returnResourcesToOriginalStateTransition.data());
 }
 
 
@@ -448,7 +479,7 @@ void ComputePassFluidSim2D::SwapVelocityTexturesStates(ComPtr<ID3D12GraphicsComm
     const auto bufferInStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(velocityInput->GetResource(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     const auto bufferOutStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(velocityOutput->GetResource(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     std::vector<CD3DX12_RESOURCE_BARRIER> buffersStateTransition = { bufferInStateTransition , bufferOutStateTransition };
-    cmdList->ResourceBarrier(2, buffersStateTransition.data());
+    cmdList->ResourceBarrier(buffersStateTransition.size(), buffersStateTransition.data());
 }
 
 void ComputePassFluidSim2D::RunSim(ComPtr<ID3D12GraphicsCommandList> cmdList) const
@@ -456,7 +487,7 @@ void ComputePassFluidSim2D::RunSim(ComPtr<ID3D12GraphicsCommandList> cmdList) co
     FluidStepInput(cmdList);
     FluidStepDiv(cmdList);
     FluidStepPressure(cmdList);
-    //FluidStepProject(cmdList);
+    FluidStepProject(cmdList);
     ////Gradient?
 
     FluidStepAdvect(cmdList);
