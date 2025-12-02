@@ -55,8 +55,11 @@ private:
     std::unique_ptr<ComputableObject> m_computeObjPressureFixEdges;
     std::unique_ptr<ComputableObject> m_computeObjProject;
     std::unique_ptr<ComputableObject> m_computeObjReflectEdgeVelocity;
-    //std::unique_ptr<ComputableObject> m_computeObjGradient;
-	D3D12_GPU_DESCRIPTOR_HANDLE m_dummySRVGPUHandle;
+
+    D3D12_GPU_DESCRIPTOR_HANDLE m_dummySRVGPUHandle;
+    int32_t m_imageSamplerIndex;
+    D3D12_GPU_DESCRIPTOR_HANDLE m_imageSamplerGpuHandle;
+
 };
 
 // Graphics

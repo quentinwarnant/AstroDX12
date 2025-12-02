@@ -24,6 +24,7 @@ cbuffer BindlessRenderResources : register(b1)
     int imageIndex;
     int samplerIndex;
     int modelVertexDataBufferIdx;
+    int gridDimension;
 };
 
 struct VertexData
@@ -59,13 +60,13 @@ float4 PS(PSInput i) : SV_Target
     float2 sampledCol = simTexture.Sample(g_BindlessSamplers[samplerIndex], i.uv);
     
     sampledCol = sampledCol * 0.5f + 0.5f; // map from [-1,1] to [0,1]
-    sampledCol *= 1.f; // scale for better visibility
+    //sampledCol *= 1.f; // scale for better visibility
     
     
     float borderCol = 0.f;
     
-    const float texSize = 256.f;
-    if (i.uv.x < 1.f / texSize || i.uv.x > (texSize-1.f) / texSize ||
+    const float texSize = gridDimension;
+    if (i.uv.x < 1.f / texSize || i.uv.x > (texSize - 1.f) / texSize ||
        i.uv.y < 1.f / texSize || i.uv.y > (texSize-1.f) / texSize)
     {
         borderCol = 1.f;

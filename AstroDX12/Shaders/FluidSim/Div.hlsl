@@ -20,11 +20,12 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
 {
     float dx = 1.0f / GridResolution;
     
-    float2 Vel_Left = VelocityTex.Load(int3(SafeCoord(DTid.xy + uint2(-1,0)), 0));
-    float2 Vel_Right = VelocityTex.Load(int3(SafeCoord(DTid.xy + uint2(1, 0)), 0));
-    float2 Vel_Down = VelocityTex.Load(int3(SafeCoord(DTid.xy + uint2(0, -1)), 0));
-    float2 Vel_Up = VelocityTex.Load(int3(SafeCoord(DTid.xy + uint2(0, 1)), 0));
+    float2 Vel_Left = VelocityTex[SafeCoord(DTid.xy + uint2(-1, 0))];
+    float2 Vel_Right = VelocityTex[SafeCoord(DTid.xy + uint2(1, 0))];
+    float2 Vel_Down = VelocityTex[SafeCoord(DTid.xy + uint2(0, 1))]; // origin is top left
+    float2 Vel_Up = VelocityTex[SafeCoord(DTid.xy + uint2(0, -1))];
     
-    float divergence = (Vel_Right.x - Vel_Left.x + Vel_Up.y - Vel_Down.y) / (2.0f * dx);
+    float divergence = 0.5f * (Vel_Right.x - Vel_Left.x + Vel_Up.y - Vel_Down.y) * dx;
+    
     Divergence[DTid.xy] = divergence;
 }
