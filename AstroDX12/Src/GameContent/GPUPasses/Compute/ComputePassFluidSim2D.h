@@ -43,7 +43,6 @@ private:
     void FluidStepInput(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
     void FluidStepAdvect(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
     void FluidStepDiv(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
-    //void FluidStepGrad(ComPtr<ID3D12GraphicsCommandList> cmdList);
     void FluidStepDiffuse(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
     void FluidStepPressure(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
     void FluidStepProject(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
