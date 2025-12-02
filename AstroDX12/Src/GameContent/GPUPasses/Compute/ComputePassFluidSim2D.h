@@ -10,6 +10,8 @@
 #include <Rendering/Compute/ComputableObject.h>
 #include <Rendering/Common/RenderTarget.h>
 #include <Rendering/Common/RenderTargetPair.h>
+#include <Rendering/Common/TickableResetFlag.h>
+
 
 class ComputePassFluidSim2D :
     public ComputePass
@@ -26,11 +28,17 @@ public:
         return m_imageRenderTarget->GetSRVIndex();
 	}
 
+    virtual void OnSimReset()
+    {
+		m_simNeedsReset.FlagForReset();
+    }
+
 private:
     
     int32_t m_frameIdxModulo = 0;
-    //SimNeedsResetData m_simNeedsReset;
+    TickableResetFlag m_simNeedsReset;
 
+	void SimReset(ComPtr<ID3D12GraphicsCommandList>& cmdList) const;
     void RunSim(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
     void FluidStepInput(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
     void FluidStepAdvect(ComPtr<ID3D12GraphicsCommandList> cmdList) const;

@@ -6,6 +6,7 @@
 #include <directxmath.h>
 #include <Rendering/Common/StructuredBuffer.h>
 #include <Rendering/RenderData/Mesh.h>
+#include <Rendering/Common/TickableResetFlag.h>
 
 using Microsoft::WRL::ComPtr;
 
@@ -49,29 +50,6 @@ namespace PhysicsChain
 
 }
 
-struct SimNeedsResetData
-{
-
-    bool FlaggedForReset = false;
-    bool NeedsResetting = false;
-
-	void FlagForReset() { FlaggedForReset = true; }
-    void Tick() 
-    {
-        if (FlaggedForReset)
-        {
-			FlaggedForReset = false;
-            NeedsResetting = true;
-        }
-        else
-        {
-            NeedsResetting = false;
-        }
-    };
-
-	bool NeedsReset() const { return NeedsResetting; }
-};
-
 class ComputePassPhysicsChain :
     public ComputePass
 {
@@ -96,7 +74,7 @@ public:
 
 private:
     int32_t m_frameIdxModulo = 0;
-    SimNeedsResetData m_simNeedsReset;
+    TickableResetFlag m_simNeedsReset;
 
 	int32_t m_debugDrawBufferUAVIndex = -1;
 

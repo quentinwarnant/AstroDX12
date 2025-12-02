@@ -19,9 +19,9 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
     
     const float deltaTime = 1.f / 60.f; // todo make this an input
     const float2 addedVelocityDir = normalize(float2(1.f, 0.0f));
-    const float addedVelocityStrength = 100.04f * deltaTime;
+    const float addedVelocityStrength = 1000.04f * deltaTime;
     
-    float2 currentVelocity = VelocityGridOutput[DTid.xy];
+    float2 currentVelocity = VelocityGridInput[DTid.xy];
     float2 inputVelocity = addedVelocityDir * addedVelocityStrength;
     float mask = step(length(uv), 0.05f);
     //float mask = DTid.x == 128 && DTid.y == 128 ? 1.f : 0.f; // 1 cell input for testings
