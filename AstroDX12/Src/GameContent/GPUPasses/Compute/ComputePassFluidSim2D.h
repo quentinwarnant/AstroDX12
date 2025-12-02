@@ -43,7 +43,8 @@ private:
 	void SimReset(ComPtr<ID3D12GraphicsCommandList>& cmdList) const;
     void RunSim(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
     void FluidStepInput(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
-    void FluidStepAdvect(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
+    void FluidStepAdvectDensity(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
+    void FluidStepAdvectVelocity(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
     void FluidStepDiv(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
     void FluidStepDiffuse(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
     void FluidStepPressure(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
@@ -51,13 +52,16 @@ private:
     void CopySimOutputToDisplayTexture(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
     void SwapVelocityTexturesStates(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
 
+    std::unique_ptr<RenderTargetPair> m_gridDensityTexPair;
     std::unique_ptr<RenderTargetPair> m_gridVelocityTexPair;
     std::unique_ptr<RenderTarget> m_gridDivergenceTex;
     std::unique_ptr<RenderTargetPair> m_gridPressureTexPair;
+
 	std::unique_ptr<RenderTarget> m_imageRenderTarget;
 
     std::unique_ptr<ComputableObject> m_computeObjInput;
-    std::unique_ptr<ComputableObject> m_computeObjAdvect;
+    std::unique_ptr<ComputableObject> m_computeObjAdvectDensity;
+    std::unique_ptr<ComputableObject> m_computeObjAdvectVelocity;
     std::unique_ptr<ComputableObject> m_computeObjDiffuse;
     std::unique_ptr<ComputableObject> m_computeObjDivergence;
     std::unique_ptr<ComputableObject> m_computeObjPressure;

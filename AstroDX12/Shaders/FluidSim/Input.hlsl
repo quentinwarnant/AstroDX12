@@ -2,7 +2,9 @@
 #define THREAD_GROUP_SIZE_Y 32
 
 Texture2D<float2> VelocityGridInput : register(t0);
+Texture2D<float4> DensityGridInput : register(t1);
 RWTexture2D<float2> VelocityGridOutput : register(u0);
+RWTexture2D<float4> DensityGridOutput : register(u1);
 
 cbuffer BindlessRenderResources : register(b0)
 {
@@ -13,6 +15,8 @@ cbuffer BindlessRenderResources : register(b0)
 float2 GetDir(float t)
 {
     float angle = t * 3.1415f * 0.2f;
+    angle += sin(t * 0.5f) * 0.5f;
+    angle -= cos(t * 12.3f) * 0.5f;
     return float2(cos(angle), sin(angle));
 }
 
@@ -28,11 +32,17 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
 
     const float2 dir = GetDir(time);
     const float2 addedVelocityDir = normalize(dir);
-    const float addedVelocityStrength = 10000.04f * deltaTime;
+    const float addedVelocityStrength = 1000.04f * deltaTime;
     
     float2 currentVelocity = VelocityGridInput[DTid.xy];
     float2 inputVelocity = addedVelocityDir * addedVelocityStrength;
     const float maskRadius = 0.02f;
     float mask = step(length(uv), maskRadius);
     VelocityGridOutput[DTid.xy] = lerp(currentVelocity, currentVelocity + (inputVelocity), mask);
+    
+    float4 density = DensityGridInput[DTid.xy];
+    DensityGridOutput[DTid.xy] = min(1.f, lerp(density, density +
+    (float4((0.5 * sin(time)) + 1.f, 0.5f * (cos(time)) + 1.f, time % 1.f, 0.f)) * 0.1f
+    , mask));
+
 }

@@ -56,14 +56,14 @@ PSInput VS(uint VertexID : SV_VertexID)
 
 float4 PS(PSInput i) : SV_Target
 {
-    Texture2D<float2> simTexture = ResourceDescriptorHeap[imageIndex];
-    float2 sampledCol = simTexture.Sample(g_BindlessSamplers[samplerIndex], i.uv);
+    Texture2D<float4> simTexture = ResourceDescriptorHeap[imageIndex];
+    float4 sampledCol = simTexture.Sample(g_BindlessSamplers[samplerIndex], i.uv);
     
-    sampledCol = sampledCol * 0.5f + 0.5f; // map from [-1,1] to [0,1]
+    sampledCol = sampledCol;// * 0.5f + 0.5f; // map from [-1,1] to [0,1]
     //sampledCol *= 1.f; // scale for better visibility
     
     
-    float borderCol = 0.f;
+    float borderCol = sampledCol.b;;
     
     const float texSize = gridDimension;
     if (i.uv.x < 1.f / texSize || i.uv.x > (texSize - 1.f) / texSize ||
