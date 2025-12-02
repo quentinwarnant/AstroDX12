@@ -156,7 +156,7 @@ void GraphicsPassDebugDraw::CreatePipelineState(IRenderer* renderer, AstroTools:
 		/*wireframe*/ true);
 }
 
-void GraphicsPassDebugDraw::Update(int32_t /*frameIdxModulo*/, void* /*Data*/)
+void GraphicsPassDebugDraw::Update(float /*deltaTime*/, int32_t /*frameIdxModulo*/, void* /*Data*/)
 {
 }
 

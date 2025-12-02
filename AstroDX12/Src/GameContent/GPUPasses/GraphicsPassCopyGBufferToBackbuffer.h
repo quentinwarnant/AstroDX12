@@ -20,7 +20,7 @@ public:
     }
 
     void Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, int32_t GBufferRTViewIndex);
-    virtual void Update(int32_t frameIdxModulo, void* Data) override;
+    virtual void Update(float deltaTime, int32_t frameIdxModulo, void* Data) override;
     virtual void Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float deltaTime, const FrameResource& frameResources) const override;
     virtual void Shutdown() override;
 

@@ -44,7 +44,7 @@ public:
     ComputePassParticles();
 
     void Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary);
-    virtual void Update(int32_t frameIdxModulo, void* Data) override;
+    virtual void Update(float deltaTime, int32_t frameIdxModulo, void* Data) override;
     virtual void Execute(
         ComPtr<ID3D12GraphicsCommandList> cmdList,
         float deltaTime,
@@ -68,7 +68,7 @@ class GraphicsPassParticles : public GraphicsPass
 public:
     GraphicsPassParticles();
     void Init(std::weak_ptr<const ComputePassParticles> particlesComputePass, IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, const MeshLibrary& meshLibrary);
-    virtual void Update(int32_t frameIdxModulo, void* Data) override;
+    virtual void Update(float deltaTime, int32_t frameIdxModulo, void* Data) override;
     virtual void Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float deltaTime, const FrameResource& frameResources) const override;
     virtual void Shutdown() override;
 

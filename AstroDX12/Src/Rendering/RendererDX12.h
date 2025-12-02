@@ -25,7 +25,8 @@ public:
 
     virtual void ProcessGPUPass(
         const GPUPass& pass,
-        const FrameResource& frameResources) override;
+        const FrameResource& frameResources,
+        float deltaTime) override;
 
     virtual void AddNewFence(std::function<void(int)> onNewFenceValue) override;
     virtual void Shutdown() override;

@@ -16,7 +16,7 @@ class GPUPass
 {
 public:
 	// Update resources
-	virtual void Update(int32_t frameIdxModulo, void* Data) = 0;
+	virtual void Update(float deltaTime, int32_t frameIdxModulo, void* Data) = 0;
 	virtual void Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float deltaTime, const FrameResource& frameResources) const = 0;
 	virtual void OnSimReset() {}
 	// Clear allocated memory

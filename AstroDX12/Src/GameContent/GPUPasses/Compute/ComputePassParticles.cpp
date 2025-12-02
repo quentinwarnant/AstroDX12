@@ -90,7 +90,7 @@ void ComputePassParticles::Init(IRenderer* renderer, AstroTools::Rendering::Shad
     // TODO (schedule init particles pass)
 }
 
-void ComputePassParticles::Update(int32_t frameIdxModulo, void* /*Data*/)
+void ComputePassParticles::Update(float /*deltaTime*/, int32_t frameIdxModulo, void* /*Data*/)
 {
     m_frameIdxModulo = frameIdxModulo;
 }
@@ -244,7 +244,7 @@ void GraphicsPassParticles::Init(std::weak_ptr<const ComputePassParticles>  part
         ps);
 }
 
-void GraphicsPassParticles::Update(int32_t /*frameIdxModulo*/, void* /*Data*/)
+void GraphicsPassParticles::Update(float /*deltaTime*/, int32_t /*frameIdxModulo*/, void* /*Data*/)
 {
 }
 

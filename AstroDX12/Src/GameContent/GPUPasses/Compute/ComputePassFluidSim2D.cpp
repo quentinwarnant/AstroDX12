@@ -4,6 +4,7 @@
 #include <Rendering/Common/MeshLibrary.h>
 #include <Rendering/Common/FrameResource.h>
 #include <Rendering/Common/SamplerIDs.h>
+#include <bit>
 
 namespace Privates
 {
@@ -185,7 +186,7 @@ void ComputePassFluidSim2D::Init(IRenderer* renderer, AstroTools::Rendering::Sha
 
     const auto rootPath = s2ws(DX::GetWorkingDirectory());
     const auto computeShaderPathInput = rootPath + std::wstring(L"\\Shaders\\FluidSim\\Input.hlsl");
-    m_computeObjInput = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathInput, L"CSMain", 1, 1 );
+    m_computeObjInput = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathInput, L"CSMain", 1, 2 );
 
     const auto computeShaderPathAdvect = rootPath + std::wstring(L"\\Shaders\\FluidSim\\Advect.hlsl");
     m_computeObjAdvect = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathAdvect, L"CSMain", 1, 2, true);
@@ -193,24 +194,22 @@ void ComputePassFluidSim2D::Init(IRenderer* renderer, AstroTools::Rendering::Sha
     const auto computeShaderPathDivergence = rootPath + std::wstring(L"\\Shaders\\FluidSim\\Div.hlsl");
     m_computeObjDivergence = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathDivergence, L"CSMain", 1, 1);
 
-    //const auto computeShaderPathGradient = rootPath + std::wstring(L"\\Shaders\\FluidSim\\Grad.hlsl");
-    //m_computeObjGradient = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathGradient);
-
     const auto computeShaderPathDiffuse = rootPath + std::wstring(L"\\Shaders\\FluidSim\\Diffuse.hlsl");
     m_computeObjDiffuse = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathDiffuse, L"CSMain", 1, 1);
 
     const auto computeShaderPathPressure = rootPath + std::wstring(L"\\Shaders\\FluidSim\\Pressure.hlsl");
-    m_computeObjPressure = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathPressure, L"CSMain", 2, 1);
-    m_computeObjPressureFixEdges = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathPressure, L"CSMain_FixEdges", 2, 1);
+    m_computeObjPressure = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathPressure, L"CSMain", 2, 2, true);
+    m_computeObjPressureFixEdges = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathPressure, L"CSMain_FixEdges", 2, 2, true);
 
     const auto computeShaderPathProject = rootPath + std::wstring(L"\\Shaders\\FluidSim\\Project.hlsl");
     m_computeObjProject = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathProject, L"CSMain", 2, 1);
     m_computeObjReflectEdgeVelocity = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathProject, L"CSMain_ReflectEdgeVelocity", 2, 1);
 }
 
-void ComputePassFluidSim2D::Update(int32_t /*frameIdxModulo*/, void* /*Data*/)
+void ComputePassFluidSim2D::Update(float deltaTime, int32_t /*frameIdxModulo*/, void* /*Data*/)
 {
 	m_simNeedsReset.Tick();
+    m_timer += deltaTime;
 }
 
 void ComputePassFluidSim2D::SimReset(ComPtr<ID3D12GraphicsCommandList>& cmdList) const
@@ -242,12 +241,19 @@ void ComputePassFluidSim2D::FluidStepInput(ComPtr<ID3D12GraphicsCommandList> cmd
 
     cmdList->SetComputeRootDescriptorTable(0, bufferInput->GetSRVGPUDescriptorHandle());
     cmdList->SetComputeRootDescriptorTable(1, bufferOutput->GetUAVGPUDescriptorHandle());
-    cmdList->SetComputeRoot32BitConstant(2, Privates::GridDimensions.x, 0); // GridWidth
 
+    const std::vector<int32_t> GraphicsBindlessResourceIndices = {
+       Privates::GridDimensions.x,
+       std::bit_cast<int32_t>( m_timer )
+    };
+
+    cmdList->SetComputeRoot32BitConstants(2, 
+        (UINT)GraphicsBindlessResourceIndices.size(),
+        GraphicsBindlessResourceIndices.data(),
+         0);
 
     constexpr ivec2 dispatchSize = Privates::ComputeDispatchSize(Privates::GridDimensions, Privates::ThreadGroupSize);
     cmdList->Dispatch(dispatchSize.x, dispatchSize.y, 1);
-
 
     // Transition resources into their next correct state
     {
@@ -317,9 +323,7 @@ void ComputePassFluidSim2D::FluidStepPressure(ComPtr<ID3D12GraphicsCommandList> 
             D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
         std::vector<CD3DX12_RESOURCE_BARRIER> buffersStateTransition2 = { pressureInTexTransitionToSRV };
         cmdList->ResourceBarrier((UINT)buffersStateTransition2.size(), buffersStateTransition2.data());
-
     }
-
 
     cmdList->ClearUnorderedAccessViewFloat(
         m_gridPressureTexPair->GetOutput()->GetUAVGPUDescriptorHandle(),
@@ -335,7 +339,19 @@ void ComputePassFluidSim2D::FluidStepPressure(ComPtr<ID3D12GraphicsCommandList> 
     constexpr ivec2 dispatchSize = Privates::ComputeDispatchSize(Privates::GridDimensions, Privates::ThreadGroupSize);
 	constexpr int32_t pressureIterations = 60;
     cmdList->SetComputeRootDescriptorTable(0, divTex->GetSRVGPUDescriptorHandle());
-    cmdList->SetComputeRoot32BitConstant(3, Privates::GridDimensions.x, 0); // GridWidth
+
+    const std::vector<int32_t> GraphicsBindlessResourceIndices = {
+        Privates::GridDimensions.x,
+        m_imageSamplerIndex
+    };
+    cmdList->SetComputeRoot32BitConstants(3,
+        (UINT)GraphicsBindlessResourceIndices.size(),
+        GraphicsBindlessResourceIndices.data(), 0); // GridWidth
+
+    cmdList->SetComputeRootDescriptorTable(
+        4,
+        m_imageSamplerGpuHandle
+    );
 
     for (int32_t i = 0; i < pressureIterations; ++i)
     {
@@ -361,7 +377,6 @@ void ComputePassFluidSim2D::FluidStepPressure(ComPtr<ID3D12GraphicsCommandList> 
         m_gridPressureTexPair->Swap();
 	}
 
-
 	// - Fix edges
     {
 
@@ -373,7 +388,10 @@ void ComputePassFluidSim2D::FluidStepPressure(ComPtr<ID3D12GraphicsCommandList> 
         cmdList->SetComputeRootDescriptorTable(0, m_dummySRVGPUHandle);
         cmdList->SetComputeRootDescriptorTable(1, pressureTexInput->GetSRVGPUDescriptorHandle());
         cmdList->SetComputeRootDescriptorTable(2, pressureTexOutput->GetUAVGPUDescriptorHandle());
-        cmdList->SetComputeRoot32BitConstant(3, Privates::GridDimensions.x, 0); // GridWidth
+        cmdList->SetComputeRoot32BitConstants(3,
+            (UINT)GraphicsBindlessResourceIndices.size(),
+            GraphicsBindlessResourceIndices.data(), 0);
+        cmdList->SetComputeRootDescriptorTable(4, m_imageSamplerGpuHandle);
         cmdList->Dispatch(dispatchSize.x, dispatchSize.y, 1);
 
 
@@ -710,7 +728,7 @@ void GraphicsPassFluidSim2D::Init(std::weak_ptr<const ComputePassFluidSim2D> flu
         ps);
 }
 
-void GraphicsPassFluidSim2D::Update(int32_t /*frameIdxModulo*/, void* /*Data*/)
+void GraphicsPassFluidSim2D::Update(float /*deltaTime*/, int32_t /*frameIdxModulo*/, void* /*Data*/)
 {
 }
 

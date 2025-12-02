@@ -495,9 +495,10 @@ void RendererDX12::EndNewFrame(std::function<void(int)> onNewFenceValue)
 
 void RendererDX12::ProcessGPUPass(
 	const GPUPass& pass,
-	const FrameResource& frameResources )
+	const FrameResource& frameResources,
+	float deltaTime)
 {
-	pass.Execute(m_commandList, 0.f, frameResources);
+	pass.Execute(m_commandList, deltaTime, frameResources);
 }
 
 void RendererDX12::AddNewFence(std::function<void(int)> onNewFenceValue)

@@ -212,13 +212,13 @@ void AstroGameInstance::Update(float deltaTime)
 
 	for (auto& gpuPass : m_gpuPasses)
 	{
-		gpuPass.get()->Update(frameIdxModulo, nullptr);
+		gpuPass.get()->Update(deltaTime, frameIdxModulo, nullptr);
 	}
 
 	PIXEndEvent();
 }
 
-void AstroGameInstance::Render(float /*deltaTime*/)
+void AstroGameInstance::Render(float deltaTime)
 {
 	PIXBeginEvent(PIX_COLOR_DEFAULT, L"Render");
 
@@ -226,7 +226,7 @@ void AstroGameInstance::Render(float /*deltaTime*/)
 
 	for (auto& pass : m_gpuPasses)
 	{
-		m_renderer->ProcessGPUPass(*pass.get(), *m_currentFrameResource);
+		m_renderer->ProcessGPUPass(*pass.get(), *m_currentFrameResource, deltaTime);
 		
 		switch (pass->PassType())
 		{

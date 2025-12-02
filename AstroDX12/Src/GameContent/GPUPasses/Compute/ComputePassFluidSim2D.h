@@ -19,7 +19,7 @@ class ComputePassFluidSim2D :
 public:
 
     void Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary);
-    virtual void Update(int32_t frameIdxModulo, void* Data) override;
+    virtual void Update(float deltaTime, int32_t frameIdxModulo, void* Data) override;
     virtual void Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float deltaTime, const FrameResource& frameResources) const override;
     virtual void Shutdown() override;
 
@@ -31,12 +31,14 @@ public:
     virtual void OnSimReset()
     {
 		m_simNeedsReset.FlagForReset();
+        m_timer = 0;
     }
 
 private:
     
     int32_t m_frameIdxModulo = 0;
     TickableResetFlag m_simNeedsReset;
+    float m_timer = 0;
 
 	void SimReset(ComPtr<ID3D12GraphicsCommandList>& cmdList) const;
     void RunSim(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
@@ -74,7 +76,7 @@ class GraphicsPassFluidSim2D : public GraphicsPass
 {
 public: 
     void Init(std::weak_ptr<const ComputePassFluidSim2D> fluidSimComputePass, IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, MeshLibrary& meshLibrary);
-    virtual void Update(int32_t frameIdxModulo, void* Data) override;
+    virtual void Update(float deltaTime, int32_t frameIdxModulo, void* Data) override;
     virtual void Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float deltaTime, const FrameResource& frameResources) const override;
     virtual void Shutdown() override;
 

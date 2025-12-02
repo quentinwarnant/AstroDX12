@@ -286,7 +286,7 @@ void BasePassSceneGeometry::BuildRootSignature(IRenderer* renderer)
 }
 
 
-void BasePassSceneGeometry::Update(int32_t frameIdxModulo, void* /*Data*/)
+void BasePassSceneGeometry::Update(float /*deltaTime*/, int32_t frameIdxModulo, void* /*Data*/)
 {
     m_frameIdxModulo = frameIdxModulo;
     // re-using the same constant buffer to set all the renderables objects - per object constant data.

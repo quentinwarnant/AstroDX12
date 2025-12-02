@@ -7,12 +7,12 @@ RWTexture2D<float2> velocityTexOut : register(u0);
 
 cbuffer BindlessRenderResources : register(b0)
 {
-    uint GridResolution;
+    int GridResolution;
 }
 
-uint2 SafeCoord(uint2 coord)
+int2 SafeCoord(int2 coord)
 {
-    return uint2(clamp(coord.x, 0, GridResolution - 1), clamp(coord.y, 0, GridResolution - 1));
+    return int2(clamp(coord.x, 0, GridResolution - 1), clamp(coord.y, 0, GridResolution - 1));
 }
 
 [numthreads(THREAD_GROUP_SIZE_X, THREAD_GROUP_SIZE_Y, 1)]
@@ -21,10 +21,12 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
     const float cellSize = 1.f / GridResolution;
     const float2 currentVelocity = velocityTexIn[DTid.xy];
     
-    const float p_up = pressureTex[SafeCoord(DTid.xy + uint2(0, -1))];
-    const float p_down = pressureTex[SafeCoord(DTid.xy + uint2(0, 1))];
-    const float p_right = pressureTex[SafeCoord(DTid.xy + uint2(1, 0))];
-    const float p_left = pressureTex[SafeCoord(DTid.xy + uint2(-1, 0))];
+    int2 coord = int2(DTid.xy);
+    
+    const float p_up = pressureTex[SafeCoord(coord + int2(0, -1))];
+    const float p_down = pressureTex[SafeCoord(coord + int2(0, 1))];
+    const float p_right = pressureTex[SafeCoord(coord + int2(1, 0))];
+    const float p_left = pressureTex[SafeCoord(coord + int2(-1, 0))];
     
     const float cellSpacing = 1.f / (2.f * cellSize);
     const float2 pressureGradient = float2(p_right - p_left, p_up - p_down) * 0.5 * cellSpacing;

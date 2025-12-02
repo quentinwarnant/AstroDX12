@@ -24,7 +24,8 @@ public:
 	
 	virtual void ProcessGPUPass(
 		const GPUPass& pass,
-		const FrameResource& frameResources) = 0;
+		const FrameResource& frameResources,
+		float deltaTime) = 0;
 	
 	virtual void AddNewFence(std::function<void(int)> onNewFenceValue) = 0;
 	virtual void Shutdown() = 0;
