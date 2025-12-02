@@ -61,6 +61,7 @@ private:
 
     std::unique_ptr<ComputableObject> m_computeObjInput;
     std::unique_ptr<ComputableObject> m_computeObjAdvectDensity;
+    std::unique_ptr<ComputableObject> m_computeObjAdvectDensityFixEdges;
     std::unique_ptr<ComputableObject> m_computeObjAdvectVelocity;
     std::unique_ptr<ComputableObject> m_computeObjDiffuse;
     std::unique_ptr<ComputableObject> m_computeObjDivergence;

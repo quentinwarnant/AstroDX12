@@ -210,6 +210,7 @@ void ComputePassFluidSim2D::Init(IRenderer* renderer, AstroTools::Rendering::Sha
 
     const auto computeShaderPathAdvectDensity = rootPath + std::wstring(L"\\Shaders\\FluidSim\\AdvectDensity.hlsl");
     m_computeObjAdvectDensity = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathAdvectDensity, L"CSMain", 2, 1, 2, true);
+    m_computeObjAdvectDensityFixEdges = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathAdvectDensity, L"CSMain_FixEdges", 2, 1, 2, true);
 
     const auto computeShaderPathDivergence = rootPath + std::wstring(L"\\Shaders\\FluidSim\\Div.hlsl");
     m_computeObjDivergence = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathDivergence, L"CSMain", 1, 1, 1);
@@ -246,6 +247,25 @@ void ComputePassFluidSim2D::SimReset(ComPtr<ID3D12GraphicsCommandList>& cmdList)
             clearValues,
             0,
             nullptr);
+
+
+        auto densityTex = m_gridDensityTexPair->GetInput();
+        const auto densityTexTransitionToUAV = CD3DX12_RESOURCE_BARRIER::Transition(densityTex->GetResource(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        std::vector<CD3DX12_RESOURCE_BARRIER> densityTransition1 = { densityTexTransitionToUAV };
+        cmdList->ResourceBarrier((UINT)densityTransition1.size(), densityTransition1.data());
+
+        cmdList->ClearUnorderedAccessViewFloat(
+            densityTex->GetUAVGPUDescriptorHandle(),
+            densityTex->GetUAVCPUDescriptorHandle(),
+            densityTex->GetResource(),
+            clearValues,
+            0,
+            nullptr);
+
+        const auto densityTexTransitionToSRV = CD3DX12_RESOURCE_BARRIER::Transition(densityTex->GetResource(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+        std::vector<CD3DX12_RESOURCE_BARRIER> densityTransition2 = { densityTexTransitionToSRV };
+        cmdList->ResourceBarrier((UINT)densityTransition2.size(), densityTransition2.data());
+
     }
 }
 
@@ -368,7 +388,7 @@ void ComputePassFluidSim2D::FluidStepPressure(ComPtr<ID3D12GraphicsCommandList> 
 
     Privates::ApplyRootSignatureAndPSO(cmdList, m_computeObjPressure.get());
     constexpr ivec2 dispatchSize = Privates::ComputeDispatchSize(Privates::GridDimensions, Privates::ThreadGroupSize);
-	constexpr int32_t pressureIterations = 60;
+	constexpr int32_t pressureIterations = 240;
     cmdList->SetComputeRootDescriptorTable(0, divTex->GetSRVGPUDescriptorHandle());
 
     const std::vector<int32_t> GraphicsBindlessResourceIndices = {
@@ -503,27 +523,55 @@ void ComputePassFluidSim2D::FluidStepAdvectDensity(ComPtr<ID3D12GraphicsCommandL
     auto densityInputTex = m_gridDensityTexPair->GetInput();
     auto densityOutputTex = m_gridDensityTexPair->GetOutput();
 
-    Privates::ApplyRootSignatureAndPSO(cmdList, m_computeObjAdvectDensity.get());
-
-    cmdList->SetComputeRootDescriptorTable(0, velocityTex->GetSRVGPUDescriptorHandle());
-    cmdList->SetComputeRootDescriptorTable(1, densityInputTex->GetSRVGPUDescriptorHandle());
-    cmdList->SetComputeRootDescriptorTable(2, densityOutputTex->GetUAVGPUDescriptorHandle());
-
-    const std::vector<int32_t> GraphicsBindlessResourceIndices = {
-       Privates::GridDimensions.x,
-       m_imageSamplerIndex
-    };
-    cmdList->SetComputeRoot32BitConstants(
-        (UINT)3,
-        (UINT)GraphicsBindlessResourceIndices.size(), GraphicsBindlessResourceIndices.data(), 0);
-
-    cmdList->SetComputeRootDescriptorTable(
-        4,
-        m_imageSamplerGpuHandle
-    );
-
     constexpr ivec2 dispatchSize = Privates::ComputeDispatchSize(Privates::GridDimensions, Privates::ThreadGroupSize);
-    cmdList->Dispatch(dispatchSize.x, dispatchSize.y, 1);
+
+	// - Advect density / colour
+    {
+        Privates::ApplyRootSignatureAndPSO(cmdList, m_computeObjAdvectDensity.get());
+
+        cmdList->SetComputeRootDescriptorTable(0, velocityTex->GetSRVGPUDescriptorHandle());
+        cmdList->SetComputeRootDescriptorTable(1, densityInputTex->GetSRVGPUDescriptorHandle());
+        cmdList->SetComputeRootDescriptorTable(2, densityOutputTex->GetUAVGPUDescriptorHandle());
+
+        const std::vector<int32_t> GraphicsBindlessResourceIndices = {
+           Privates::GridDimensions.x,
+           m_imageSamplerIndex
+        };
+        cmdList->SetComputeRoot32BitConstants(
+            (UINT)3,
+            (UINT)GraphicsBindlessResourceIndices.size(), GraphicsBindlessResourceIndices.data(), 0);
+
+        cmdList->SetComputeRootDescriptorTable(
+            4,
+            m_imageSamplerGpuHandle
+        );
+
+        cmdList->Dispatch(dispatchSize.x, dispatchSize.y, 1);
+    }
+
+	// - Fix edges
+    {
+
+        Privates::ApplyRootSignatureAndPSO(cmdList, m_computeObjAdvectDensityFixEdges.get());
+
+        cmdList->SetComputeRootDescriptorTable(0, m_dummySRVGPUHandle);
+        cmdList->SetComputeRootDescriptorTable(1, m_dummySRVGPUHandle);
+        cmdList->SetComputeRootDescriptorTable(2, densityOutputTex->GetUAVGPUDescriptorHandle());
+
+        const std::vector<int32_t> GraphicsBindlessResourceIndices = {
+           Privates::GridDimensions.x,
+           m_imageSamplerIndex
+        };
+        cmdList->SetComputeRoot32BitConstants(
+            (UINT)3,
+            (UINT)GraphicsBindlessResourceIndices.size(), GraphicsBindlessResourceIndices.data(), 0);
+
+        cmdList->SetComputeRootDescriptorTable(
+            4,
+            m_imageSamplerGpuHandle
+        );
+        cmdList->Dispatch(dispatchSize.x, dispatchSize.y, 1);
+    }
 
 
     const auto bufferInStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
@@ -590,18 +638,17 @@ void ComputePassFluidSim2D::CopySimOutputToDisplayTexture(ComPtr<ID3D12GraphicsC
 {
     PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "Copy Sim output texture");
 
-    //auto bufferOutput = m_gridVelocityTexPair->GetOutput();
-    auto bufferOutput = m_gridDensityTexPair->GetInput();
 
     // resource barrier to copy to image render target
     const auto imageRTTransitionToCopyDest = CD3DX12_RESOURCE_BARRIER::Transition(m_imageRenderTarget->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
+    auto densityTex = m_gridDensityTexPair->GetInput();
     //const auto simBufferOutputTransitionToCopySrc = CD3DX12_RESOURCE_BARRIER::Transition(bufferOutput->GetResource(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE);
-    const auto simBufferOutputTransitionToCopySrc = CD3DX12_RESOURCE_BARRIER::Transition(bufferOutput->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_SOURCE);
+    const auto simBufferOutputTransitionToCopySrc = CD3DX12_RESOURCE_BARRIER::Transition(densityTex->GetResource(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_SOURCE);
     std::vector<CD3DX12_RESOURCE_BARRIER> prepForCopyTransition = { imageRTTransitionToCopyDest , simBufferOutputTransitionToCopySrc };
     cmdList->ResourceBarrier((UINT)prepForCopyTransition.size(), prepForCopyTransition.data());
 
     D3D12_TEXTURE_COPY_LOCATION sourceLoc{
-        .pResource = bufferOutput->GetResource(),
+        .pResource = densityTex->GetResource(),
             .Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
             .SubresourceIndex = 0
     };
@@ -620,9 +667,9 @@ void ComputePassFluidSim2D::CopySimOutputToDisplayTexture(ComPtr<ID3D12GraphicsC
     //Resource barrier to transition back to original states
     const auto imageRTTransitionToSrv = CD3DX12_RESOURCE_BARRIER::Transition(m_imageRenderTarget->GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     //const auto simBufferOutputTransitionToUAV = CD3DX12_RESOURCE_BARRIER::Transition(bufferOutput->GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-    const auto simBufferOutputTransitionToUAV = CD3DX12_RESOURCE_BARRIER::Transition(bufferOutput->GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    const auto simBufferOutputTransitionToSRV = CD3DX12_RESOURCE_BARRIER::Transition(densityTex->GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
-    std::vector<CD3DX12_RESOURCE_BARRIER> returnResourcesToOriginalStateTransition = { imageRTTransitionToSrv , simBufferOutputTransitionToUAV };
+    std::vector<CD3DX12_RESOURCE_BARRIER> returnResourcesToOriginalStateTransition = { imageRTTransitionToSrv , simBufferOutputTransitionToSRV };
     cmdList->ResourceBarrier((UINT)returnResourcesToOriginalStateTransition.size(), returnResourcesToOriginalStateTransition.data());
 }
 

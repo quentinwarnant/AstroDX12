@@ -14,7 +14,7 @@ cbuffer BindlessRenderResources : register(b0)
 
 float2 GetDir(float t)
 {
-    float angle = t * 3.1415f * 0.2f;
+    float angle = 1.f + t * 3.1415f * 0.2f;
     angle += sin(t * 0.5f) * 0.5f;
     angle -= cos(t * 12.3f) * 0.5f;
     return float2(cos(angle), sin(angle));
@@ -32,7 +32,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
 
     const float2 dir = GetDir(time);
     const float2 addedVelocityDir = normalize(dir);
-    const float addedVelocityStrength = 1000.04f * deltaTime;
+    const float addedVelocityStrength = 3000.04f * deltaTime;
     
     float2 currentVelocity = VelocityGridInput[DTid.xy];
     float2 inputVelocity = addedVelocityDir * addedVelocityStrength;
@@ -40,9 +40,10 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
     float mask = step(length(uv), maskRadius);
     VelocityGridOutput[DTid.xy] = lerp(currentVelocity, currentVelocity + (inputVelocity), mask);
     
-    float4 density = DensityGridInput[DTid.xy];
-    DensityGridOutput[DTid.xy] = min(1.f, lerp(density, density +
-    (float4((0.5 * sin(time)) + 1.f, 0.5f * (cos(time)) + 1.f, time % 1.f, 0.f)) * 0.1f
+    float decayRate = 0.999f;
+    float4 density = DensityGridInput[DTid.xy] * decayRate;
+    DensityGridOutput[DTid.xy] = min(1.f, lerp(density, 
+    (float4((0.5 * sin(time)) + 1.f, 0.5f * (cos(time)) + 1.f, time % 1.f, 0.f)) * 1.0f
     , mask));
 
 }

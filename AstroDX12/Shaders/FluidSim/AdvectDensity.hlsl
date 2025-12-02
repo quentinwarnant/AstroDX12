@@ -35,3 +35,15 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
 
     DensityGridOutput[DTid.xy] = interpolatedValue;
 }
+
+
+[numthreads(THREAD_GROUP_SIZE_X, THREAD_GROUP_SIZE_Y, 1)]
+void CSMain_FixEdges(uint3 DTid : SV_DispatchThreadID)
+{
+    // copy the inner cell value onto the edges
+    
+    int2 coord = clamp(DTid.xy, int2(1, 1), int2(GridResolution-2, GridResolution-2));
+    float4 density = DensityGridOutput[coord];
+    
+    DensityGridOutput[DTid.xy] = density;
+}
