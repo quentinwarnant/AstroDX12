@@ -97,7 +97,7 @@ void GraphicsPassCopyGBufferToBackbuffer::Init(IRenderer* renderer, AstroTools::
 
 
 
-void GraphicsPassCopyGBufferToBackbuffer::Update(float /*deltaTime*/, int32_t /*frameIdxModulo*/, void* /*Data*/)
+void GraphicsPassCopyGBufferToBackbuffer::Update(const GPUPassUpdateData& /*updateData*/ )
 {
 
 }

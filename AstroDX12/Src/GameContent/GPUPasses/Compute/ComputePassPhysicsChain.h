@@ -57,7 +57,7 @@ public:
     ComputePassPhysicsChain();
 
     void Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, int32_t debugDrawBufferUAVIndex);
-    virtual void Update(float deltaTime, int32_t frameIdxModulo, void* Data) override;
+    virtual void Update(const GPUPassUpdateData& updateData) override;
     virtual void Execute(
         ComPtr<ID3D12GraphicsCommandList> cmdList,
         float deltaTime,
@@ -89,7 +89,7 @@ class GraphicsPassPhysicsChain : public GraphicsPass
 public:
     GraphicsPassPhysicsChain();
     void Init(std::weak_ptr<const ComputePassPhysicsChain> particlesComputePass, IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, MeshLibrary& meshLibrary);
-    virtual void Update(float deltaTime, int32_t frameIdxModulo, void* Data) override;
+    virtual void Update(const GPUPassUpdateData& updateData) override;
     virtual void Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float deltaTime, const FrameResource& frameResources) const override;
     virtual void Shutdown() override;
 

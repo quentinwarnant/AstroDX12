@@ -6,6 +6,7 @@
 #include <Maths/MathUtils.h>
 #include <Rendering/RendererDX12.h>
 #include <Rendering/Renderable/RenderableGroup.h>
+#include <Rendering/Common/VectorTypes.h>
 #include "winnt.h"
 
 extern void ExitGame() noexcept;
@@ -18,7 +19,7 @@ Game::Game() noexcept(false)
     : m_screenWidth(350)
     , m_screenHeight(200)
     , m_shaderLibrary()
-    , m_lastMousePos()
+    , m_lastPressedMousePos()
     , m_cameraPhi(0.f)
     , m_cameraTheta(0.f * XM_PI)
     , m_cameraOriginPos(XMVectorSet(0,0,-10, 1))
@@ -75,12 +76,12 @@ void Game::Shutdown()
 void Game::Tick(float totalTime, float deltaTime)
 {
     m_totalTime = totalTime;
-    Update(deltaTime);
+    Update(deltaTime, ivec2(int32_t(m_cursorPos.x), int32_t(m_cursorPos.y)));
     Render(deltaTime);
 }
 
 // Updates the world.
-void Game::Update(float /*deltaTime*/)
+void Game::Update(float /*deltaTime*/, ivec2 /*cursorPos*/)
 {
 }
 #pragma endregion
@@ -136,8 +137,8 @@ void Game::OnWindowSizeChanged(int width, int height)
 
 void Game::OnMouseDown(WPARAM /*btnState*/, int x, int y)
 {
-    m_lastMousePos.x = x;
-    m_lastMousePos.y = y;
+    m_lastPressedMousePos.x = x;
+    m_lastPressedMousePos.y = y;
    
 }
 
@@ -150,8 +151,8 @@ void Game::OnMouseMove(WPARAM mouseBtnState, int x, int y)
     if ((mouseBtnState & MK_LBUTTON) != 0)
     {
         // Make each pixel correspond to a quarter of a degree.
-        float dx = XMConvertToRadians(0.25f * static_cast<float>(x - m_lastMousePos.x));
-        float dy = XMConvertToRadians(0.25f * static_cast<float>(y - m_lastMousePos.y));
+        float dx = XMConvertToRadians(0.25f * static_cast<float>(x - m_lastPressedMousePos.x));
+        float dy = XMConvertToRadians(0.25f * static_cast<float>(y - m_lastPressedMousePos.y));
 
         // Update angles based on input to orbit camera around box.
         m_cameraTheta += dx;
@@ -160,9 +161,11 @@ void Game::OnMouseMove(WPARAM mouseBtnState, int x, int y)
         // Restrict the angle m_cameraPhi.
         m_cameraPhi = AstroTools::Maths::Clamp(m_cameraPhi, -AstroTools::Maths::Pi-0.1f, AstroTools::Maths::Pi - 0.1f);
 
-        m_lastMousePos.x = x;
-        m_lastMousePos.y = y;
+        m_lastPressedMousePos.x = x;
+        m_lastPressedMousePos.y = y;
     }
+
+	m_cursorPos = { x, y };
 }
 
 void Game::OnKeyboardKey(KeyboardKey key)

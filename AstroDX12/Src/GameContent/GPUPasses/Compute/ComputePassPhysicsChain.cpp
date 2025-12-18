@@ -120,9 +120,9 @@ void ComputePassPhysicsChain::Init(IRenderer* renderer, AstroTools::Rendering::S
     m_debugDrawBufferUAVIndex = debugDrawBufferUAVIndex;
 }
 
-void ComputePassPhysicsChain::Update(float /*deltaTime*/, int32_t frameIdxModulo, void* /*Data*/)
+void ComputePassPhysicsChain::Update(const GPUPassUpdateData& updateData)
 {
-    m_frameIdxModulo = frameIdxModulo;
+    m_frameIdxModulo = updateData.frameIdxModulo;
 
     m_simNeedsReset.Tick();
 }
@@ -378,7 +378,7 @@ void GraphicsPassPhysicsChain::Init(std::weak_ptr<const ComputePassPhysicsChain>
         ps);
 }
 
-void GraphicsPassPhysicsChain::Update(float /*deltaTime*/, int32_t /*frameIdxModulo*/, void* /*Data*/)
+void GraphicsPassPhysicsChain::Update(const GPUPassUpdateData& /*updateData*/)
 {
 }
 

@@ -108,7 +108,7 @@ void ComputePassRaymarchScene::Init(IRenderer* renderer, AstroTools::Rendering::
 
 }
 
-void ComputePassRaymarchScene::Update(float /*deltaTime*/, int32_t /*frameIdxModulo*/, void* /*Data*/)
+void ComputePassRaymarchScene::Update(const GPUPassUpdateData& /*updateData*/)
 {
     m_currentParticleDataBufferSRVIdx = m_particleComputePass.lock()->GetParticleOutputBufferSRVHeapIndex();
 }

@@ -10,6 +10,7 @@
 #include <Rendering/Common/ShaderLibrary.h>
 
 class IRenderable;
+struct ivec2;
 
 // A basic game implementation that creates a D3D12 device and
 // provides a game loop.
@@ -60,7 +61,7 @@ protected:
     // Triggered after Initialise, meant for initial state configuration 
     virtual void InitCamera() = 0;
     virtual void CreatePasses(AstroTools::Rendering::ShaderLibrary& shaderLibrary) = 0;
-    virtual void Update(float deltaTime) = 0;
+    virtual void Update(float deltaTime, ivec2 cursorPos) = 0;
     virtual void Render(float deltaTime) = 0;
     virtual void OnSimReset() = 0;
 
@@ -72,7 +73,8 @@ private:
     float m_totalTime;
 
 protected:
-    POINT m_lastMousePos;
+    POINT m_lastPressedMousePos;
+    POINT m_cursorPos;
     float m_cameraTheta;
     float m_cameraPhi;
     XMVECTOR m_cameraOriginPos;

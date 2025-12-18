@@ -40,7 +40,7 @@ public:
     };
 
     void Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, std::weak_ptr<ComputePassParticles> particleComputePass);
-    virtual void Update(float deltaTime, int32_t frameIdxModulo, void* Data) override;
+    virtual void Update(const GPUPassUpdateData& updateData) override;
     virtual void Execute(
         ComPtr<ID3D12GraphicsCommandList> cmdList,
         float deltaTime,

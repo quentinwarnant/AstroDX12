@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Common.h>
+#include <Rendering/Common/VectorTypes.h>
 
 struct FrameResource;
 class DescriptorHeap;
@@ -12,11 +13,18 @@ enum class GPUPassType
 	Compute = 1
 };
 
+struct GPUPassUpdateData
+{
+	float deltaTime;
+	int32_t frameIdxModulo;
+	ivec2 cursorScreenPos;
+};
+
 class GPUPass
 {
 public:
 	// Update resources
-	virtual void Update(float deltaTime, int32_t frameIdxModulo, void* Data) = 0;
+	virtual void Update(const GPUPassUpdateData& updateData) = 0;
 	virtual void Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float deltaTime, const FrameResource& frameResources) const = 0;
 	virtual void OnSimReset() {}
 	// Clear allocated memory

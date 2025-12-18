@@ -6,6 +6,8 @@
 #include <Rendering/Common/ShaderLibrary.h>
 #include <Rendering/Common/VertexDataInputLayoutLibrary.h>
 #include <Rendering/Compute/ComputableObject.h>
+#include <Rendering/Common/VectorTypes.h>
+
 
 #include <GameContent/GPUPasses/BasePassSceneGeometry.h>
 #include <GameContent/GPUPasses/Compute/ComputePassParticles.h>
@@ -170,9 +172,9 @@ void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shade
 	//m_gpuPasses.push_back(std::move(copyGbufferToBackBufferPass));
 }
 
-void AstroGameInstance::Update(float deltaTime)
+void AstroGameInstance::Update(float deltaTime, ivec2 cursorPos)
 {
-	Game::Update(deltaTime);
+	Game::Update(deltaTime, cursorPos);
 
 	m_frameIdx++;
 
@@ -210,9 +212,16 @@ void AstroGameInstance::Update(float deltaTime)
 
 	const int32_t frameIdxModulo = m_frameIdx % NumFrameResources;
 
+	const GPUPassUpdateData updateData
+	{
+		deltaTime,
+		frameIdxModulo,
+		cursorPos
+	};
+
 	for (auto& gpuPass : m_gpuPasses)
 	{
-		gpuPass.get()->Update(deltaTime, frameIdxModulo, nullptr);
+		gpuPass.get()->Update(updateData);
 	}
 
 	PIXEndEvent();

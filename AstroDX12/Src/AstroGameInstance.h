@@ -10,6 +10,7 @@
 
 using Microsoft::WRL::ComPtr;
 struct SceneData;
+struct ivec2;
 
 namespace AstroTools::Rendering
 {
@@ -54,7 +55,7 @@ private:
     std::vector<std::shared_ptr<GPUPass>> m_gpuPasses;
 
     virtual void CreatePasses(AstroTools::Rendering::ShaderLibrary& shaderLibrary) override;
-    virtual void Update(float deltaTime) override;
+    virtual void Update(float deltaTime, ivec2 cursorPos) override;
     virtual void Render(float deltaTime) override;
 	virtual void OnSimReset() override;
 };

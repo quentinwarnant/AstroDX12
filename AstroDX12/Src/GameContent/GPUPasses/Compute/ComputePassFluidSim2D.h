@@ -19,7 +19,7 @@ class ComputePassFluidSim2D :
 public:
 
     void Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary);
-    virtual void Update(float deltaTime, int32_t frameIdxModulo, void* Data) override;
+    virtual void Update(const GPUPassUpdateData& updateData) override;
     virtual void Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float deltaTime, const FrameResource& frameResources) const override;
     virtual void Shutdown() override;
 
@@ -41,8 +41,8 @@ private:
     float m_timer = 0;
 
 	void SimReset(ComPtr<ID3D12GraphicsCommandList>& cmdList) const;
-    void RunSim(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
-    void FluidStepInput(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
+    void RunSim(ComPtr<ID3D12GraphicsCommandList> cmdList, const FrameResource& frameResources, ivec2 inputScreenPos, ivec2 inputPrevScreenPos) const;
+    void FluidStepInput(ComPtr<ID3D12GraphicsCommandList> cmdList, const FrameResource& frameResources, ivec2 inputScreenPos, ivec2 inputPrevScreenPos) const;
     void FluidStepAdvectDensity(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
     void FluidStepAdvectVelocity(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
     void FluidStepDiv(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
@@ -70,6 +70,8 @@ private:
     std::unique_ptr<ComputableObject> m_computeObjProject;
     std::unique_ptr<ComputableObject> m_computeObjReflectEdgeVelocity;
 
+	ivec2 m_inputScreenPos;
+    ivec2 m_inputPrevScreenPos;
     D3D12_GPU_DESCRIPTOR_HANDLE m_dummySRVGPUHandle;
     int32_t m_imageSamplerIndex;
     D3D12_GPU_DESCRIPTOR_HANDLE m_imageSamplerGpuHandle;
@@ -81,7 +83,7 @@ class GraphicsPassFluidSim2D : public GraphicsPass
 {
 public: 
     void Init(std::weak_ptr<const ComputePassFluidSim2D> fluidSimComputePass, IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, MeshLibrary& meshLibrary);
-    virtual void Update(float deltaTime, int32_t frameIdxModulo, void* Data) override;
+    virtual void Update(const GPUPassUpdateData& updateData) override;
     virtual void Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float deltaTime, const FrameResource& frameResources) const override;
     virtual void Shutdown() override;
 

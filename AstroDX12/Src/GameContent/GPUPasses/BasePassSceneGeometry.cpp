@@ -286,9 +286,9 @@ void BasePassSceneGeometry::BuildRootSignature(IRenderer* renderer)
 }
 
 
-void BasePassSceneGeometry::Update(float /*deltaTime*/, int32_t frameIdxModulo, void* /*Data*/)
+void BasePassSceneGeometry::Update(const GPUPassUpdateData& updateData)
 {
-    m_frameIdxModulo = frameIdxModulo;
+    m_frameIdxModulo = updateData.frameIdxModulo;
     // re-using the same constant buffer to set all the renderables objects - per object constant data.
 
     //TODO: re-enable this with the new 1 buffer format - by allowing to do partial updates to the structured buffer type (currently it's not possible)

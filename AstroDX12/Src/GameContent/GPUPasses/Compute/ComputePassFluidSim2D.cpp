@@ -10,20 +10,21 @@ namespace Privates
 {
 	constexpr ivec2 ThreadGroupSize = ivec2(32, 32);
     constexpr ivec2 GridDimensions = ivec2(256, 256);
+    constexpr int32_t PressureIterationCount = 120;
 
     std::unique_ptr<ComputableObject> CreateComputableObject(
         IRenderer* renderer,
         AstroTools::Rendering::ShaderLibrary& shaderLibrary,
         const std::wstring& computeShaderPath,
         const std::wstring& entryPoint,
+        UINT numConstantBuffers,
         UINT numRenderTargetInputs,
 		UINT numRenderTargetOutputs,
         UINT numBindlessConstants,
         bool AddLinearSampler = false)
     {
-        std::vector<D3D12_DESCRIPTOR_RANGE1> srvRanges;
-
         // SRV descriptor table for Texture2D (BufferIn)
+        std::vector<D3D12_DESCRIPTOR_RANGE1> srvRanges;
         D3D12_DESCRIPTOR_RANGE1 srvRange = {};
         srvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
         srvRange.NumDescriptors = 1;
@@ -52,9 +53,20 @@ namespace Privates
             uavRanges.push_back(uavRange);
             uavRanges[i].BaseShaderRegister = (UINT)i;
         }
-        //ranges.push_back(uavRange);
 
         std::vector<D3D12_ROOT_PARAMETER1> slotRootParams;
+        
+        // CBV 
+        for (size_t i = 0; i < numConstantBuffers; ++i)
+        {
+            D3D12_ROOT_PARAMETER1 cbv = {};
+            cbv.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+            cbv.Descriptor.ShaderRegister = (UINT)i;
+            cbv.Descriptor.RegisterSpace = 0;
+            cbv.Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_NONE;
+            cbv.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+            slotRootParams.push_back(cbv);
+        }
 
         // SRV table
         for (size_t i = 0; i < numRenderTargetInputs; ++i)
@@ -84,7 +96,7 @@ namespace Privates
             .ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS,
             .Constants
             { 
-                .ShaderRegister = 0, 
+                .ShaderRegister = numConstantBuffers,
                 .RegisterSpace = 0,
                 .Num32BitValues = numBindlessConstants
             },
@@ -172,6 +184,8 @@ namespace Privates
 
 void ComputePassFluidSim2D::Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary)
 {
+    m_inputScreenPos = ivec2(0, 0);
+    m_inputPrevScreenPos = ivec2(0, 0);
     m_dummySRVGPUHandle = renderer->GetDummySRVGPUHandle();
     m_imageSamplerIndex = AstroTools::Rendering::SamplerIDs::LinearClamp;
     m_imageSamplerGpuHandle = renderer->GetSamplerGPUHandle(m_imageSamplerIndex);
@@ -203,34 +217,36 @@ void ComputePassFluidSim2D::Init(IRenderer* renderer, AstroTools::Rendering::Sha
 
     const auto rootPath = s2ws(DX::GetWorkingDirectory());
     const auto computeShaderPathInput = rootPath + std::wstring(L"\\Shaders\\FluidSim\\Input.hlsl");
-    m_computeObjInput = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathInput, L"CSMain", 2, 2, 2 );
+    m_computeObjInput = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathInput, L"CSMain", 1, 2, 2, 6 );
 
     const auto computeShaderPathAdvect = rootPath + std::wstring(L"\\Shaders\\FluidSim\\Advect.hlsl");
-    m_computeObjAdvectVelocity = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathAdvect, L"CSMain", 1, 1, 2, true);
+    m_computeObjAdvectVelocity = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathAdvect, L"CSMain", 0, 1, 1, 2, true);
 
     const auto computeShaderPathAdvectDensity = rootPath + std::wstring(L"\\Shaders\\FluidSim\\AdvectDensity.hlsl");
-    m_computeObjAdvectDensity = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathAdvectDensity, L"CSMain", 2, 1, 2, true);
-    m_computeObjAdvectDensityFixEdges = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathAdvectDensity, L"CSMain_FixEdges", 2, 1, 2, true);
+    m_computeObjAdvectDensity = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathAdvectDensity, L"CSMain", 0, 2, 1, 2, true);
+    m_computeObjAdvectDensityFixEdges = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathAdvectDensity, L"CSMain_FixEdges", 0, 2, 1, 2, true);
 
     const auto computeShaderPathDivergence = rootPath + std::wstring(L"\\Shaders\\FluidSim\\Div.hlsl");
-    m_computeObjDivergence = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathDivergence, L"CSMain", 1, 1, 1);
+    m_computeObjDivergence = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathDivergence, L"CSMain", 0, 1, 1, 1);
 
     const auto computeShaderPathDiffuse = rootPath + std::wstring(L"\\Shaders\\FluidSim\\Diffuse.hlsl");
-    m_computeObjDiffuse = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathDiffuse, L"CSMain", 1, 1, 1);
+    m_computeObjDiffuse = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathDiffuse, L"CSMain", 0, 1, 1, 1);
 
     const auto computeShaderPathPressure = rootPath + std::wstring(L"\\Shaders\\FluidSim\\Pressure.hlsl");
-    m_computeObjPressure = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathPressure, L"CSMain", 2, 1, 2, true);
-    m_computeObjPressureFixEdges = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathPressure, L"CSMain_FixEdges", 2, 1, 2, true);
+    m_computeObjPressure = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathPressure, L"CSMain", 0, 2, 1, 2, true);
+    m_computeObjPressureFixEdges = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathPressure, L"CSMain_FixEdges", 0, 2, 1, 2, true);
 
     const auto computeShaderPathProject = rootPath + std::wstring(L"\\Shaders\\FluidSim\\Project.hlsl");
-    m_computeObjProject = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathProject, L"CSMain", 2, 1, 1);
-    m_computeObjReflectEdgeVelocity = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathProject, L"CSMain_ReflectEdgeVelocity", 2, 1, 1);
+    m_computeObjProject = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathProject, L"CSMain", 0, 2, 1, 1);
+    m_computeObjReflectEdgeVelocity = Privates::CreateComputableObject(renderer, shaderLibrary, computeShaderPathProject, L"CSMain_ReflectEdgeVelocity", 0, 2, 1, 1);
 }
 
-void ComputePassFluidSim2D::Update(float deltaTime, int32_t /*frameIdxModulo*/, void* /*Data*/)
+void ComputePassFluidSim2D::Update(const GPUPassUpdateData& updateData)
 {
 	m_simNeedsReset.Tick();
-    m_timer += deltaTime;
+    m_timer += updateData.deltaTime;
+    m_inputPrevScreenPos = m_inputScreenPos;
+    m_inputScreenPos = updateData.cursorScreenPos;
 }
 
 void ComputePassFluidSim2D::SimReset(ComPtr<ID3D12GraphicsCommandList>& cmdList) const
@@ -269,7 +285,10 @@ void ComputePassFluidSim2D::SimReset(ComPtr<ID3D12GraphicsCommandList>& cmdList)
     }
 }
 
-void ComputePassFluidSim2D::FluidStepInput(ComPtr<ID3D12GraphicsCommandList> cmdList) const
+void ComputePassFluidSim2D::FluidStepInput(ComPtr<ID3D12GraphicsCommandList> cmdList,
+    const FrameResource& frameResources,
+    ivec2 inputScreenPos,
+    ivec2 inputPrevScreenPos) const
 {
     PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "FluidStepInput");
 
@@ -281,17 +300,24 @@ void ComputePassFluidSim2D::FluidStepInput(ComPtr<ID3D12GraphicsCommandList> cmd
 
     Privates::ApplyRootSignatureAndPSO(cmdList, m_computeObjInput.get());
 
-    cmdList->SetComputeRootDescriptorTable(0, velocityInputTex->GetSRVGPUDescriptorHandle());
-    cmdList->SetComputeRootDescriptorTable(1, densityInputTex->GetSRVGPUDescriptorHandle());
-    cmdList->SetComputeRootDescriptorTable(2, velocityOutputTex->GetUAVGPUDescriptorHandle());
-    cmdList->SetComputeRootDescriptorTable(3, densityOutputTex->GetUAVGPUDescriptorHandle());
+    const auto frameResourceCBVBufferGPUAddress = frameResources.PassConstantBuffer->Resource()->GetGPUVirtualAddress();
+    cmdList->SetComputeRootConstantBufferView(0, frameResourceCBVBufferGPUAddress);
+
+    cmdList->SetComputeRootDescriptorTable(1, velocityInputTex->GetSRVGPUDescriptorHandle());
+    cmdList->SetComputeRootDescriptorTable(2, densityInputTex->GetSRVGPUDescriptorHandle());
+    cmdList->SetComputeRootDescriptorTable(3, velocityOutputTex->GetUAVGPUDescriptorHandle());
+    cmdList->SetComputeRootDescriptorTable(4, densityOutputTex->GetUAVGPUDescriptorHandle());
 
     const std::vector<int32_t> GraphicsBindlessResourceIndices = {
        Privates::GridDimensions.x,
-       std::bit_cast<int32_t>( m_timer )
+       std::bit_cast<int32_t>( m_timer ),
+       std::bit_cast<int32_t>(inputScreenPos.x),
+       std::bit_cast<int32_t>(inputScreenPos.y),
+       std::bit_cast<int32_t>(inputPrevScreenPos.x),
+       std::bit_cast<int32_t>(inputPrevScreenPos.y)
     };
 
-    cmdList->SetComputeRoot32BitConstants(4, 
+    cmdList->SetComputeRoot32BitConstants(5, 
         (UINT)GraphicsBindlessResourceIndices.size(),
         GraphicsBindlessResourceIndices.data(),
          0);
@@ -388,7 +414,6 @@ void ComputePassFluidSim2D::FluidStepPressure(ComPtr<ID3D12GraphicsCommandList> 
 
     Privates::ApplyRootSignatureAndPSO(cmdList, m_computeObjPressure.get());
     constexpr ivec2 dispatchSize = Privates::ComputeDispatchSize(Privates::GridDimensions, Privates::ThreadGroupSize);
-	constexpr int32_t pressureIterations = 240;
     cmdList->SetComputeRootDescriptorTable(0, divTex->GetSRVGPUDescriptorHandle());
 
     const std::vector<int32_t> GraphicsBindlessResourceIndices = {
@@ -404,7 +429,7 @@ void ComputePassFluidSim2D::FluidStepPressure(ComPtr<ID3D12GraphicsCommandList> 
         m_imageSamplerGpuHandle
     );
 
-    for (int32_t i = 0; i < pressureIterations; ++i)
+    for (int32_t i = 0; i < Privates::PressureIterationCount; ++i)
     {
         auto pressureTexInput = m_gridPressureTexPair->GetInput();
         auto pressureTexOutput = m_gridPressureTexPair->GetOutput();
@@ -463,7 +488,6 @@ void ComputePassFluidSim2D::FluidStepPressure(ComPtr<ID3D12GraphicsCommandList> 
 
         m_gridPressureTexPair->Swap();
     }
-
 }
 
 void ComputePassFluidSim2D::FluidStepProject(ComPtr<ID3D12GraphicsCommandList> cmdList) const
@@ -485,7 +509,6 @@ void ComputePassFluidSim2D::FluidStepProject(ComPtr<ID3D12GraphicsCommandList> c
         constexpr ivec2 dispatchSize = Privates::ComputeDispatchSize(Privates::GridDimensions, Privates::ThreadGroupSize);
         cmdList->Dispatch(dispatchSize.x, dispatchSize.y, 1);
     }
-
 
     // Fix velocity at edges
     {
@@ -512,7 +535,6 @@ void ComputePassFluidSim2D::FluidStepProject(ComPtr<ID3D12GraphicsCommandList> c
     cmdList->ResourceBarrier((UINT)buffersStateTransition.size(), buffersStateTransition.data());
 
     m_gridVelocityTexPair->Swap();
-
 }
 
 void ComputePassFluidSim2D::FluidStepAdvectDensity(ComPtr<ID3D12GraphicsCommandList> cmdList) const
@@ -584,7 +606,6 @@ void ComputePassFluidSim2D::FluidStepAdvectDensity(ComPtr<ID3D12GraphicsCommandL
     std::vector<CD3DX12_RESOURCE_BARRIER> buffersStateTransition = { bufferInStateTransition , bufferOutStateTransition };
     cmdList->ResourceBarrier((UINT)buffersStateTransition.size(), buffersStateTransition.data());
     m_gridDensityTexPair->Swap();
-
 }
 
 void ComputePassFluidSim2D::FluidStepAdvectVelocity(ComPtr<ID3D12GraphicsCommandList> cmdList) const
@@ -633,11 +654,9 @@ void ComputePassFluidSim2D::FluidStepDiffuse(ComPtr<ID3D12GraphicsCommandList> c
     cmdList->Dispatch(dispatchSize.x, dispatchSize.y, 1);
 }
 
-
 void ComputePassFluidSim2D::CopySimOutputToDisplayTexture(ComPtr<ID3D12GraphicsCommandList> cmdList) const
 {
     PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "Copy Sim output texture");
-
 
     // resource barrier to copy to image render target
     const auto imageRTTransitionToCopyDest = CD3DX12_RESOURCE_BARRIER::Transition(m_imageRenderTarget->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
@@ -673,7 +692,6 @@ void ComputePassFluidSim2D::CopySimOutputToDisplayTexture(ComPtr<ID3D12GraphicsC
     cmdList->ResourceBarrier((UINT)returnResourcesToOriginalStateTransition.size(), returnResourcesToOriginalStateTransition.data());
 }
 
-
 void ComputePassFluidSim2D::SwapVelocityTexturesStates(ComPtr<ID3D12GraphicsCommandList> cmdList) const
 {
     PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "SwapVelocityTexturesStates");
@@ -689,9 +707,11 @@ void ComputePassFluidSim2D::SwapVelocityTexturesStates(ComPtr<ID3D12GraphicsComm
     m_gridVelocityTexPair->Swap();
 }
 
-void ComputePassFluidSim2D::RunSim(ComPtr<ID3D12GraphicsCommandList> cmdList) const
+void ComputePassFluidSim2D::RunSim(ComPtr<ID3D12GraphicsCommandList> cmdList,
+    const FrameResource& frameResources,
+    ivec2 inputScreenPos, ivec2 inputPrevScreenPos) const
 {
-    FluidStepInput(cmdList);
+    FluidStepInput(cmdList, frameResources, inputScreenPos, inputPrevScreenPos);
     FluidStepDiv(cmdList);
     FluidStepPressure(cmdList);
     FluidStepProject(cmdList);
@@ -705,6 +725,7 @@ void ComputePassFluidSim2D::RunSim(ComPtr<ID3D12GraphicsCommandList> cmdList) co
     {
         SimReset(cmdList);
     }
+
     SwapVelocityTexturesStates(cmdList);
 
 }
@@ -712,11 +733,11 @@ void ComputePassFluidSim2D::RunSim(ComPtr<ID3D12GraphicsCommandList> cmdList) co
 void ComputePassFluidSim2D::Execute(
     ComPtr<ID3D12GraphicsCommandList> cmdList,
     float /*deltaTime*/,
-    const FrameResource& /*frameResources*/) const
+    const FrameResource& frameResources) const
 {
     PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "ComputePassFluidSim2D");
 
-    RunSim(cmdList);
+    RunSim(cmdList, frameResources, m_inputScreenPos, m_inputPrevScreenPos);
 }
 
 void ComputePassFluidSim2D::Shutdown()
@@ -747,7 +768,6 @@ namespace GFXPrivates
         meshLibrary.AddMesh(renderer->GetRendererContext(), MeshName, verts, indices);
 	}
 }
-
 
 void GraphicsPassFluidSim2D::Init(std::weak_ptr<const ComputePassFluidSim2D> fluidSimComputePass, IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, MeshLibrary& meshLibrary)
 {
@@ -854,7 +874,7 @@ void GraphicsPassFluidSim2D::Init(std::weak_ptr<const ComputePassFluidSim2D> flu
         ps);
 }
 
-void GraphicsPassFluidSim2D::Update(float /*deltaTime*/, int32_t /*frameIdxModulo*/, void* /*Data*/)
+void GraphicsPassFluidSim2D::Update(const GPUPassUpdateData& /*updateData*/)
 {
 }
 
@@ -896,6 +916,5 @@ void GraphicsPassFluidSim2D::Execute(
 
 void GraphicsPassFluidSim2D::Shutdown()
 {
-
 }
 
