@@ -122,14 +122,9 @@ void RendererDX12::Init(HWND window, int width, int height)
 	}
 	else
 	{
-		switch (shaderModelSupport.HighestShaderModel)
+		if (shaderModelSupport.HighestShaderModel < D3D_SHADER_MODEL_6_7)
 		{
-		case D3D_SHADER_MODEL_6_6: 
-			break;
-
-		default:
-			break;
-		
+			DX::astro_assert(false, "GPU Adapter doesn't support graphics features we need for various effects used");
 		}
 	}
 
