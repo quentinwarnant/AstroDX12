@@ -16,6 +16,7 @@
 #include <GameContent/GPUPasses/Compute/ComputePassPhysicsChain.h>
 #include <GameContent/GPUPasses/Debugging/GraphicsPassDebugDraw.h>
 #include <GameContent/GPUPasses/Compute/ComputePassFluidSim2D.h>
+#include <GameContent/GPUPasses/Compute/ComputePassPicFlip3D.h>
 
 #include <Rendering/RenderData/RenderConstants.h>
 
@@ -149,6 +150,7 @@ void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shade
 	//physicsChainRenderPass->Init(physicsChainSimPassWeak, m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
 	//m_gpuPasses.push_back(std::move(physicsChainRenderPass));
 
+	// Eulerian Fluid Sim
 	auto fluidSim2DComputePass = std::make_shared< ComputePassFluidSim2D >();
 	fluidSim2DComputePass->Init(m_renderer.get(), shaderLibrary);
 
@@ -158,6 +160,19 @@ void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shade
 	m_gpuPasses.push_back(std::move(fluidSim2DComputePass));
 	m_gpuPasses.push_back(std::move(fluidSim2DGraphicsPass));
 
+
+	// Pic Flip 3D fluid sim
+	auto fluidSim3DComputePass = std::make_shared< ComputePassPicFlip3D >();
+	fluidSim3DComputePass->Init(m_renderer.get(), shaderLibrary);
+
+	auto fluidSim3DGraphicsPass = std::make_shared< GraphicsPassPicFlip3D >();
+	fluidSim3DGraphicsPass->Init(fluidSim3DComputePass, m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
+
+	m_gpuPasses.push_back(std::move(fluidSim3DComputePass));
+	m_gpuPasses.push_back(std::move(fluidSim3DGraphicsPass));
+
+
+	
 
 	 //Debug draw is the last pass to render debug objects on top of everything else
 	//m_gpuPasses.push_back(std::move(debugDrawRenderPass));
