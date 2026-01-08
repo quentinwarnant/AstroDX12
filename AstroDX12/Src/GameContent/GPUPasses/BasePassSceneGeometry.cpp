@@ -17,6 +17,11 @@
 
 using namespace AstroTools::Rendering;
 
+namespace Privates
+{
+    const std::string MeshName("BoxGeometry");
+}
+
 void BasePassSceneGeometry::Init(IRenderer* renderer, ShaderLibrary& shaderLibrary, MeshLibrary& meshLibrary, int16_t numFrameResources)
 {
     BuildSceneGeometry(renderer, meshLibrary);
@@ -124,7 +129,7 @@ void BasePassSceneGeometry::BuildSceneGeometry(IRenderer* renderer, MeshLibrary&
 
 
     const auto vertsPODList = VertexDataFactory::Convert(verts);
-    auto boxMesh = meshLibrary.AddMesh(renderer->GetRendererContext(), std::string("BoxGeometry"), vertsPODList, indices);
+    auto boxMesh = meshLibrary.AddMesh(renderer->GetRendererContext(), Privates::MeshName, vertsPODList, indices);
 
     const auto rootPath = s2ws(DX::GetWorkingDirectory());
     const auto basicShaderPath = rootPath + std::wstring(L"\\Shaders\\basic.hlsl");

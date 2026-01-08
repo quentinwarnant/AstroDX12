@@ -34,7 +34,6 @@ private:
 	
 	void CreateRootSignature(IRenderer* renderer);
 	void CreatePipelineState(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary);
-	void CreateMesh(RendererContext& rendererContext, MeshLibrary& meshLibrary);
 
 	struct DebugObjectData
 	{

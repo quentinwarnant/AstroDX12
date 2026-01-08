@@ -9,9 +9,7 @@ namespace Privates
 {
     int32_t ParticleCount = 1000;
     const std::string MeshName = "Sphere";
-
 }
-
 
 void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary)
 {
@@ -158,9 +156,6 @@ void GraphicsPassPicFlip3D::Init(std::weak_ptr<const ComputePassPicFlip3D> fluid
 {
 	m_fluidSimComputePass = fluidSimComputePass;
 
-    auto sphereGeo = GeometryHelper::GenerateDelaunaySphere(4);
-
-    meshLibrary.AddMesh(renderer->GetRendererContext(), Privates::MeshName, sphereGeo.vertices, sphereGeo.indices);
     assert(meshLibrary.GetMesh(Privates::MeshName, m_sphereMesh));
     
     const auto rootPath = s2ws(DX::GetWorkingDirectory());

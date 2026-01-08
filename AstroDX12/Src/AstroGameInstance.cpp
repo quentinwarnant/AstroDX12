@@ -7,6 +7,7 @@
 #include <Rendering/Common/VertexDataInputLayoutLibrary.h>
 #include <Rendering/Compute/ComputableObject.h>
 #include <Rendering/Common/VectorTypes.h>
+#include <Rendering/CommonMeshes.h>
 
 
 #include <GameContent/GPUPasses/BasePassSceneGeometry.h>
@@ -122,13 +123,15 @@ void AstroGameInstance::UpdateMainRenderPassConstantBuffer(float deltaTime)
 
 void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shaderLibrary)
 {
+	AstroDX::CommonMeshes::CreateCommonMeshes(*m_meshLibrary.get(), m_renderer->GetRendererContext());
+
 	 //Base Geo PASS
 	//auto baseGeoPass = std::make_shared< BasePassSceneGeometry>();
 	//baseGeoPass->Init(m_renderer.get(),shaderLibrary, *m_meshLibrary, NumFrameResources);
 	//m_gpuPasses.push_back(std::move(baseGeoPass));
 
-	//auto debugDrawRenderPass = std::make_shared< GraphicsPassDebugDraw >();
-	//debugDrawRenderPass->Init(m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
+	auto debugDrawRenderPass = std::make_shared< GraphicsPassDebugDraw >();
+	debugDrawRenderPass->Init(m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
 
 	// //Particle System Passes
 	//auto particlesSimPass = std::make_shared< ComputePassParticles >();	
@@ -151,14 +154,14 @@ void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shade
 	//m_gpuPasses.push_back(std::move(physicsChainRenderPass));
 
 	// Eulerian Fluid Sim
-	auto fluidSim2DComputePass = std::make_shared< ComputePassFluidSim2D >();
-	fluidSim2DComputePass->Init(m_renderer.get(), shaderLibrary);
+	//auto fluidSim2DComputePass = std::make_shared< ComputePassFluidSim2D >();
+	//fluidSim2DComputePass->Init(m_renderer.get(), shaderLibrary);
 
-	auto fluidSim2DGraphicsPass = std::make_shared< GraphicsPassFluidSim2D >();
-	fluidSim2DGraphicsPass->Init(fluidSim2DComputePass,m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
+	//auto fluidSim2DGraphicsPass = std::make_shared< GraphicsPassFluidSim2D >();
+	//fluidSim2DGraphicsPass->Init(fluidSim2DComputePass,m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
 
-	m_gpuPasses.push_back(std::move(fluidSim2DComputePass));
-	m_gpuPasses.push_back(std::move(fluidSim2DGraphicsPass));
+	//m_gpuPasses.push_back(std::move(fluidSim2DComputePass));
+	//m_gpuPasses.push_back(std::move(fluidSim2DGraphicsPass));
 
 
 	// Pic Flip 3D fluid sim
@@ -175,7 +178,7 @@ void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shade
 	
 
 	 //Debug draw is the last pass to render debug objects on top of everything else
-	//m_gpuPasses.push_back(std::move(debugDrawRenderPass));
+	m_gpuPasses.push_back(std::move(debugDrawRenderPass));
 	
 	//auto raymarchSDFScenePass = std::make_shared<ComputePassRaymarchScene>();
 	//raymarchSDFScenePass->Init(m_renderer.get(), shaderLibrary, ParticleSimPassWeak);

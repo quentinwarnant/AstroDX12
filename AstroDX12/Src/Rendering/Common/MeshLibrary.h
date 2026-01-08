@@ -29,7 +29,7 @@ public:
 		return std::weak_ptr<IMesh>(entryIt->second);
 	}
 
-	bool GetMesh(const std::string& meshName, std::weak_ptr<IMesh>& OutMesh) const
+	bool GetMesh(const std::string_view meshName, std::weak_ptr<IMesh>& OutMesh) const
 	{
 		auto it = Meshes.find(meshName);
 		if (it == Meshes.end())
@@ -40,5 +40,5 @@ public:
 		return true;
 	}
 private:
-	std::map<std::string,std::shared_ptr<IMesh>> Meshes;
+	std::map<std::string,std::shared_ptr<IMesh>,std::less<>> Meshes;
 };

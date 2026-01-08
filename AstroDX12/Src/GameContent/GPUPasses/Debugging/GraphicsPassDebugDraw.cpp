@@ -26,7 +26,8 @@ void GraphicsPassDebugDraw::Init(IRenderer* renderer, AstroTools::Rendering::Sha
 
 	CreateRootSignature(renderer);
 	CreatePipelineState(renderer, shaderLibrary);
-	CreateMesh(renderer->GetRendererContext(), meshLibrary);
+
+	DX::astro_assert(meshLibrary.GetMesh(std::string_view("Sphere"), m_debugMesh), "Failed to load mesh");
 }
 
 void GraphicsPassDebugDraw::CreateRootSignature(IRenderer* renderer)
@@ -92,53 +93,6 @@ void GraphicsPassDebugDraw::CreateRootSignature(IRenderer* renderer)
 
 }
 
-void GraphicsPassDebugDraw::CreateMesh(RendererContext& rendererContext, MeshLibrary& meshLibrary)
-{
-	// sphere mesh
-	std::vector<VertexData_Position_POD> vertices;
-	std::vector<uint32_t> indices;
-
-	const int32_t latitudeCount = 10;
-	const int32_t longitudeCount = 10;
-	const float radius = 0.5f;
-
-	for (int32_t lat = 0; lat <= latitudeCount; ++lat)
-	{
-		float theta = lat * XM_PI / latitudeCount;
-		float sinTheta = sinf(theta);
-		float cosTheta = cosf(theta);
-
-		for (int32_t lon = 0; lon <= longitudeCount; ++lon)
-		{
-			float phi = lon * 2.0f * XM_PI / longitudeCount;
-			float sinPhi = sinf(phi);
-			float cosPhi = cosf(phi);
-
-			XMFLOAT3 position = { radius * sinTheta * cosPhi, radius * cosTheta, radius * sinTheta * sinPhi };
-			vertices.push_back(position);
-		}
-	}
-
-	for (int32_t lat = 0; lat < latitudeCount; ++lat)
-	{
-		for (int32_t lon = 0; lon < longitudeCount; ++lon)
-		{
-			indices.push_back(lat * (longitudeCount + 1) + lon);
-			indices.push_back((lat + 1) * (longitudeCount + 1) + lon);
-			indices.push_back(lat * (longitudeCount + 1) + (lon + 1));
-
-			indices.push_back((lat + 1) * (longitudeCount + 1) + lon);
-			indices.push_back((lat + 1) * (longitudeCount + 1) + (lon + 1));
-			indices.push_back(lat * (longitudeCount + 1) + (lon + 1));
-		}
-	}
-
-	m_debugMesh = meshLibrary.AddMesh(
-		rendererContext, 
-		std::string("Sphere"),
-		vertices,
-		indices);
-}
 
 void GraphicsPassDebugDraw::CreatePipelineState(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary)
 {
