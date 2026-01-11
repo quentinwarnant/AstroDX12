@@ -6,6 +6,7 @@
 #include <Rendering/Common/ShaderLibrary.h>
 #include <Rendering/Common/MeshLibrary.h>
 #include <Rendering/Compute/ComputableObject.h>
+#include <Rendering/Common/Texture3D.h>
 
 namespace PicFlip
 {
@@ -44,6 +45,8 @@ private:
     std::unique_ptr<StructuredBuffer<PicFlip::ParticleData>> m_particleDataBufferPong;
 
     std::unique_ptr<ComputableObject> m_particlesComputeObj;
+
+	std::unique_ptr<ITexture3D> m_pressureGrid;
 
 };
 

@@ -72,4 +72,5 @@ void RenderTarget::ReleaseResources()
 		m_renderTargetResource = nullptr;
 	}
 	m_uavIndex = -1;
+	m_srvIndex = -1;
 }

@@ -3,12 +3,14 @@
 #include "Rendering\Common\FrameResource.h"
 #include "Rendering\RenderData\VertexData.h"
 #include "Rendering/RenderData/GeometryHelper.h"
+#include <Rendering/Common/VectorTypes.h>
 #include <cassert>
 
 namespace Privates
 {
     int32_t ParticleCount = 1000;
     const std::string MeshName = "Sphere";
+	ivec3 GridResolution = ivec3(32, 32, 32);
 }
 
 void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary)
@@ -26,11 +28,18 @@ void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::Shad
     m_particleDataBufferPing = std::make_unique<StructuredBuffer<PicFlip::ParticleData>>(BufferDataVector);
     m_particleDataBufferPong = std::make_unique<StructuredBuffer<PicFlip::ParticleData>>(BufferDataVector);
 
+    renderer->CreateStructuredBufferAndViews(m_particleDataBufferPing.get(), true, true);
+    renderer->CreateStructuredBufferAndViews(m_particleDataBufferPong.get(), true, true);
+
+
+	m_pressureGrid = std::make_unique<Texture3D>();
+	renderer->InitialiseTexture3D(*m_pressureGrid.get(), true,
+		L"PicFlip3D_PressureGrid",
+        DXGI_FORMAT_R16G16B16A16_FLOAT, Privates::GridResolution.x, Privates::GridResolution.y, Privates::GridResolution.z,
+        0, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_TEXTURE_LAYOUT_UNKNOWN);
+
     const auto rootPath = s2ws(DX::GetWorkingDirectory());
     {
-        renderer->CreateStructuredBufferAndViews(m_particleDataBufferPing.get(), true, true);
-        renderer->CreateStructuredBufferAndViews(m_particleDataBufferPong.get(), true, true);
-
         const auto computeShaderPath = rootPath + std::wstring(L"\\Shaders\\LagrangianFluidSim\\Simulate.hlsl");
 
         std::vector<D3D12_ROOT_PARAMETER1> slotRootParams;

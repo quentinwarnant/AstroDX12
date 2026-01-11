@@ -264,6 +264,39 @@ namespace AstroTools
 			return defaultBuffer;
 		}
 
+		[[nodiscard]] static Microsoft::WRL::ComPtr<ID3D12Resource> CreateTexture3D(
+				ID3D12Device* device,
+				bool needUAV,
+				DXGI_FORMAT format,
+				int16_t width,
+				int16_t height,
+				int16_t depth,
+				int16_t mipLevels = 0,
+				D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE,
+				D3D12_TEXTURE_LAYOUT layout = D3D12_TEXTURE_LAYOUT_UNKNOWN
+			)
+			{
+				auto defaultHeapBufferDesc = CD3DX12_RESOURCE_DESC::Tex3D(format, (UINT64)width, (UINT)height, (UINT16)depth, mipLevels, flags, layout);
+				if (needUAV)
+				{
+					defaultHeapBufferDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+				}
+
+				auto defaultHeapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+
+				Microsoft::WRL::ComPtr<ID3D12Resource> defaultBuffer;
+				DX::ThrowIfFailed(device->CreateCommittedResource(
+					&defaultHeapProps,
+					D3D12_HEAP_FLAG_NONE,
+					&defaultHeapBufferDesc,
+					D3D12_RESOURCE_STATE_COMMON,
+					nullptr,
+					IID_PPV_ARGS(defaultBuffer.GetAddressOf())));
+
+				// Upload heap not implemented for Texture3D (no need atm)
+
+				return defaultBuffer;
+			}
 
 		[[nodiscard]] static Microsoft::WRL::ComPtr<ID3D12Resource> CreateRenderTarget(
 			ID3D12Device* device,

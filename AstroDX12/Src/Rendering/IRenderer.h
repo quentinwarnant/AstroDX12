@@ -12,6 +12,7 @@ struct FrameResource;
 class IStructuredBuffer;
 struct RendererContext;
 class GPUPass;
+class ITexture3D;
 
 class IRenderer
 {
@@ -66,6 +67,18 @@ public:
 		UINT32 height,
 		DXGI_FORMAT format,
 		D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_RENDER_TARGET) = 0;
+	virtual void InitialiseTexture3D(
+		ITexture3D& texture3D,
+		bool needUAV,
+		std::wstring name,
+		DXGI_FORMAT format,
+		int32_t width,
+		int32_t height,
+		int32_t depth,
+		int16_t mipLevels = 0,
+		D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE,
+		D3D12_TEXTURE_LAYOUT layout = D3D12_TEXTURE_LAYOUT_UNKNOWN
+	) = 0;
 	virtual UINT64 GetLastCompletedFence() = 0;
 	virtual void WaitForFence(UINT64 fenceValue) = 0;
 	virtual D3D12_GPU_DESCRIPTOR_HANDLE GetSamplerGPUHandle(int32_t samplerID) = 0;

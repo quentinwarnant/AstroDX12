@@ -8,6 +8,7 @@
 #include <Rendering/Compute/ComputeGroup.h>
 #include <Rendering/Common/GPUPass.h>
 #include <Rendering/Common/SamplerIDs.h>
+#include <Rendering/Common/Texture3D.h>
 
 using namespace Microsoft::WRL;
 using namespace DX;
@@ -647,6 +648,30 @@ void RendererDX12::InitialiseRenderTarget(
 	D3D12_RESOURCE_STATES initialState)
 {
 	renderTarget->Initialize(this, *m_globalCBVSRVUAVDescriptorHeap.get(), *m_cpuGlobalUAVDescriptorHeap.get(), name, width, height, format, initialState);
+}
+
+void RendererDX12::InitialiseTexture3D(
+	ITexture3D& texture3D,
+	bool needUAV,
+	std::wstring name,
+	DXGI_FORMAT format,
+	int32_t width,
+	int32_t height,
+	int32_t depth,
+	int16_t mipLevels,
+	D3D12_RESOURCE_FLAGS flags,
+	D3D12_TEXTURE_LAYOUT layout
+)
+{
+	texture3D.Init( GetRendererContext(), needUAV, 
+		*m_globalCBVSRVUAVDescriptorHeap.get(), 
+		*m_cpuGlobalUAVDescriptorHeap.get(),
+		name,
+		format,
+		width, height, depth,
+		mipLevels,
+		flags,
+		layout);
 }
 
 RendererContext& RendererDX12::GetRendererContext()
