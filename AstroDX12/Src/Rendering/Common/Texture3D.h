@@ -80,9 +80,10 @@ public:
 
 			D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc;
 			uavDesc.Format = format;
-			uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-			uavDesc.Texture2D.MipSlice = 0;
-			uavDesc.Texture2D.PlaneSlice = 0;
+			uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
+			uavDesc.Texture3D.MipSlice = 0;
+			uavDesc.Texture3D.FirstWSlice = 0;
+			uavDesc.Texture3D.WSize = -1;
 
 			//m_uavDescriptorHandle = gpuVisibleDescriptorHeap.GetGPUDescriptorHandleByIndex(m_uavIndex);
 			auto uavCPUDescriptorHandle = cpuVisibleDescriptorHeap.GetCPUDescriptorHandleByIndex(m_uavIndex);
@@ -101,11 +102,10 @@ public:
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
 		srvDesc.Format = format;
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		srvDesc.Texture2D.MostDetailedMip = 0;
-		srvDesc.Texture2D.MipLevels = 1;
-		srvDesc.Texture2D.PlaneSlice = 0;
-		srvDesc.Texture2D.ResourceMinLODClamp = 0.f;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+		srvDesc.Texture3D.MostDetailedMip = 0;
+		srvDesc.Texture3D.MipLevels = 1;
+		srvDesc.Texture3D.ResourceMinLODClamp = 0.f;
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
 		//auto srvDescriptorHandle = gpuVisibleDescriptorHeap.GetGPUDescriptorHandleByIndex(m_srvIndex);
