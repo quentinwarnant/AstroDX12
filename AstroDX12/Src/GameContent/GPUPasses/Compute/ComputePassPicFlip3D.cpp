@@ -20,23 +20,45 @@ void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::Shad
     for (auto& ParticleData : BufferDataVector)
     {
         float x = (float(index % 10) * 3.f);
-        ParticleData.Pos = XMFLOAT3(x, (index / 100) * 2.f, ((index%100) / 10) * 3.f);
-        ParticleData.Vel = XMFLOAT3(0.f,0.f,0.f);
-		index++;
+        ParticleData.Pos = XMFLOAT3(x, (index / 100) * 2.f, ((index % 100) / 10) * 3.f);
+        ParticleData.Vel = XMFLOAT3(0.f, 0.f, 0.f);
+        index++;
     }
 
-    m_particleDataBufferPing = std::make_unique<StructuredBuffer<PicFlip::ParticleData>>(BufferDataVector);
-    m_particleDataBufferPong = std::make_unique<StructuredBuffer<PicFlip::ParticleData>>(BufferDataVector);
+    m_particleDataBufferPair = std::make_unique<PicFlip::ParticleDataBufferPair>(
+        std::make_shared<StructuredBuffer<PicFlip::ParticleData>>(BufferDataVector),
+        std::make_shared<StructuredBuffer<PicFlip::ParticleData>>(BufferDataVector)
+    );
 
-    renderer->CreateStructuredBufferAndViews(m_particleDataBufferPing.get(), true, true);
-    renderer->CreateStructuredBufferAndViews(m_particleDataBufferPong.get(), true, true);
+    renderer->CreateStructuredBufferAndViews(m_particleDataBufferPair->GetInput(), true, true);
+    renderer->CreateStructuredBufferAndViews(m_particleDataBufferPair->GetOutput(), true, true);
+    
+    m_pressureGridPair = std::make_unique<PicFlip::GridDataBufferPair>(
+        std::make_shared<Texture3D>(),
+        std::make_shared<Texture3D>()
+    );
+    
+    //TODO: put the resources into the right resource state?
+    // m_particleDataBufferPair
+    // 
 
 
-	m_pressureGrid = std::make_unique<Texture3D>();
-	renderer->InitialiseTexture3D(*m_pressureGrid.get(), true,
-		L"PicFlip3D_PressureGrid",
-        DXGI_FORMAT_R16G16B16A16_FLOAT, Privates::GridResolution.x, Privates::GridResolution.y, Privates::GridResolution.z,
-        0, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_TEXTURE_LAYOUT_UNKNOWN);
+	// Init pressure grid 3D textures
+    {
+        auto InitPressureGrid = [](IRenderer* renderer, ITexture3D* texture3D, std::wstring name, D3D12_RESOURCE_STATES initialResourceState)
+        {
+            renderer->InitialiseTexture3D(*texture3D, true,
+                name,
+                DXGI_FORMAT_R16G16B16A16_FLOAT,
+                Privates::GridResolution.x, Privates::GridResolution.y, Privates::GridResolution.z,
+                initialResourceState,
+                /*miplevels*/ 0,
+                D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, 
+                D3D12_TEXTURE_LAYOUT_UNKNOWN);
+        };
+        InitPressureGrid(renderer, m_pressureGridPair->GetInput(), L"PicFlip3D_PressureGrid_Ping", D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        InitPressureGrid(renderer, m_pressureGridPair->GetOutput(), L"PicFlip3D_PressureGrid_Pong", D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    }
 
     const auto rootPath = s2ws(DX::GetWorkingDirectory());
     {
@@ -50,7 +72,7 @@ void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::Shad
             {
                 .ShaderRegister = 0,
                 .RegisterSpace = 0,
-                .Num32BitValues = 2
+                .Num32BitValues = 4
             },
             .ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL
         };
@@ -99,19 +121,18 @@ void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::Shad
 
 int32_t ComputePassPicFlip3D::GetParticleReadBufferSRVHeapIndex() const
 {
-    auto bufferInput = m_frameIdxModulo % 2 == 0 ? m_particleDataBufferPing.get() : m_particleDataBufferPong.get();
-    return bufferInput->GetSRVIndex();
+    return m_particleDataBufferPair->GetInput()->GetSRVIndex();
 }
 
 int32_t ComputePassPicFlip3D::GetParticleOutputBufferSRVHeapIndex() const
 {
-    auto bufferInput = m_frameIdxModulo % 2 == 1 ? m_particleDataBufferPing.get() : m_particleDataBufferPong.get();
-    return bufferInput->GetSRVIndex();
+    return m_particleDataBufferPair->GetOutput()->GetSRVIndex();
 }
 
-void ComputePassPicFlip3D::Update(const GPUPassUpdateData& updateData)
+void ComputePassPicFlip3D::Update(const GPUPassUpdateData& /*updateData*/)
 {
-	m_frameIdxModulo = updateData.frameIdxModulo;
+    m_particleDataBufferPair->Swap();
+    m_pressureGridPair->Swap();
 }
 
 void ComputePassPicFlip3D::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float deltaTime, const FrameResource& frameResources) const
@@ -119,41 +140,51 @@ void ComputePassPicFlip3D::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, fl
     PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "ComputePassPicFlip3D");
 
     // Dispatch Particle update
-    auto bufferInput = m_frameIdxModulo % 2 == 0 ? m_particleDataBufferPing.get() : m_particleDataBufferPong.get();
-    auto bufferOutput = m_frameIdxModulo % 2 == 1 ? m_particleDataBufferPing.get() : m_particleDataBufferPong.get();
 
     cmdList->SetComputeRootSignature(m_particlesComputeObj->GetRootSignature().Get());
     cmdList->SetPipelineState(m_particlesComputeObj->GetPSO().Get());
 
     constexpr int32_t BindlessResourceIndicesRootSigParamIndex = 0;
     const std::vector<int32_t> BindlessResourceIndices = {
-        bufferInput->GetSRVIndex(),
-        bufferOutput->GetUAVIndex()
+        m_particleDataBufferPair->GetInput()->GetSRVIndex(),
+        m_particleDataBufferPair->GetOutput()->GetUAVIndex(),
+        m_pressureGridPair->GetInput()->GetSRVIndex(),
+        m_pressureGridPair->GetOutput()->GetUAVIndex()
     };
     cmdList->SetComputeRoot32BitConstants(
         (UINT)BindlessResourceIndicesRootSigParamIndex,
         (UINT)BindlessResourceIndices.size(), BindlessResourceIndices.data(), 0);
 
-    // Transition resources into their next correct state
-    const auto bufferInStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
-        bufferInput->Resource(),
-        D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    const auto bufferOutStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
-        bufferOutput->Resource(),
-        D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-
-    std::vector<CD3DX12_RESOURCE_BARRIER> buffersStateTransition = { bufferInStateTransition , bufferOutStateTransition };
-    cmdList->ResourceBarrier(2, buffersStateTransition.data());
-
     //TODO compute dispatch size
     cmdList->Dispatch(1, 1, 1);
+
+
+    // Transition resources into their next correct state
+    const auto particleBufferInStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
+        m_particleDataBufferPair->GetInput()->Resource(),
+        D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    const auto particleBufferOutStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
+        m_particleDataBufferPair->GetOutput()->Resource(),
+        D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    const auto pressureGridTextureInStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
+        m_pressureGridPair->GetInput()->Resource(),
+        D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    const auto pressureGridTextureOutStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
+        m_pressureGridPair->GetOutput()->Resource(),
+        D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+
+
+    std::vector<CD3DX12_RESOURCE_BARRIER> buffersStateTransition = { 
+        particleBufferInStateTransition,
+        particleBufferOutStateTransition,
+        pressureGridTextureInStateTransition,
+        pressureGridTextureOutStateTransition
+    };
+    cmdList->ResourceBarrier(buffersStateTransition.size(), buffersStateTransition.data());
 }
 
 void ComputePassPicFlip3D::Shutdown()
 {
-    m_particleDataBufferPing.release();
-    m_particleDataBufferPong.release();
-
     m_particlesComputeObj.release();
 }
 
@@ -259,7 +290,7 @@ void GraphicsPassPicFlip3D::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, f
 
     const uint32_t GraphicsBindlessResourceIndicesRootSigParamIndex = 1;
     const std::vector<int32_t> GraphicsBindlessResourceIndices = {
-        m_fluidSimComputePass.lock()->GetParticleReadBufferSRVHeapIndex(),
+        m_fluidSimComputePass.lock()->GetParticleOutputBufferSRVHeapIndex(),
         m_sphereMesh.lock()->GetVertexBufferSRV()
     };
     cmdList->SetGraphicsRoot32BitConstants(

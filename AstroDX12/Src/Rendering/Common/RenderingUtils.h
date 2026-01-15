@@ -271,6 +271,7 @@ namespace AstroTools
 				int16_t width,
 				int16_t height,
 				int16_t depth,
+				D3D12_RESOURCE_STATES initialResourceState, 
 				int16_t mipLevels = 0,
 				D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE,
 				D3D12_TEXTURE_LAYOUT layout = D3D12_TEXTURE_LAYOUT_UNKNOWN
@@ -289,7 +290,7 @@ namespace AstroTools
 					&defaultHeapProps,
 					D3D12_HEAP_FLAG_NONE,
 					&defaultHeapBufferDesc,
-					D3D12_RESOURCE_STATE_COMMON,
+					initialResourceState,
 					nullptr,
 					IID_PPV_ARGS(defaultBuffer.GetAddressOf())));
 

@@ -9,7 +9,7 @@
 
 #include <Rendering/Compute/ComputableObject.h>
 #include <Rendering/Common/RenderTarget.h>
-#include <Rendering/Common/RenderTargetPair.h>
+#include <Rendering/Common/RenderResourcePair.h>
 #include <Rendering/Common/TickableResetFlag.h>
 
 
@@ -52,10 +52,10 @@ private:
     void CopySimOutputToDisplayTexture(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
     void SwapVelocityTexturesStates(ComPtr<ID3D12GraphicsCommandList> cmdList) const;
 
-    std::unique_ptr<RenderTargetPair> m_gridDensityTexPair;
-    std::unique_ptr<RenderTargetPair> m_gridVelocityTexPair;
+    std::unique_ptr<RenderResourcePair<RenderTarget>> m_gridDensityTexPair;
+    std::unique_ptr<RenderResourcePair<RenderTarget>> m_gridVelocityTexPair;
     std::unique_ptr<RenderTarget> m_gridDivergenceTex;
-    std::unique_ptr<RenderTargetPair> m_gridPressureTexPair;
+    std::unique_ptr<RenderResourcePair<RenderTarget>> m_gridPressureTexPair;
 
 	std::unique_ptr<RenderTarget> m_imageRenderTarget;
 

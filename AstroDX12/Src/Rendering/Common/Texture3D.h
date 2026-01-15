@@ -20,11 +20,15 @@ public:
 		int32_t width,
 		int32_t height,
 		int32_t depth,
+		D3D12_RESOURCE_STATES initialResourceState,
 		int16_t mipLevels = 0,
 		D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE,
 		D3D12_TEXTURE_LAYOUT layout = D3D12_TEXTURE_LAYOUT_UNKNOWN
 		) = 0;
 	
+	virtual int32_t GetSRVIndex() = 0;
+	virtual int32_t GetUAVIndex() = 0;
+	virtual ID3D12Resource* Resource() const = 0;
 };
 
 
@@ -38,10 +42,11 @@ public:
 
 	virtual ~Texture3D()
 	{
-		if (m_texture3DResource.Get())
-		{
-			m_texture3DResource->Release();
-		}
+	}
+
+	ID3D12Resource* Resource() const 
+	{
+		return m_texture3DResource.Get();
 	}
 
 	virtual void Init(
@@ -54,6 +59,7 @@ public:
 		int32_t width,
 		int32_t height,
 		int32_t depth,
+		D3D12_RESOURCE_STATES initialResourceState,
 		int16_t mipLevels = 0,
 		D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE,
 		D3D12_TEXTURE_LAYOUT layout = D3D12_TEXTURE_LAYOUT_UNKNOWN
@@ -66,6 +72,7 @@ public:
 			width,
 			height,
 			depth,
+			initialResourceState,
 			mipLevels,
 			flags,
 			layout			
@@ -83,7 +90,7 @@ public:
 			uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
 			uavDesc.Texture3D.MipSlice = 0;
 			uavDesc.Texture3D.FirstWSlice = 0;
-			uavDesc.Texture3D.WSize = -1;
+			uavDesc.Texture3D.WSize = (UINT)-1;
 
 			//m_uavDescriptorHandle = gpuVisibleDescriptorHeap.GetGPUDescriptorHandleByIndex(m_uavIndex);
 			auto uavCPUDescriptorHandle = cpuVisibleDescriptorHeap.GetCPUDescriptorHandleByIndex(m_uavIndex);
@@ -115,6 +122,16 @@ public:
 			gpuVisibleDescriptorHeap.GetCPUDescriptorHandleByIndex(m_srvIndex));
 
 		gpuVisibleDescriptorHeap.IncreaseCurrentDescriptorHeapHandle();
+	}
+
+	virtual int32_t GetSRVIndex() override
+	{
+		return m_srvIndex;
+	}
+
+	virtual int32_t GetUAVIndex() override
+	{
+		return m_uavIndex;
 	}
 
 private:

@@ -75,6 +75,7 @@ public:
 		int32_t width,
 		int32_t height,
 		int32_t depth,
+		D3D12_RESOURCE_STATES initialResourceState,
 		int16_t mipLevels = 0,
 		D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE,
 		D3D12_TEXTURE_LAYOUT layout = D3D12_TEXTURE_LAYOUT_UNKNOWN

@@ -658,6 +658,7 @@ void RendererDX12::InitialiseTexture3D(
 	int32_t width,
 	int32_t height,
 	int32_t depth,
+	D3D12_RESOURCE_STATES initialResourceState,
 	int16_t mipLevels,
 	D3D12_RESOURCE_FLAGS flags,
 	D3D12_TEXTURE_LAYOUT layout
@@ -669,6 +670,7 @@ void RendererDX12::InitialiseTexture3D(
 		name,
 		format,
 		width, height, depth,
+		initialResourceState,
 		mipLevels,
 		flags,
 		layout);

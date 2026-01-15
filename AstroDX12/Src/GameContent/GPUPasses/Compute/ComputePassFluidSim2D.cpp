@@ -190,14 +190,14 @@ void ComputePassFluidSim2D::Init(IRenderer* renderer, AstroTools::Rendering::Sha
     m_imageSamplerIndex = AstroTools::Rendering::SamplerIDs::LinearClamp;
     m_imageSamplerGpuHandle = renderer->GetSamplerGPUHandle(m_imageSamplerIndex);
 
-    m_gridDensityTexPair = std::make_unique<RenderTargetPair>(
+    m_gridDensityTexPair = std::make_unique<RenderResourcePair<RenderTarget>>(
         std::make_unique<RenderTarget>(),
         std::make_unique<RenderTarget>());
     renderer->InitialiseRenderTarget(m_gridDensityTexPair->GetInput(), L"FluidSim2D::DensityGrid::Ping", Privates::GridDimensions.x, Privates::GridDimensions.y, DXGI_FORMAT_R32G32B32A32_FLOAT, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     renderer->InitialiseRenderTarget(m_gridDensityTexPair->GetOutput(), L"FluidSim2D::DensityGrid::Pong", Privates::GridDimensions.x, Privates::GridDimensions.y, DXGI_FORMAT_R32G32B32A32_FLOAT, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
 
-    m_gridVelocityTexPair = std::make_unique<RenderTargetPair>(
+    m_gridVelocityTexPair = std::make_unique<RenderResourcePair<RenderTarget>>(
         std::make_unique<RenderTarget>(),
 		std::make_unique<RenderTarget>());
     renderer->InitialiseRenderTarget(m_gridVelocityTexPair->GetInput(), L"FluidSim2D::VelocityGrid::Ping", Privates::GridDimensions.x, Privates::GridDimensions.y, DXGI_FORMAT_R32G32_FLOAT, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
@@ -206,7 +206,7 @@ void ComputePassFluidSim2D::Init(IRenderer* renderer, AstroTools::Rendering::Sha
     m_gridDivergenceTex = std::make_unique<RenderTarget>();
     renderer->InitialiseRenderTarget(m_gridDivergenceTex.get(), L"FluidSim2D::DivergenceGrid", Privates::GridDimensions.x, Privates::GridDimensions.y, DXGI_FORMAT_R32_FLOAT, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-    m_gridPressureTexPair = std::make_unique<RenderTargetPair>(
+    m_gridPressureTexPair = std::make_unique<RenderResourcePair<RenderTarget>>(
         std::make_unique<RenderTarget>(),
         std::make_unique<RenderTarget>());
     renderer->InitialiseRenderTarget(m_gridPressureTexPair->GetInput(), L"FluidSim2D::PressureGrid::Ping", Privates::GridDimensions.x, Privates::GridDimensions.y, DXGI_FORMAT_R32_FLOAT, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);

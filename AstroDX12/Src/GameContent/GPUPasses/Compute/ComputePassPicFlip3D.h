@@ -7,6 +7,7 @@
 #include <Rendering/Common/MeshLibrary.h>
 #include <Rendering/Compute/ComputableObject.h>
 #include <Rendering/Common/Texture3D.h>
+#include <Rendering/Common/RenderResourcePair.h>
 
 namespace PicFlip
 {
@@ -22,8 +23,10 @@ namespace PicFlip
         DirectX::XMFLOAT3 Pos;
         DirectX::XMFLOAT3 Vel;
     };
-}
 
+    using ParticleDataBufferPair = RenderResourcePair<StructuredBuffer<PicFlip::ParticleData>>;
+    using GridDataBufferPair = RenderResourcePair<ITexture3D>;
+}
 
 class ComputePassPicFlip3D :
     public ComputePass
@@ -41,12 +44,12 @@ private:
 	int32_t m_frameIdxModulo = 0;
 	int32_t m_ParticleReadBufferSRVIndex = 0;
 
-    std::unique_ptr<StructuredBuffer<PicFlip::ParticleData>> m_particleDataBufferPing;
-    std::unique_ptr<StructuredBuffer<PicFlip::ParticleData>> m_particleDataBufferPong;
+    std::unique_ptr<PicFlip::ParticleDataBufferPair> m_particleDataBufferPair;
 
     std::unique_ptr<ComputableObject> m_particlesComputeObj;
 
-	std::unique_ptr<ITexture3D> m_pressureGrid;
+	std::unique_ptr<PicFlip::GridDataBufferPair> m_pressureGridPair;
+
 
 };
 
