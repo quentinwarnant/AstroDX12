@@ -15,6 +15,7 @@ using namespace DX;
 
 RendererDX12::~RendererDX12()
 {
+	m_currentAdapter->Release();
 	IRenderer::~IRenderer();
 }
 
@@ -42,13 +43,12 @@ void RendererDX12::Init(HWND window, int width, int height)
 	
 	// Collect adapters, and select the best one
 	UINT AdaptedIndex = 0;
-	ComPtr<IDXGIAdapter> currentAdapter;
 	{
 
 		std::vector <ComPtr<IDXGIAdapter>> availableAdapters;
-		while (m_dxgiFactory->EnumAdapters(AdaptedIndex, currentAdapter.GetAddressOf()) != DXGI_ERROR_NOT_FOUND)
+		while (m_dxgiFactory->EnumAdapters(AdaptedIndex, m_currentAdapter.GetAddressOf()) != DXGI_ERROR_NOT_FOUND)
 		{
-			availableAdapters.push_back(currentAdapter);
+			availableAdapters.push_back(m_currentAdapter);
 			++AdaptedIndex;
 		}
 
@@ -69,17 +69,17 @@ void RendererDX12::Init(HWND window, int width, int height)
 					adapterWithMaxVRAMIndex = index;
 				}
 			}
-			currentAdapter = availableAdapters[adapterWithMaxVRAMIndex];
+			m_currentAdapter = availableAdapters[adapterWithMaxVRAMIndex];
 		}
 		else
 		{
-			currentAdapter = availableAdapters[0];
+			m_currentAdapter = availableAdapters[0];
 		}
 
 		
 		for (auto& adapter : availableAdapters)
 		{
-			if (adapter != currentAdapter)
+			if (adapter != m_currentAdapter)
 			{
 				adapter->Release();
 			}
@@ -88,7 +88,7 @@ void RendererDX12::Init(HWND window, int width, int height)
 	}
 
 	
-	auto deviceCreateResult = D3D12CreateDevice(currentAdapter.Get(), D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&m_device));
+	auto deviceCreateResult = D3D12CreateDevice(m_currentAdapter.Get(), D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&m_device));
 	if (FAILED(deviceCreateResult))
 	{
 		//Create WARP device - Windows advanced rasterization platform (software renderer)

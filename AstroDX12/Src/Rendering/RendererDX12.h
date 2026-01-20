@@ -104,6 +104,7 @@ private:
     size_t m_renderPassCBVOffset = 0;
 
     ComPtr<IDXGIFactory4> m_dxgiFactory;
+    ComPtr<IDXGIAdapter> m_currentAdapter;
     ComPtr<ID3D12Device> m_device;
     ComPtr<ID3D12Fence> m_fence;
     ComPtr<IDXGISwapChain1> m_swapChain;
