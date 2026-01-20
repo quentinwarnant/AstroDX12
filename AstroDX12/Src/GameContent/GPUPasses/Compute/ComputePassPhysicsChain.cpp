@@ -182,10 +182,6 @@ void ComputePassPhysicsChain::Execute(
 
 void ComputePassPhysicsChain::Shutdown()
 {
-    m_chainDataBufferPing.release();
-    m_chainDataBufferPong.release();
-
-    m_particlesComputeObj.release();
 }
 
 //---------------------------------------------------------------------------------------
@@ -414,9 +410,5 @@ void GraphicsPassPhysicsChain::Execute(
 
 void GraphicsPassPhysicsChain::Shutdown()
 {
-    m_chainElementMesh.reset();
-    m_particlesComputePass.reset();
-    m_pipelineStateObject = nullptr;
-    m_pipelineStateObject = nullptr;
 }
 

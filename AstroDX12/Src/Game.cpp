@@ -32,13 +32,6 @@ Game::Game() noexcept(false)
 
 Game::~Game()
 {
-    m_renderer->Shutdown();
-    m_renderer.reset();
-    Shutdown();
-    //if (m_deviceResources)
-    //{
-    //    m_deviceResources->WaitForGpu();
-    //}
 }
 
 // Initialize the Direct3D resources required to run.
@@ -68,6 +61,8 @@ void Game::Initialize(HWND window, int width, int height)
 
 void Game::Shutdown()
 {
+    m_renderer->Shutdown();
+    m_renderer.reset();
 
 }
 

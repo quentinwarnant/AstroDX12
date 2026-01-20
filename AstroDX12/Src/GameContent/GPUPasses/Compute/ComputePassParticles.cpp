@@ -148,10 +148,6 @@ void ComputePassParticles::Execute(
 
 void ComputePassParticles::Shutdown()
 {
-    m_particleDataBufferPing.release();
-    m_particleDataBufferPong.release();
-
-    m_particlesComputeObj.release();
 }
 
 //---------------------------------------------------------------------------------------
@@ -280,9 +276,5 @@ void GraphicsPassParticles::Execute(
 
 void GraphicsPassParticles::Shutdown()
 {
-    m_boxMesh.reset();
-    m_particlesComputePass.reset();
-    m_pipelineStateObject = nullptr;
-    m_rootSignature = nullptr;
 }
 

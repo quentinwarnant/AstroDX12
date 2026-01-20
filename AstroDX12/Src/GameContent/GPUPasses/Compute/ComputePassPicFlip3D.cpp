@@ -185,7 +185,6 @@ void ComputePassPicFlip3D::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, fl
 
 void ComputePassPicFlip3D::Shutdown()
 {
-    m_particlesComputeObj.release();
 }
 
 

@@ -42,11 +42,11 @@ void RendererDX12::Init(HWND window, int width, int height)
 	
 	// Collect adapters, and select the best one
 	UINT AdaptedIndex = 0;
-	IDXGIAdapter* currentAdapter;
+	ComPtr<IDXGIAdapter> currentAdapter;
 	{
 
-		std::vector <IDXGIAdapter*> availableAdapters;
-		while (m_dxgiFactory->EnumAdapters(AdaptedIndex, &currentAdapter) != DXGI_ERROR_NOT_FOUND)
+		std::vector <ComPtr<IDXGIAdapter>> availableAdapters;
+		while (m_dxgiFactory->EnumAdapters(AdaptedIndex, currentAdapter.GetAddressOf()) != DXGI_ERROR_NOT_FOUND)
 		{
 			availableAdapters.push_back(currentAdapter);
 			++AdaptedIndex;
@@ -75,10 +75,20 @@ void RendererDX12::Init(HWND window, int width, int height)
 		{
 			currentAdapter = availableAdapters[0];
 		}
+
+		
+		for (auto& adapter : availableAdapters)
+		{
+			if (adapter != currentAdapter)
+			{
+				adapter->Release();
+			}
+		}
+
 	}
 
 	
-	auto deviceCreateResult = D3D12CreateDevice(currentAdapter, D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&m_device));
+	auto deviceCreateResult = D3D12CreateDevice(currentAdapter.Get(), D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&m_device));
 	if (FAILED(deviceCreateResult))
 	{
 		//Create WARP device - Windows advanced rasterization platform (software renderer)
@@ -86,33 +96,7 @@ void RendererDX12::Init(HWND window, int width, int height)
 		ThrowIfFailed(m_dxgiFactory->EnumWarpAdapter(IID_PPV_ARGS(&warpAdapter)));
 		ThrowIfFailed(D3D12CreateDevice(warpAdapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_device)));
 	}
-
-
-	//D3D12_FEATURE_DATA_D3D12_OPTIONS featureSupport{};
-	//if (FAILED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &featureSupport, sizeof(featureSupport)) ) )
-	//{
-	//	assert(false);
-	//}
-	//else
-	//{
-
-	//	switch (featureSupport.ResourceBindingTier)
-	//	{
-	//	case D3D12_RESOURCE_BINDING_TIER_1:
-	//		// Tier 1 is supported.
-	//		break;
-
-	//	case D3D12_RESOURCE_BINDING_TIER_2:
-	//		// Tiers 1 and 2 are supported.
-	//		break;
-
-	//	case D3D12_RESOURCE_BINDING_TIER_3:
-	//		// Tiers 1, 2, and 3 are supported.
-	//		break;
-	//	}
-
-	//}
-
+	
 	//
 	D3D12_FEATURE_DATA_SHADER_MODEL  shaderModelSupport{};
 	shaderModelSupport.HighestShaderModel = D3D_SHADER_MODEL_6_7;
@@ -509,12 +493,6 @@ void RendererDX12::AddNewFence(std::function<void(int)> onNewFenceValue)
 
 void RendererDX12::Shutdown()
 {
-	ComPtr<ID3D12DebugDevice> debugDevice;
-	if (SUCCEEDED(m_device->QueryInterface(IID_PPV_ARGS(&debugDevice)))) {
-		// You now have a debug device
-		debugDevice->ReportLiveDeviceObjects(D3D12_RLDO_FLAGS::D3D12_RLDO_DETAIL);
-	}
-
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE RendererDX12::CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize)

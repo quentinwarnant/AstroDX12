@@ -161,12 +161,4 @@ void ComputePassRaymarchScene::Execute(
 
 void ComputePassRaymarchScene::Shutdown()
 {
-    if( m_gBuffer1RT )
-    {
-        m_gBuffer1RT.reset();
-	}
-   if( m_SDFSceneObjectsBuffer )
-    {
-        m_SDFSceneObjectsBuffer.reset();
-   }
 }

@@ -45,8 +45,6 @@ AstroGameInstance::AstroGameInstance()
 
 AstroGameInstance::~AstroGameInstance()
 {
-	m_frameResources.clear();
-	m_meshLibrary.reset();
 }
 
 void AstroGameInstance::InitCamera()
@@ -288,4 +286,6 @@ void AstroGameInstance::Shutdown()
 		pass->Shutdown();
 	}
 	m_gpuPasses.clear();
+
+	Game::Shutdown();
 }
