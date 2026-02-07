@@ -8,9 +8,20 @@
 
 namespace Privates
 {
-    int32_t ParticleCount = 1000;
+    int32_t ParticleCount = 100;
     const std::string MeshName = "Sphere";
 	ivec3 GridResolution = ivec3(32, 32, 32);
+	ivec3 GridWorldPosition = ivec3(5, 5, 5);
+	ivec3 GridWorldExtents = ivec3(30, 30, 30);
+	ivec3 DispatchThreadGroupSize = ivec3(32, 32, 1);
+
+    ivec3 CalculateDispatchGroupCount()
+    {
+        return ivec3(
+            (GridResolution.x + DispatchThreadGroupSize.x - 1) / DispatchThreadGroupSize.x,
+            (GridResolution.y + DispatchThreadGroupSize.y - 1) / DispatchThreadGroupSize.y,
+            (GridResolution.z + DispatchThreadGroupSize.z - 1) / DispatchThreadGroupSize.z);
+	}
 }
 
 void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary)
@@ -19,8 +30,12 @@ void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::Shad
     int32_t index = 0;
     for (auto& ParticleData : BufferDataVector)
     {
-        float x = (float(index % 10) * 3.f);
-        ParticleData.Pos = XMFLOAT3(x, (index / 100) * 2.f, ((index % 100) / 10) * 3.f);
+        const int ParticleGridSpacing = 5;
+        float x = (float(index % ParticleGridSpacing) * 3.f);
+        ParticleData.Pos = XMFLOAT3(
+            Privates::GridWorldPosition.x + x,
+            Privates::GridWorldPosition.y + ((index / (ParticleGridSpacing* ParticleGridSpacing)) * 2.f),
+            Privates::GridWorldPosition.z + ((index % (ParticleGridSpacing * ParticleGridSpacing)) / 10) * 3.f);
         ParticleData.Vel = XMFLOAT3(0.f, 0.f, 0.f);
         index++;
     }
@@ -72,7 +87,7 @@ void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::Shad
             {
                 .ShaderRegister = 0,
                 .RegisterSpace = 0,
-                .Num32BitValues = 4
+                .Num32BitValues = 16
             },
             .ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL
         };
@@ -149,14 +164,20 @@ void ComputePassPicFlip3D::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, fl
         m_particleDataBufferPair->GetInput()->GetSRVIndex(),
         m_particleDataBufferPair->GetOutput()->GetUAVIndex(),
         m_pressureGridPair->GetInput()->GetSRVIndex(),
-        m_pressureGridPair->GetOutput()->GetUAVIndex()
+        m_pressureGridPair->GetOutput()->GetUAVIndex(),
+        Privates::GridResolution.x, Privates::GridResolution.y, Privates::GridResolution.z, 0,
+        Privates::GridWorldPosition.x, Privates::GridWorldPosition.y, Privates::GridWorldPosition.z, 0,
+        Privates::GridWorldExtents.x, Privates::GridWorldExtents.y, Privates::GridWorldExtents.z,
+        Privates::ParticleCount
+
     };
+
     cmdList->SetComputeRoot32BitConstants(
         (UINT)BindlessResourceIndicesRootSigParamIndex,
         (UINT)BindlessResourceIndices.size(), BindlessResourceIndices.data(), 0);
 
-    //TODO compute dispatch size
-    cmdList->Dispatch(1, 1, 1);
+    const ivec3 dispatchSize = Privates::CalculateDispatchGroupCount();
+    cmdList->Dispatch(dispatchSize.x, dispatchSize.y, dispatchSize.z);
 
 
     // Transition resources into their next correct state
