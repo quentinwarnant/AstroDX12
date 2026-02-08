@@ -46,15 +46,18 @@ public:
 		return std::make_unique<UploadBuffer<T>>(GetDevice().Get(), elementCount, true);
 	}
 
-	virtual D3D12_GPU_DESCRIPTOR_HANDLE CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize) = 0;
-	virtual void CreateStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav) = 0;
+	virtual int32_t CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize) = 0;
+
+	virtual void CreateStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, std::wstring_view bufferName, bool srv, bool uav, bool viewsAreByteAddress = false) = 0;
+	virtual void CreateCommandSignature(D3D12_COMMAND_SIGNATURE_DESC* sigDesc, ComPtr<ID3D12RootSignature> executeIndirectRootSignature, ComPtr<ID3D12CommandSignature>& commandSignature) = 0;
 	virtual void CreateGraphicsPipelineState(
 		ComPtr<ID3D12PipelineState>& pso,
 		ComPtr<ID3D12RootSignature>& rootSignature,
 		const std::vector<D3D12_INPUT_ELEMENT_DESC>* inputLayout,
 		ComPtr<IDxcBlob>& vertexShaderByteCode,
 		ComPtr<IDxcBlob>& pixelShaderByteCode,
-		bool wireframeEnabled = false) = 0;
+		bool wireframeEnabled = false,
+		D3D12_PRIMITIVE_TOPOLOGY_TYPE topology = D3D12_PRIMITIVE_TOPOLOGY_TYPE::D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE) = 0;
 	virtual void CreateComputePipelineState(
 		ComPtr<ID3D12PipelineState>& pso,
 		ComPtr<ID3D12RootSignature>& rootSignature,
@@ -72,9 +75,9 @@ public:
 		bool needUAV,
 		std::wstring name,
 		DXGI_FORMAT format,
-		int32_t width,
-		int32_t height,
-		int32_t depth,
+		int16_t width,
+		int16_t height,
+		int16_t depth,
 		D3D12_RESOURCE_STATES initialResourceState,
 		int16_t mipLevels = 0,
 		D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE,

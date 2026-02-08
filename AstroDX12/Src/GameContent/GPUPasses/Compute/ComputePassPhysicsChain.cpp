@@ -55,8 +55,8 @@ void ComputePassPhysicsChain::Init(IRenderer* renderer, AstroTools::Rendering::S
 {
     const auto rootPath = s2ws(DX::GetWorkingDirectory());
     {
-        renderer->CreateStructuredBufferAndViews(m_chainDataBufferPing.get(), true, true);
-        renderer->CreateStructuredBufferAndViews(m_chainDataBufferPong.get(), true, true);
+        renderer->CreateStructuredBufferAndViews(m_chainDataBufferPing.get(), std::wstring_view(L"ChainData_Ping"), true, true);
+        renderer->CreateStructuredBufferAndViews(m_chainDataBufferPong.get(), std::wstring_view(L"ChainData_Pong"), true, true);
 
         const auto computeShaderPath = rootPath + std::wstring(L"\\Shaders\\physicsChainCompute.hlsl");
 

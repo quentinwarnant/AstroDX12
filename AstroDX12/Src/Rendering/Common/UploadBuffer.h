@@ -59,10 +59,12 @@ public:
 	}
 
 	UINT GetElementByteSize() { return m_elementByteSize; }
-
+	void SetHeapDescriptorIndex(int32_t heapDescriptorIndex) { m_heapDescriptorIndex = heapDescriptorIndex; }
+	int32_t GetHeapDescriptorIndex() const { return m_heapDescriptorIndex; }
 private:
 	bool m_isConstantBuffer;
 	UINT m_elementByteSize;
+	int32_t m_heapDescriptorIndex;
 
 	ComPtr<ID3D12Resource> m_uploadBuffer;
 	BYTE* m_mappedData;

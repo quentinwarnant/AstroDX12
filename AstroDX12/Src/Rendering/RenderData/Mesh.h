@@ -59,13 +59,20 @@ public:
 		VertexDataStructuredBuffer->Init(
 			rendererContext.Device.Get(),
 			rendererContext.CommandList.Get(),
+			std::wstring_view(L"VertexDataBuffer"),
 			true, // SRV
 			false,// UAV
 			*rendererContext.GlobalCBVSRVUAVDescriptorHeap.lock());
 
 		// Vertex Index buffer
-		IndexBufferGPU = AstroTools::Rendering::CreateDefaultBuffer(rendererContext.Device.Get(), rendererContext.CommandList.Get(),
-			VertexIndices.data(), IndexBufferByteSize, false, IndexUploadBuffer);
+		IndexBufferGPU = AstroTools::Rendering::CreateDefaultBuffer(
+			rendererContext.Device.Get(),
+			rendererContext.CommandList.Get(),
+			VertexIndices.data(),
+			IndexBufferByteSize,
+			false, 
+			std::wstring_view(L"VertexIndexBuffer"), 
+			IndexUploadBuffer);
 	}
 
 	Mesh(Mesh&& other) = delete;

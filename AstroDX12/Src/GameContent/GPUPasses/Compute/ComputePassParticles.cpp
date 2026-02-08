@@ -9,6 +9,7 @@
 
 using namespace AstroTools::Rendering;
 
+
 ComputePassParticles::ComputePassParticles()
     : m_frameIdxModulo(0)
 {
@@ -27,8 +28,8 @@ void ComputePassParticles::Init(IRenderer* renderer, AstroTools::Rendering::Shad
 {
     const auto rootPath = s2ws(DX::GetWorkingDirectory());
     {
-        renderer->CreateStructuredBufferAndViews(m_particleDataBufferPing.get(), true, true);
-        renderer->CreateStructuredBufferAndViews(m_particleDataBufferPong.get(), true, true);
+        renderer->CreateStructuredBufferAndViews(m_particleDataBufferPing.get(), std::wstring_view(L"ParticlesData_Ping"), true, true);
+        renderer->CreateStructuredBufferAndViews(m_particleDataBufferPong.get(), std::wstring_view(L"ParticlesData_Pong"), true, true);
 
         const auto computeShaderPath = rootPath + std::wstring(L"\\Shaders\\particles.hlsl");
 

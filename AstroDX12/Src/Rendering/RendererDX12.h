@@ -38,16 +38,18 @@ protected:
     virtual void CreateRenderTargetView(ID3D12Resource* resource, const D3D12_RENDER_TARGET_VIEW_DESC* desc) override;
     virtual void CreateGlobalDescriptorHeaps() override;
 public:
-    virtual D3D12_GPU_DESCRIPTOR_HANDLE CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize) override;
+    virtual int32_t CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize) override;
 
-    virtual void CreateStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav) override;
+    virtual void CreateStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, std::wstring_view bufferName, bool srv, bool uav, bool viewsAreByteAddress = false) override;
+    virtual void CreateCommandSignature(D3D12_COMMAND_SIGNATURE_DESC* sigDesc, ComPtr<ID3D12RootSignature> executeIndirectRootSignature, ComPtr<ID3D12CommandSignature>& commandSignature) override;
     virtual void CreateGraphicsPipelineState(
         ComPtr<ID3D12PipelineState>& pso,
         ComPtr<ID3D12RootSignature>& rootSignature,
         const std::vector<D3D12_INPUT_ELEMENT_DESC>* inputLayout,
         ComPtr<IDxcBlob>& vertexShaderByteCode,
         ComPtr<IDxcBlob>& pixelShaderByteCode,
-        bool wireframeEnabled = false) override;
+        bool wireframeEnabled = false,
+        D3D12_PRIMITIVE_TOPOLOGY_TYPE topology = D3D12_PRIMITIVE_TOPOLOGY_TYPE::D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE) override;
     virtual void CreateComputePipelineState(
         ComPtr<ID3D12PipelineState>& pso,
         ComPtr<ID3D12RootSignature>& rootSignature,
@@ -67,9 +69,9 @@ public:
         bool needUAV,
         std::wstring name,
         DXGI_FORMAT format,
-        int32_t width,
-        int32_t height,
-        int32_t depth,
+        int16_t width,
+        int16_t height,
+        int16_t depth,
         D3D12_RESOURCE_STATES initialResourceState,
         int16_t mipLevels = 0,
         D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE,

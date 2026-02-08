@@ -20,6 +20,7 @@ using namespace AstroTools::Rendering;
 namespace Privates
 {
     const std::string MeshName("BoxGeometry");
+	const std::wstring BufferName(L"RenderableObjectConstants");
 }
 
 void BasePassSceneGeometry::Init(IRenderer* renderer, ShaderLibrary& shaderLibrary, MeshLibrary& meshLibrary, int16_t numFrameResources)
@@ -40,7 +41,7 @@ void BasePassSceneGeometry::Init(IRenderer* renderer, ShaderLibrary& shaderLibra
     {
         m_renderableObjectConstantsDataBufferPerFrameResources.emplace_back(
             std::move(std::make_unique<StructuredBuffer<RenderableObjectConstantData>>(BufferDataVector)));
-        renderer->CreateStructuredBufferAndViews(m_renderableObjectConstantsDataBufferPerFrameResources[frameIdx].get(), true, false);
+        renderer->CreateStructuredBufferAndViews(m_renderableObjectConstantsDataBufferPerFrameResources[frameIdx].get(), std::wstring_view(Privates::BufferName), true, false);
     }
 
     int16_t index = 0;

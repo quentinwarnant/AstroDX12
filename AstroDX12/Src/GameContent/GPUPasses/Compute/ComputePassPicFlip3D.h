@@ -9,6 +9,8 @@
 #include <Rendering/Common/Texture3D.h>
 #include <Rendering/Common/RenderResourcePair.h>
 
+#include <GameContent/GPUPasses/Debugging/ComputePassVertexLineDebugDraw.h>
+
 namespace PicFlip
 {
     struct ParticleData
@@ -32,7 +34,7 @@ class ComputePassPicFlip3D :
     public ComputePass
 {
 public:
-    void Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary);
+    void Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, std::shared_ptr<ComputePassVertexLineDebugDraw> debugDrawLine);
     virtual void Update(const GPUPassUpdateData& updateData) override;
     virtual void Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float deltaTime, const FrameResource& frameResources) const override;
     virtual void Shutdown() override;
@@ -43,6 +45,8 @@ public:
 private:
 	int32_t m_frameIdxModulo = 0;
 	int32_t m_ParticleReadBufferSRVIndex = 0;
+    int32_t m_debugDrawLineVertexBufferUAVIdx;
+    int32_t m_debugDrawLineCounterBufferUAVIdx;
 
     std::unique_ptr<PicFlip::ParticleDataBufferPair> m_particleDataBufferPair;
 

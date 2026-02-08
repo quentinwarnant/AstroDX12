@@ -10,10 +10,11 @@ namespace Privates
 {
     int32_t ParticleCount = 100;
     const std::string MeshName = "Sphere";
-	ivec3 GridResolution = ivec3(32, 32, 32);
+	ivec3 ParticlesSpawnOffset = ivec3(12, 12, 12);
+	ivec3 GridResolution = ivec3(8, 8, 8);
 	ivec3 GridWorldPosition = ivec3(5, 5, 5);
 	ivec3 GridWorldExtents = ivec3(30, 30, 30);
-	ivec3 DispatchThreadGroupSize = ivec3(32, 32, 1);
+	ivec3 DispatchThreadGroupSize = ivec3(8, 8, 8);
 
     ivec3 CalculateDispatchGroupCount()
     {
@@ -24,7 +25,7 @@ namespace Privates
 	}
 }
 
-void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary)
+void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, std::shared_ptr<ComputePassVertexLineDebugDraw> debugDrawLine)
 {
     auto BufferDataVector = std::vector<PicFlip::ParticleData>(Privates::ParticleCount);
     int32_t index = 0;
@@ -33,9 +34,9 @@ void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::Shad
         const int ParticleGridSpacing = 5;
         float x = (float(index % ParticleGridSpacing) * 3.f);
         ParticleData.Pos = XMFLOAT3(
-            Privates::GridWorldPosition.x + x,
-            Privates::GridWorldPosition.y + ((index / (ParticleGridSpacing* ParticleGridSpacing)) * 2.f),
-            Privates::GridWorldPosition.z + ((index % (ParticleGridSpacing * ParticleGridSpacing)) / 10) * 3.f);
+            Privates::ParticlesSpawnOffset.x + x,
+            Privates::ParticlesSpawnOffset.y + ((index / (ParticleGridSpacing* ParticleGridSpacing)) * 2.f),
+            Privates::ParticlesSpawnOffset.z + ((index % (ParticleGridSpacing * ParticleGridSpacing)) / 10) * 3.f);
         ParticleData.Vel = XMFLOAT3(0.f, 0.f, 0.f);
         index++;
     }
@@ -45,8 +46,8 @@ void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::Shad
         std::make_shared<StructuredBuffer<PicFlip::ParticleData>>(BufferDataVector)
     );
 
-    renderer->CreateStructuredBufferAndViews(m_particleDataBufferPair->GetInput(), true, true);
-    renderer->CreateStructuredBufferAndViews(m_particleDataBufferPair->GetOutput(), true, true);
+    renderer->CreateStructuredBufferAndViews(m_particleDataBufferPair->GetInput(), std::wstring_view(L"PicFlipParticlesData_Ping"), true, true);
+    renderer->CreateStructuredBufferAndViews(m_particleDataBufferPair->GetOutput(), std::wstring_view(L"PicFlipParticlesData_Pong"), true, true);
     
     m_pressureGridPair = std::make_unique<PicFlip::GridDataBufferPair>(
         std::make_shared<Texture3D>(),
@@ -87,7 +88,7 @@ void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::Shad
             {
                 .ShaderRegister = 0,
                 .RegisterSpace = 0,
-                .Num32BitValues = 16
+                .Num32BitValues = 18
             },
             .ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL
         };
@@ -132,6 +133,9 @@ void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::Shad
 
         m_particlesComputeObj = std::make_unique<ComputableObject>(computableObjDesc.RootSignature, computableObjDesc.PipelineStateObject);
     }
+
+    m_debugDrawLineVertexBufferUAVIdx = debugDrawLine->GetDebugDrawLineVertexBufferUAVIndex();
+    m_debugDrawLineCounterBufferUAVIdx = debugDrawLine->GetLineCountBufferUAVIndex();
 }
 
 int32_t ComputePassPicFlip3D::GetParticleReadBufferSRVHeapIndex() const
@@ -150,7 +154,7 @@ void ComputePassPicFlip3D::Update(const GPUPassUpdateData& /*updateData*/)
     m_pressureGridPair->Swap();
 }
 
-void ComputePassPicFlip3D::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float deltaTime, const FrameResource& frameResources) const
+void ComputePassPicFlip3D::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float /*deltaTime*/, const FrameResource& /*frameResources*/) const
 {
     PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "ComputePassPicFlip3D");
 
@@ -168,7 +172,9 @@ void ComputePassPicFlip3D::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, fl
         Privates::GridResolution.x, Privates::GridResolution.y, Privates::GridResolution.z, 0,
         Privates::GridWorldPosition.x, Privates::GridWorldPosition.y, Privates::GridWorldPosition.z, 0,
         Privates::GridWorldExtents.x, Privates::GridWorldExtents.y, Privates::GridWorldExtents.z,
-        Privates::ParticleCount
+        Privates::ParticleCount,
+
+        m_debugDrawLineVertexBufferUAVIdx, m_debugDrawLineCounterBufferUAVIdx
 
     };
 
@@ -201,7 +207,7 @@ void ComputePassPicFlip3D::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, fl
         pressureGridTextureInStateTransition,
         pressureGridTextureOutStateTransition
     };
-    cmdList->ResourceBarrier(buffersStateTransition.size(), buffersStateTransition.data());
+    cmdList->ResourceBarrier((UINT)buffersStateTransition.size(), buffersStateTransition.data());
 }
 
 void ComputePassPicFlip3D::Shutdown()
@@ -290,11 +296,11 @@ void GraphicsPassPicFlip3D::Init(std::weak_ptr<const ComputePassPicFlip3D> fluid
         ps);
 }
 
-void GraphicsPassPicFlip3D::Update(const GPUPassUpdateData& updateData)
+void GraphicsPassPicFlip3D::Update(const GPUPassUpdateData& /*updateData*/)
 {
 }
 
-void GraphicsPassPicFlip3D::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float deltaTime, const FrameResource& frameResources) const
+void GraphicsPassPicFlip3D::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float /*deltaTime*/, const FrameResource& frameResources) const
 {
     PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "GraphicsPassFluidSim2D");
 

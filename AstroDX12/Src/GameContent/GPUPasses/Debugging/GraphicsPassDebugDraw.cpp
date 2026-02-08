@@ -22,7 +22,7 @@ void GraphicsPassDebugDraw::Init(IRenderer* renderer, AstroTools::Rendering::Sha
     }
 
     m_debugObjectsBuffer = std::make_unique<StructuredBuffer<GraphicsPassDebugDraw::DebugObjectData>>(BufferDataVector);
-    renderer->CreateStructuredBufferAndViews(m_debugObjectsBuffer.get(), true, true);
+    renderer->CreateStructuredBufferAndViews(m_debugObjectsBuffer.get(), std::wstring_view(L"DebugDrawData"), true, true);
 
 	CreateRootSignature(renderer);
 	CreatePipelineState(renderer, shaderLibrary);

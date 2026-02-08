@@ -16,6 +16,7 @@
 #include <GameContent/GPUPasses/GraphicsPassCopyGBufferToBackbuffer.h>
 #include <GameContent/GPUPasses/Compute/ComputePassPhysicsChain.h>
 #include <GameContent/GPUPasses/Debugging/GraphicsPassDebugDraw.h>
+#include <GameContent/GPUPasses/Debugging/ComputePassVertexLineDebugDraw.h>
 #include <GameContent/GPUPasses/Compute/ComputePassFluidSim2D.h>
 #include <GameContent/GPUPasses/Compute/ComputePassPicFlip3D.h>
 
@@ -64,7 +65,8 @@ void AstroGameInstance::CreateConstantBufferViews()
 		D3D12_GPU_VIRTUAL_ADDRESS cbAddress = passCB->GetGPUVirtualAddress();
 
 		// Finalise creation of constant buffer view
-		const auto cbvGpuHandle = m_renderer->CreateConstantBufferView(cbAddress, passCBByteSize);
+		const auto cbvHeapDescriptorIndex = m_renderer->CreateConstantBufferView(cbAddress, passCBByteSize);
+		m_frameResources[frameIdx]->PassConstantBuffer->SetHeapDescriptorIndex(cbvHeapDescriptorIndex);
 	}
 }
 
@@ -128,6 +130,9 @@ void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shade
 	//baseGeoPass->Init(m_renderer.get(),shaderLibrary, *m_meshLibrary, NumFrameResources);
 	//m_gpuPasses.push_back(std::move(baseGeoPass));
 
+	auto debugDrawLinePass = std::make_shared<ComputePassVertexLineDebugDraw>();
+	debugDrawLinePass->Init(m_renderer.get(), shaderLibrary);
+
 	auto debugDrawRenderPass = std::make_shared< GraphicsPassDebugDraw >();
 	debugDrawRenderPass->Init(m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
 
@@ -164,7 +169,7 @@ void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shade
 
 	// Pic Flip 3D fluid sim
 	auto fluidSim3DComputePass = std::make_shared< ComputePassPicFlip3D >();
-	fluidSim3DComputePass->Init(m_renderer.get(), shaderLibrary);
+	fluidSim3DComputePass->Init(m_renderer.get(), shaderLibrary, debugDrawLinePass);
 
 	auto fluidSim3DGraphicsPass = std::make_shared< GraphicsPassPicFlip3D >();
 	fluidSim3DGraphicsPass->Init(fluidSim3DComputePass, m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
@@ -176,6 +181,7 @@ void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shade
 	
 
 	 //Debug draw is the last pass to render debug objects on top of everything else
+	m_gpuPasses.push_back(std::move(debugDrawLinePass));
 	m_gpuPasses.push_back(std::move(debugDrawRenderPass));
 	
 	//auto raymarchSDFScenePass = std::make_shared<ComputePassRaymarchScene>();

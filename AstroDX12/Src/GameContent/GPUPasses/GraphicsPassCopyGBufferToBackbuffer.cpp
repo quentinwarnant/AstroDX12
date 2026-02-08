@@ -83,8 +83,11 @@ void GraphicsPassCopyGBufferToBackbuffer::Init(IRenderer* renderer, AstroTools::
     RendererContext& rendererContext = renderer->GetRendererContext();
 	const UINT64 IndexBufferByteSize = PassPrivates::VertexIndices.size() * sizeof(uint32_t);
 
-	m_indexBufferGPU = AstroTools::Rendering::CreateDefaultBuffer(rendererContext.Device.Get(), rendererContext.CommandList.Get(),
-		PassPrivates::VertexIndices.data(), IndexBufferByteSize, false, m_indexUploadBuffer);
+	m_indexBufferGPU = AstroTools::Rendering::CreateDefaultBuffer(
+        rendererContext.Device.Get(), rendererContext.CommandList.Get(),
+        PassPrivates::VertexIndices.data(), IndexBufferByteSize, false,
+		std::wstring_view(L"GraphicsPassCopyGBufferToBackbuffer_IndexBuffer"),
+        m_indexUploadBuffer);
 
 	m_indexBufferView.BufferLocation = m_indexBufferGPU->GetGPUVirtualAddress();
 	m_indexBufferView.Format = DXGI_FORMAT_R32_UINT;

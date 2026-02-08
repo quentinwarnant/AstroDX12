@@ -11,7 +11,14 @@ using namespace DX;
 class IStructuredBuffer
 {
 public:
-	virtual void Init(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, bool needSRV, bool needUAV, DescriptorHeap& descriptorHeap) = 0;
+	virtual void Init(
+		ID3D12Device* device, 
+		ID3D12GraphicsCommandList* cmdList,
+		std::wstring_view bufferName, 
+		bool needSRV,
+		bool needUAV, 
+		DescriptorHeap& descriptorHeap, 
+		bool viewsAreByteAddress = false) = 0;
 	virtual void DisposeUploadBuffer() = 0;
 };
 
@@ -40,10 +47,17 @@ public:
 		m_mappedData = nullptr;
 	}
 
-	virtual void Init(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, bool needSRV, bool needUAV, DescriptorHeap& descriptorHeap) override
+	virtual void Init(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, std::wstring_view bufferName, bool needSRV, bool needUAV, DescriptorHeap& descriptorHeap, bool viewsAreByteAddress = false) override
 	{
 		// Creates both he default buffer and the "helper" upload buffer + adds the copy of data resources copy to the command list
-		m_defaultBuffer = AstroTools::Rendering::CreateDefaultBuffer(device, cmdList, m_dataVector.data(), m_dataVector.size() * m_elementByteSize, needUAV, m_uploadBuffer);
+		m_defaultBuffer = AstroTools::Rendering::CreateDefaultBuffer(
+			device,
+			cmdList,
+			m_dataVector.data(),
+			m_dataVector.size() * m_elementByteSize,
+			needUAV,
+			bufferName,
+			m_uploadBuffer);
 
 		// Assigns a pointer to m_mappedData that points to the subresource 0 inside the "uploadBuffer" I3D12Resource
 		// This way we can modify the contents of the upload buffer using CopyData()
@@ -55,14 +69,28 @@ public:
 		if (needSRV)
 		{
 			SrvIndex = descriptorHeap.GetCurrentDescriptorHeapHandle();
-			CreateSRV(device, descriptorHeap.GetCPUDescriptorHandleByIndex(SrvIndex));
+			if (viewsAreByteAddress)
+			{
+				CreateByteAddressSRV(device, descriptorHeap.GetCPUDescriptorHandleByIndex(SrvIndex));
+			}
+			else
+			{
+				CreateSRV(device, descriptorHeap.GetCPUDescriptorHandleByIndex(SrvIndex));
+			}
 			descriptorHeap.IncreaseCurrentDescriptorHeapHandle();
 		}
 		
 		if (needUAV)
 		{
 			UavIndex = descriptorHeap.GetCurrentDescriptorHeapHandle();
-			CreateUAV(device, descriptorHeap.GetCPUDescriptorHandleByIndex(UavIndex));
+			if (viewsAreByteAddress)
+			{
+				CreateByteAddressUAV(device, descriptorHeap.GetCPUDescriptorHandleByIndex(UavIndex));
+			}
+			else
+			{
+				CreateUAV(device, descriptorHeap.GetCPUDescriptorHandleByIndex(UavIndex));
+			}
 			descriptorHeap.IncreaseCurrentDescriptorHeapHandle();
 		}
 	}
@@ -113,12 +141,7 @@ private:
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
 		srvDesc.Format = DXGI_FORMAT_UNKNOWN;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-		srvDesc.Shader4ComponentMapping = D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING(
-			D3D12_SHADER_COMPONENT_MAPPING_FROM_MEMORY_COMPONENT_0,
-			D3D12_SHADER_COMPONENT_MAPPING_FROM_MEMORY_COMPONENT_1,
-			D3D12_SHADER_COMPONENT_MAPPING_FROM_MEMORY_COMPONENT_2,
-			D3D12_SHADER_COMPONENT_MAPPING_FROM_MEMORY_COMPONENT_3
-		);
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
 		srvDesc.Buffer.FirstElement = 0;
 		srvDesc.Buffer.NumElements = UINT(m_dataVector.size());
@@ -126,6 +149,21 @@ private:
 		srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
 		device->CreateShaderResourceView(Resource(),  &srvDesc, cpuDescriptorHandle);
+	}
+
+	void CreateByteAddressSRV(ID3D12Device* device, D3D12_CPU_DESCRIPTOR_HANDLE cpuDescriptorHandle)
+	{
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
+		srvDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+		srvDesc.Buffer.FirstElement = 0;
+		srvDesc.Buffer.NumElements = UINT(sizeof(m_dataVector[0]) * m_dataVector.size() / 4); // elements for byteAddressBuffer is measured in number of 4 bytes
+		srvDesc.Buffer.StructureByteStride = 0;
+		srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;
+
+		device->CreateShaderResourceView(Resource(), &srvDesc, cpuDescriptorHandle);
 	}
 
 	void CreateUAV(ID3D12Device* device, D3D12_CPU_DESCRIPTOR_HANDLE cpuDescriptorHandle)
@@ -139,6 +177,21 @@ private:
 		uavDesc.Buffer.StructureByteStride = m_elementByteSize;
 		uavDesc.Buffer.CounterOffsetInBytes = 0;
 		uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+
+		device->CreateUnorderedAccessView(Resource(), nullptr, &uavDesc, cpuDescriptorHandle);
+	}
+
+	void CreateByteAddressUAV(ID3D12Device* device, D3D12_CPU_DESCRIPTOR_HANDLE cpuDescriptorHandle)
+	{
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc;
+		uavDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+
+		uavDesc.Buffer.FirstElement = 0;
+		uavDesc.Buffer.NumElements = UINT(sizeof(m_dataVector[0]) * m_dataVector.size() / 4); // elements for byteAddressBuffer is measured in number of 4 bytes
+		uavDesc.Buffer.StructureByteStride = 0;
+		uavDesc.Buffer.CounterOffsetInBytes = 0;
+		uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW;
 
 		device->CreateUnorderedAccessView(Resource(), nullptr, &uavDesc, cpuDescriptorHandle);
 	}

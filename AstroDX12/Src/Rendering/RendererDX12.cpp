@@ -305,7 +305,7 @@ void RendererDX12::CreateGlobalDescriptorHeaps()
 	D3D12_DESCRIPTOR_HEAP_DESC cpuDescriptorHeapDesc{};
 	cpuDescriptorHeapDesc.NumDescriptors = (UINT)descriptorCount;
 	cpuDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	cpuDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	cpuDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE; // - not shader visible
 	cpuDescriptorHeapDesc.NodeMask = 0; // device/Adapter index
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> cpuRTVHeap;
@@ -495,7 +495,7 @@ void RendererDX12::Shutdown()
 {
 }
 
-D3D12_GPU_DESCRIPTOR_HANDLE RendererDX12::CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize)
+int32_t RendererDX12::CreateConstantBufferView(D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress, UINT cbvByteSize)
 {
 	const auto cbvDescriptorIndex = m_globalCBVSRVUAVDescriptorHeap->GetCurrentDescriptorHeapHandle();
 	const auto cpuDescriptorHandle = m_globalCBVSRVUAVDescriptorHeap->GetCPUDescriptorHandleByIndex(cbvDescriptorIndex);
@@ -508,12 +508,24 @@ D3D12_GPU_DESCRIPTOR_HANDLE RendererDX12::CreateConstantBufferView(D3D12_GPU_VIR
 
 	m_device->CreateConstantBufferView(&cbViewDesc, cpuDescriptorHandle);
 
-	return gpuDescriptorHandle;
+	return cbvDescriptorIndex;
 }
 
-void RendererDX12::CreateStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, bool srv, bool uav)
+void RendererDX12::CreateStructuredBufferAndViews(IStructuredBuffer* structuredBuffer, std::wstring_view bufferName, bool srv, bool uav, bool viewsAreByteAddress)
 {
-	structuredBuffer->Init(m_device.Get(), m_commandList.Get(), srv, uav, *m_globalCBVSRVUAVDescriptorHeap);
+	structuredBuffer->Init(
+		m_device.Get(),
+		m_commandList.Get(),
+		bufferName,
+		srv, 
+		uav,
+		*m_globalCBVSRVUAVDescriptorHeap, 
+		viewsAreByteAddress);
+}
+
+void RendererDX12::CreateCommandSignature(D3D12_COMMAND_SIGNATURE_DESC* sigDesc, ComPtr<ID3D12RootSignature> executeIndirectRootSignature, ComPtr<ID3D12CommandSignature>& commandSignature)
+{
+	m_device->CreateCommandSignature(sigDesc, executeIndirectRootSignature.Get(), IID_PPV_ARGS(&commandSignature));
 }
 
 void RendererDX12::CreateGraphicsPipelineState(
@@ -522,7 +534,8 @@ void RendererDX12::CreateGraphicsPipelineState(
 	const std::vector<D3D12_INPUT_ELEMENT_DESC>* inputLayout,
 	ComPtr<IDxcBlob>& vertexShaderByteCode,
 	ComPtr<IDxcBlob>& pixelShaderByteCode,
-	bool wireframeEnabled /*= false*/)
+	bool wireframeEnabled /* false*/, 
+	D3D12_PRIMITIVE_TOPOLOGY_TYPE topology /*D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE*/)
 {
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
 	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
@@ -552,7 +565,7 @@ void RendererDX12::CreateGraphicsPipelineState(
 	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 	psoDesc.SampleMask = UINT_MAX;
-	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	psoDesc.PrimitiveTopologyType = topology;
 	psoDesc.NumRenderTargets = 1;
 	psoDesc.RTVFormats[0] =  m_backbufferFormat;
 	psoDesc.SampleDesc.Count = 1;
@@ -633,9 +646,9 @@ void RendererDX12::InitialiseTexture3D(
 	bool needUAV,
 	std::wstring name,
 	DXGI_FORMAT format,
-	int32_t width,
-	int32_t height,
-	int32_t depth,
+	int16_t width,
+	int16_t height,
+	int16_t depth,
 	D3D12_RESOURCE_STATES initialResourceState,
 	int16_t mipLevels,
 	D3D12_RESOURCE_FLAGS flags,

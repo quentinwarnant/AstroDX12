@@ -41,6 +41,7 @@ struct ivec2
 	}
 };
 
+
 struct ivec3
 {
 	int32_t x;

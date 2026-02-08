@@ -207,6 +207,7 @@ namespace AstroTools
 			const void* initData,
 			UINT64 byteSize,
 			bool enableUAVsupport,
+			std::wstring_view bufferName,
 			Microsoft::WRL::ComPtr<ID3D12Resource>& uploadBuffer
 		)
 		{
@@ -226,7 +227,8 @@ namespace AstroTools
 				D3D12_RESOURCE_STATE_COMMON,
 				nullptr,
 				IID_PPV_ARGS(defaultBuffer.GetAddressOf())));
-
+			
+			defaultBuffer->SetName(bufferName.data());
 			// In order to copy CPU memory data into our default buffer, we need to create
 			// an intermediate upload heap. 
 			auto uploadHeapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
