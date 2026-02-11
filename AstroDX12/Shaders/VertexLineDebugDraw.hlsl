@@ -34,19 +34,33 @@ struct PSInput
     float4 Color : COLOR;
 };
 
+float4 GetDebugColor(int index)
+{
+    const float4 DebugColors[8] = {
+        float4(1, 0, 0, 1), // Red
+        float4(0, 1, 0, 1), // Green
+        float4(0, 0, 1, 1), // Blue
+        float4(1, 1, 0, 1), // Yellow
+        float4(1, 0, 1, 1), // Magenta
+        float4(0, 1, 1, 1), // Cyan
+        float4(1, 0.5f, 0, 1), // Orange
+        float4(0.5f, 0, 1, 1) // Purple
+    };
+    
+    return DebugColors[index];
+}
+
 PSInput VS(uint VertexID : SV_VertexID, uint InstanceID : SV_InstanceID)
 {
     PSInput o;
 
     ConstantBuffer<GlobalSceneData> SceneData = ResourceDescriptorHeap[globalCBVIdx];
     StructuredBuffer<VertexData> vertexData = ResourceDescriptorHeap[debugDrawLineVertexDataBufferIdx];
-
     
 	// Transform to homogeneous clip space.
     const float3 posW = vertexData[VertexID].posWorld;
-    o.PosH = mul(float4(posW, 1.0f), SceneData.gViewProj); // when we've plugged the CBV we can use this
-    //o.PosH = float4(posW, 1.0f);
-    o.Color = float4(0, 1, 0, 1); // TODO : use color index to pick color
+    o.PosH = mul(float4(posW, 1.0f), SceneData.gViewProj); 
+    o.Color = GetDebugColor(vertexData[VertexID].colorIndex);
 
     return o;
 }
