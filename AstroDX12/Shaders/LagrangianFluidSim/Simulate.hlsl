@@ -31,6 +31,154 @@ struct DebugLineVertex
     int ColorIndex;
 };
 
+void DebugDrawCellEdges(float3 cellPos, float3 gridCellHalfSize, bool3 isEdgeCell)
+{
+    RWStructuredBuffer<DebugLineVertex> debugDrawLineVertexBuffer = ResourceDescriptorHeap[debugDrawLineVertexBufferIndex];
+    RWByteAddressBuffer debugDrawLineCounterBuffer = ResourceDescriptorHeap[debugDrawLineCounterBufferIndex];
+        
+    int newEdgeCount = 3;
+    if (isEdgeCell.x) // There will be a bit of overlap on cube corners, but that's fine
+    {
+        newEdgeCount += 4;
+    }
+    if (isEdgeCell.y)
+    {
+        newEdgeCount += 4;
+    }
+    if (isEdgeCell.z)
+    {
+        newEdgeCount += 4;
+    }
+
+
+    
+    uint cellIndex;
+    debugDrawLineCounterBuffer.InterlockedAdd(0, newEdgeCount, cellIndex); 
+    if (cellIndex < 100000000) // MAX_DEBUG_LINES_PER_FRAME
+    {
+        uint vertexIndex = cellIndex * 2;
+            
+        // BLB (bottom, left, back)
+        const float3 BLBCorner = cellPos - gridCellHalfSize;
+        const float3 BLFCorner = cellPos + float3(-gridCellHalfSize.x, -gridCellHalfSize.y, gridCellHalfSize.z);
+        const float3 TLFCorner = cellPos + float3(-gridCellHalfSize.x, gridCellHalfSize.y, gridCellHalfSize.z);
+        const float3 TLBCorner = cellPos + float3(-gridCellHalfSize.x, gridCellHalfSize.y, -gridCellHalfSize.z);
+         
+        const float3 BRBCorner = cellPos + float3(gridCellHalfSize.x, -gridCellHalfSize.y, -gridCellHalfSize.z);
+        const float3 BRFCorner = cellPos + float3(gridCellHalfSize.x, -gridCellHalfSize.y, gridCellHalfSize.z);
+        const float3 TRFCorner = cellPos + gridCellHalfSize;
+        const float3 TRBCorner = cellPos + float3(gridCellHalfSize.x, gridCellHalfSize.y, -gridCellHalfSize.z);
+            
+        // Only draw edges leaving from bottom left back corner to avoid double drawing edges between cells
+        // We will fix the outer sides with special cases.
+        
+        // Left face
+        debugDrawLineVertexBuffer[vertexIndex].Pos = BLBCorner;
+        debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 1;
+        debugDrawLineVertexBuffer[vertexIndex + 1].Pos = BLFCorner;
+        debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
+            
+        vertexIndex += 2;
+        debugDrawLineVertexBuffer[vertexIndex].Pos = BLBCorner;
+        debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 1;
+        debugDrawLineVertexBuffer[vertexIndex + 1].Pos = TLBCorner;
+        debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
+            
+        vertexIndex += 2;
+        debugDrawLineVertexBuffer[vertexIndex].Pos = BLBCorner;
+        debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 1;
+        debugDrawLineVertexBuffer[vertexIndex + 1].Pos = BRBCorner;
+        debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
+        
+        
+        
+        if (isEdgeCell.x)
+        {
+            debugDrawLineCounterBuffer.InterlockedAdd(0, 4, cellIndex);
+            vertexIndex += 2;
+            debugDrawLineVertexBuffer[vertexIndex].Pos = BRBCorner;
+            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 1;
+            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = BRFCorner;
+            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
+                
+            vertexIndex += 2;
+            debugDrawLineVertexBuffer[vertexIndex].Pos = BRFCorner;
+            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 1;
+            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = TRFCorner;
+            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
+
+            vertexIndex += 2;
+            debugDrawLineVertexBuffer[vertexIndex].Pos = TRFCorner;
+            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 1;
+            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = TRBCorner;
+            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
+            
+            vertexIndex += 2;
+            debugDrawLineVertexBuffer[vertexIndex].Pos = TRBCorner;
+            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 1;
+            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = BRBCorner;
+            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
+        }
+        
+        
+        if (isEdgeCell.y)
+        {
+            debugDrawLineCounterBuffer.InterlockedAdd(0, 4, cellIndex);
+            vertexIndex += 2;
+            debugDrawLineVertexBuffer[vertexIndex].Pos = TLBCorner;
+            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 1;
+            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = TLFCorner;
+            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
+                
+            vertexIndex += 2;
+            debugDrawLineVertexBuffer[vertexIndex].Pos = TLFCorner;
+            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 1;
+            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = TRFCorner;
+            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
+
+            vertexIndex += 2;
+            debugDrawLineVertexBuffer[vertexIndex].Pos = TRFCorner;
+            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 1;
+            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = TRBCorner;
+            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
+            
+            vertexIndex += 2;
+            debugDrawLineVertexBuffer[vertexIndex].Pos = TRBCorner;
+            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 1;
+            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = TLBCorner;
+            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
+        }
+        
+        if (isEdgeCell.z)
+        {
+            debugDrawLineCounterBuffer.InterlockedAdd(0, 4, cellIndex);
+            vertexIndex += 2;
+            debugDrawLineVertexBuffer[vertexIndex].Pos = BLFCorner;
+            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 1;
+            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = TLFCorner;
+            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
+                
+            vertexIndex += 2;
+            debugDrawLineVertexBuffer[vertexIndex].Pos = TLFCorner;
+            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 1;
+            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = TRFCorner;
+            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
+
+            vertexIndex += 2;
+            debugDrawLineVertexBuffer[vertexIndex].Pos = TRFCorner;
+            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 1;
+            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = BRFCorner;
+            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
+            
+            vertexIndex += 2;
+            debugDrawLineVertexBuffer[vertexIndex].Pos = BRFCorner;
+            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 1;
+            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = BLFCorner;
+            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
+        }
+    }
+}
+
 
 [numthreads(THREAD_GROUP_SIZE_X, THREAD_GROUP_SIZE_Y, THREAD_GROUP_SIZE_Z)]
 void CSMain(uint3 DTid : SV_DispatchThreadID)
@@ -50,104 +198,12 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
     float4 cellData = pressureGridIn[DTid];
     
     
-    //if( DTid.x < 2 && DTid.y == 0 && DTid.z == 0)
-    {
-        RWStructuredBuffer<DebugLineVertex> debugDrawLineVertexBuffer = ResourceDescriptorHeap[debugDrawLineVertexBufferIndex];
-        RWByteAddressBuffer debugDrawLineCounterBuffer = ResourceDescriptorHeap[debugDrawLineCounterBufferIndex];
-        
-        uint cellIndex;
-        debugDrawLineCounterBuffer.InterlockedAdd(0, 12, cellIndex); // 12 edges per cube
-        if (cellIndex < 10000000) // MAX_DEBUG_LINES_PER_FRAME
-        {
-            uint vertexIndex = cellIndex * 2;
-            
-            // BLB (bottom, left, back)
-            float3 BLBCorner = cellPos - gridCellHalfSize;
-            float3 BLFCorner = cellPos + float3(-gridCellHalfSize.x, -gridCellHalfSize.y, gridCellHalfSize.z);
-            float3 TLFCorner = cellPos + float3(-gridCellHalfSize.x, gridCellHalfSize.y, gridCellHalfSize.z);
-            float3 TLBCorner = cellPos + float3(-gridCellHalfSize.x, gridCellHalfSize.y, -gridCellHalfSize.z);
-
-            float3 BRBCorner = cellPos + float3(gridCellHalfSize.x, -gridCellHalfSize.y, -gridCellHalfSize.z);
-            float3 BRFCorner = cellPos + float3(gridCellHalfSize.x, -gridCellHalfSize.y, gridCellHalfSize.z);
-            float3 TRFCorner = cellPos + gridCellHalfSize;
-            float3 TRBCorner = cellPos + float3(gridCellHalfSize.x, gridCellHalfSize.y, -gridCellHalfSize.z);
-            
-            // Left face
-            debugDrawLineVertexBuffer[vertexIndex].Pos = BLBCorner;
-            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 0;
-            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = BLFCorner;
-            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
-            
-            vertexIndex+=2;
-            debugDrawLineVertexBuffer[vertexIndex].Pos = BLFCorner;
-            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 0;
-            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = TLFCorner;
-            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
-            
-            vertexIndex += 2;
-            debugDrawLineVertexBuffer[vertexIndex].Pos = TLFCorner;
-            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 0;
-            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = TLBCorner;
-            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
-            
-            vertexIndex += 2;
-            debugDrawLineVertexBuffer[vertexIndex].Pos = TLBCorner;
-            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 0;
-            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = BLBCorner;
-            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
-            
-            // Right face
-            vertexIndex += 2;
-            debugDrawLineVertexBuffer[vertexIndex].Pos = BRBCorner;
-            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 0;
-            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = BRFCorner;
-            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
-            
-            vertexIndex += 2;
-            debugDrawLineVertexBuffer[vertexIndex].Pos = BRFCorner;
-            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 0;
-            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = TRFCorner;
-            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
-            
-            vertexIndex += 2;
-            debugDrawLineVertexBuffer[vertexIndex].Pos = TRFCorner;
-            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 0;
-            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = TRBCorner;
-            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
-            
-            vertexIndex += 2;
-            debugDrawLineVertexBuffer[vertexIndex].Pos = TRBCorner;
-            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 0;
-            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = BRBCorner;
-            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
-            
-            
-            // connection between faces
-            vertexIndex += 2;
-            debugDrawLineVertexBuffer[vertexIndex].Pos = BLBCorner;
-            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 0;
-            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = BRBCorner;
-            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
-            
-            vertexIndex += 2;
-            debugDrawLineVertexBuffer[vertexIndex].Pos = BLFCorner;
-            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 0;
-            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = BRFCorner;
-            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
-            
-            vertexIndex += 2;
-            debugDrawLineVertexBuffer[vertexIndex].Pos = TLFCorner;
-            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 0;
-            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = TRFCorner;
-            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
-            
-            vertexIndex += 2;
-            debugDrawLineVertexBuffer[vertexIndex].Pos = TLBCorner;
-            debugDrawLineVertexBuffer[vertexIndex].ColorIndex = 0;
-            debugDrawLineVertexBuffer[vertexIndex + 1].Pos = TRBCorner;
-            debugDrawLineVertexBuffer[vertexIndex + 1].ColorIndex = 1;
-        }
-    }
+    bool3 isEdgeCell = bool3(
+    DTid.x == pressureGridResolution.x - 1,
+    DTid.y == pressureGridResolution.y - 1,
+    DTid.z == pressureGridResolution.z - 1);
+    
+    DebugDrawCellEdges(cellPos, gridCellHalfSize, isEdgeCell);
     
     float3 accumulatedVel = float3(0.f, 0.f, 0.f);
     int particleCountInCell = 0;
