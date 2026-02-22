@@ -52,9 +52,8 @@ private:
 
     std::unique_ptr<ComputableObject> m_particlesComputeObj;
 
-	std::unique_ptr<PicFlip::GridDataBufferPair> m_pressureGridPair;
-
-
+    std::unique_ptr<PicFlip::GridDataBufferPair> m_pressureGridPair;
+    std::unique_ptr<PicFlip::GridDataBufferPair> m_velocityGridPair;
 };
 
 

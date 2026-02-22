@@ -11,18 +11,28 @@ namespace Privates
     int32_t ParticleCount = 100;
     const std::string MeshName = "Sphere";
 	ivec3 ParticlesSpawnOffset = ivec3(12, 12, 12);
-	ivec3 GridResolution = ivec3(8, 8, 8);
+    ivec3 PressureGridResolution = ivec3(8, 8, 8);
+    // velocity uses a Staggered grid, ie centered on the edges of the pressure grid, therefore it needs to be 1 element wider in each direction.
+    ivec3 VelocityGridResolution = ivec3(PressureGridResolution.x+1, PressureGridResolution.y+1, PressureGridResolution.z+1);
 	ivec3 GridWorldPosition = ivec3(5, 5, 5);
 	ivec3 GridWorldExtents = ivec3(30, 30, 30);
 	ivec3 DispatchThreadGroupSize = ivec3(8, 8, 8);
 
-    ivec3 CalculateDispatchGroupCount()
+    ivec3 Pressure_CalculateDispatchGroupCount()
     {
         return ivec3(
-            (GridResolution.x + DispatchThreadGroupSize.x - 1) / DispatchThreadGroupSize.x,
-            (GridResolution.y + DispatchThreadGroupSize.y - 1) / DispatchThreadGroupSize.y,
-            (GridResolution.z + DispatchThreadGroupSize.z - 1) / DispatchThreadGroupSize.z);
+            (PressureGridResolution.x + DispatchThreadGroupSize.x - 1) / DispatchThreadGroupSize.x,
+            (PressureGridResolution.y + DispatchThreadGroupSize.y - 1) / DispatchThreadGroupSize.y,
+            (PressureGridResolution.z + DispatchThreadGroupSize.z - 1) / DispatchThreadGroupSize.z);
 	}
+
+    ivec3 Velocity_CalculateDispatchGroupCount()
+    {
+        return ivec3(
+            (VelocityGridResolution.x + DispatchThreadGroupSize.x - 1) / DispatchThreadGroupSize.x,
+            (VelocityGridResolution.y + DispatchThreadGroupSize.y - 1) / DispatchThreadGroupSize.y,
+            (VelocityGridResolution.z + DispatchThreadGroupSize.z - 1) / DispatchThreadGroupSize.z);
+    }
 }
 
 void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, std::shared_ptr<ComputePassVertexLineDebugDraw> debugDrawLine)
@@ -54,9 +64,10 @@ void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::Shad
         std::make_shared<Texture3D>()
     );
     
-    //TODO: put the resources into the right resource state?
-    // m_particleDataBufferPair
-    // 
+    m_velocityGridPair = std::make_unique<PicFlip::GridDataBufferPair>(
+        std::make_shared<Texture3D>(),
+        std::make_shared<Texture3D>()
+    );
 
 
 	// Init pressure grid 3D textures
@@ -65,8 +76,8 @@ void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::Shad
         {
             renderer->InitialiseTexture3D(*texture3D, true,
                 name,
-                DXGI_FORMAT_R16G16B16A16_FLOAT,
-                Privates::GridResolution.x, Privates::GridResolution.y, Privates::GridResolution.z,
+                DXGI_FORMAT_R32_FLOAT,
+                Privates::PressureGridResolution.x, Privates::PressureGridResolution.y, Privates::PressureGridResolution.z,
                 initialResourceState,
                 /*miplevels*/ 0,
                 D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, 
@@ -74,6 +85,22 @@ void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::Shad
         };
         InitPressureGrid(renderer, m_pressureGridPair->GetInput(), L"PicFlip3D_PressureGrid_Ping", D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
         InitPressureGrid(renderer, m_pressureGridPair->GetOutput(), L"PicFlip3D_PressureGrid_Pong", D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    }
+
+    {
+        auto InitVelocityGrid = [](IRenderer* renderer, ITexture3D* texture3D, std::wstring name, D3D12_RESOURCE_STATES initialResourceState)
+            {
+                renderer->InitialiseTexture3D(*texture3D, true,
+                    name,
+                    DXGI_FORMAT_R16G16B16A16_FLOAT,
+                    Privates::VelocityGridResolution.x, Privates::VelocityGridResolution.y, Privates::VelocityGridResolution.z,
+                    initialResourceState,
+                    /*miplevels*/ 0,
+                    D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+                    D3D12_TEXTURE_LAYOUT_UNKNOWN);
+            };
+        InitVelocityGrid(renderer, m_velocityGridPair->GetInput(), L"PicFlip3D_VelocityGrid_Ping", D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        InitVelocityGrid(renderer, m_velocityGridPair->GetOutput(), L"PicFlip3D_VelocityGrid_Pong", D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     }
 
     const auto rootPath = s2ws(DX::GetWorkingDirectory());
@@ -88,7 +115,7 @@ void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::Shad
             {
                 .ShaderRegister = 0,
                 .RegisterSpace = 0,
-                .Num32BitValues = 18
+                .Num32BitValues = 24
             },
             .ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL
         };
@@ -152,6 +179,7 @@ void ComputePassPicFlip3D::Update(const GPUPassUpdateData& /*updateData*/)
 {
     m_particleDataBufferPair->Swap();
     m_pressureGridPair->Swap();
+    m_velocityGridPair->Swap();
 }
 
 void ComputePassPicFlip3D::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float /*deltaTime*/, const FrameResource& /*frameResources*/) const
@@ -169,22 +197,33 @@ void ComputePassPicFlip3D::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, fl
         m_particleDataBufferPair->GetOutput()->GetUAVIndex(),
         m_pressureGridPair->GetInput()->GetSRVIndex(),
         m_pressureGridPair->GetOutput()->GetUAVIndex(),
-        Privates::GridResolution.x, Privates::GridResolution.y, Privates::GridResolution.z, 0,
-        Privates::GridWorldPosition.x, Privates::GridWorldPosition.y, Privates::GridWorldPosition.z, 0,
+        
+        m_velocityGridPair->GetInput()->GetSRVIndex(),
+        m_velocityGridPair->GetOutput()->GetUAVIndex(),
+        m_debugDrawLineVertexBufferUAVIdx, 
+        m_debugDrawLineCounterBufferUAVIdx,
+        
+        Privates::PressureGridResolution.x, Privates::PressureGridResolution.y, Privates::PressureGridResolution.z,
+        0, // Pad0
+        
+        Privates::VelocityGridResolution.x, Privates::VelocityGridResolution.y, Privates::VelocityGridResolution.z,
+        0, // Pad1
+
+        Privates::GridWorldPosition.x, Privates::GridWorldPosition.y, Privates::GridWorldPosition.z, 
+        0, // Pad2
+        
         Privates::GridWorldExtents.x, Privates::GridWorldExtents.y, Privates::GridWorldExtents.z,
         Privates::ParticleCount,
-
-        m_debugDrawLineVertexBufferUAVIdx, m_debugDrawLineCounterBufferUAVIdx
-
     };
 
     cmdList->SetComputeRoot32BitConstants(
         (UINT)BindlessResourceIndicesRootSigParamIndex,
         (UINT)BindlessResourceIndices.size(), BindlessResourceIndices.data(), 0);
 
-    const ivec3 dispatchSize = Privates::CalculateDispatchGroupCount();
+    const ivec3 dispatchSize = Privates::Velocity_CalculateDispatchGroupCount();
     cmdList->Dispatch(dispatchSize.x, dispatchSize.y, dispatchSize.z);
 
+    
 
     // Transition resources into their next correct state
     const auto particleBufferInStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
@@ -199,13 +238,20 @@ void ComputePassPicFlip3D::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, fl
     const auto pressureGridTextureOutStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
         m_pressureGridPair->GetOutput()->Resource(),
         D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-
+    const auto velocityGridTextureInTransition = CD3DX12_RESOURCE_BARRIER::Transition(
+        m_velocityGridPair->GetInput()->Resource(),
+        D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    const auto velocityGridTextureOutTransition = CD3DX12_RESOURCE_BARRIER::Transition(
+        m_velocityGridPair->GetOutput()->Resource(),
+        D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
     std::vector<CD3DX12_RESOURCE_BARRIER> buffersStateTransition = { 
         particleBufferInStateTransition,
         particleBufferOutStateTransition,
         pressureGridTextureInStateTransition,
-        pressureGridTextureOutStateTransition
+        pressureGridTextureOutStateTransition,
+        velocityGridTextureInTransition,
+        velocityGridTextureOutTransition
     };
     cmdList->ResourceBarrier((UINT)buffersStateTransition.size(), buffersStateTransition.data());
 }
