@@ -39,6 +39,7 @@ void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::Shad
 {
     auto BufferDataVector = std::vector<PicFlip::ParticleData>(Privates::ParticleCount);
     int32_t index = 0;
+    std::srand(0);
     for (auto& ParticleData : BufferDataVector)
     {
         const int ParticleGridSpacing = 5;
@@ -47,7 +48,8 @@ void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::Shad
             Privates::ParticlesSpawnOffset.x + x,
             Privates::ParticlesSpawnOffset.y + ((index / (ParticleGridSpacing* ParticleGridSpacing)) * 2.f),
             Privates::ParticlesSpawnOffset.z + ((index % (ParticleGridSpacing * ParticleGridSpacing)) / 10) * 3.f);
-        ParticleData.Vel = XMFLOAT3(0.f, 0.f, 0.f);
+        ParticleData.Vel = XMFLOAT3(std::rand() * 2.f, std::rand() * 2.f, -2.f + (std::rand() * 4.f));
+        //ParticleData.Vel = XMFLOAT3(0.f,0.f,0.f);
         index++;
     }
 
@@ -301,7 +303,7 @@ void GraphicsPassPicFlip3D::Init(std::weak_ptr<const ComputePassPicFlip3D> fluid
         {
             .ShaderRegister = 1,
             .RegisterSpace = 0,
-            .Num32BitValues = 4
+            .Num32BitValues = 2
         },
         .ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL
     };
@@ -348,7 +350,7 @@ void GraphicsPassPicFlip3D::Update(const GPUPassUpdateData& /*updateData*/)
 
 void GraphicsPassPicFlip3D::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float /*deltaTime*/, const FrameResource& frameResources) const
 {
-    PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "GraphicsPassFluidSim2D");
+    PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "GraphicsPassPicFlip3D");
 
     const auto indexBuffer = m_sphereMesh.lock()->IndexBufferView();
     cmdList->IASetIndexBuffer(&indexBuffer);

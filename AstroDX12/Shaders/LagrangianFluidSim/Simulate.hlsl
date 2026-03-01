@@ -2,6 +2,8 @@
 #define THREAD_GROUP_SIZE_Y 8
 #define THREAD_GROUP_SIZE_Z 8
 
+#define MAX_PARTICLES_PER_CELL 8
+
 struct ParticleData
 {
     float3 Pos;
@@ -280,6 +282,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
     float pressure = pressureGridIn[pressureGridCellIndex];
     
     float3 accumulatedVel = float3(0.f, 0.f, 0.f);
+    int particleIndicesInCell[MAX_PARTICLES_PER_CELL];
     int particleCountInCell = 0;
     int i = 0;
     for (; i < particleCount; ++i)
@@ -290,7 +293,11 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
             abs(particlePos.z - cellPos.z) < gridCellHalfSize.z)
         {
             accumulatedVel += particlesBufferIn[i].Vel;
-            particleCountInCell++;
+            particleIndicesInCell[particleCountInCell++] = i;
+            if (particleCountInCell == MAX_PARTICLES_PER_CELL)
+            {
+                break;
+            }
         }
     }
     
@@ -314,9 +321,11 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
         DebugDrawCellBoundaryCenter(cellPos, gridCellHalfSize);
     }
     
-    i = 0;
-    for (; i < particleCount; ++i)
+    // Update each particle within the bounds of this lane's cell
+    for (uint particleInCellIdx = 0; particleInCellIdx < particleCountInCell; ++particleInCellIdx)
     {
+        i = particleIndicesInCell[particleInCellIdx];
+        
         float3 particlePos = particlesBufferIn[i].Pos;
         if (abs(particlePos.x - cellPos.x) < gridCellHalfSize.x &&
             abs(particlePos.y - cellPos.y) < gridCellHalfSize.y &&
@@ -327,41 +336,55 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
             // Gravity
             particlesBufferOut[i].Vel += float3(0.f, -98.1f, 0.f) * (1.f / 60.f);
             
+            
             // Update position
-            particlesBufferOut[i].Pos += particlesBufferOut[i].Vel * (1.f / 60.f);
+            particlesBufferOut[i].Pos = particlePos + particlesBufferOut[i].Vel * (1.f / 60.f);
             
             // Clamp to bounds
-            if (particlesBufferOut[i].Pos.x < gridPos.x)
+            const float radius = 1.0f;
+            bool applyFriction = false;
+            if (particlesBufferOut[i].Pos.x - radius < gridPos.x)
             {
-                particlesBufferOut[i].Pos.x = gridPos.x;
+                particlesBufferOut[i].Pos.x = gridPos.x + radius;
                 particlesBufferOut[i].Vel.x *= -0.5f;
+                applyFriction = true;
             }
-            else if (particlesBufferOut[i].Pos.x > gridPos.x + pressureGridExtents.x)
+            else if (particlesBufferOut[i].Pos.x + radius > gridPos.x + pressureGridExtents.x)
             {
-                particlesBufferOut[i].Pos.x = gridPos.x + pressureGridExtents.x;
+                particlesBufferOut[i].Pos.x = gridPos.x + pressureGridExtents.x - radius;
                 particlesBufferOut[i].Vel.x *= -0.5f;
+                applyFriction = true;
             }
             
-            if (particlesBufferOut[i].Pos.y < gridPos.y)
+            if (particlesBufferOut[i].Pos.y - radius < gridPos.y)
             {
-                particlesBufferOut[i].Pos.y = gridPos.y;
+                particlesBufferOut[i].Pos.y = gridPos.y + radius;
                 particlesBufferOut[i].Vel.y *= -0.5f;
+                applyFriction = true;
             }
-            else if (particlesBufferOut[i].Pos.y > gridPos.y + pressureGridExtents.y)
+            else if (particlesBufferOut[i].Pos.y - radius > gridPos.y + pressureGridExtents.y)
             {
-                particlesBufferOut[i].Pos.y = gridPos.y + pressureGridExtents.y;
+                particlesBufferOut[i].Pos.y = gridPos.y + pressureGridExtents.y - radius;
                 particlesBufferOut[i].Vel.y *= -0.5f;
+                applyFriction = true;
             }
             
-            if (particlesBufferOut[i].Pos.z < gridPos.z)
+            if (particlesBufferOut[i].Pos.z - radius < gridPos.z)
             {
-                particlesBufferOut[i].Pos.z = gridPos.z;
+                particlesBufferOut[i].Pos.z = gridPos.z + radius;
                 particlesBufferOut[i].Vel.z *= -0.5f;
+                applyFriction = true;
             }
-            else if (particlesBufferOut[i].Pos.z > gridPos.z + pressureGridExtents.z)
+            else if (particlesBufferOut[i].Pos.z + radius > gridPos.z + pressureGridExtents.z)
             {
-                particlesBufferOut[i].Pos.z = gridPos.z + pressureGridExtents.z;
+                particlesBufferOut[i].Pos.z = gridPos.z + pressureGridExtents.z - radius;
                 particlesBufferOut[i].Vel.z *= -0.5f;
+                applyFriction = true;
+            }
+            
+            if(applyFriction)
+            {
+                particlesBufferOut[i].Vel *= 0.98f;
             }
         }
     }
