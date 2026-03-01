@@ -36,7 +36,7 @@ struct PSInput
 
 float4 GetDebugColor(int index)
 {
-    const float4 DebugColors[8] = {
+    const float4 DebugColors[9] = {
         float4(1, 0, 0, 1), // Red
         float4(0, 1, 0, 1), // Green
         float4(0, 0, 1, 1), // Blue
@@ -44,7 +44,8 @@ float4 GetDebugColor(int index)
         float4(1, 0, 1, 1), // Magenta
         float4(0, 1, 1, 1), // Cyan
         float4(1, 0.5f, 0, 1), // Orange
-        float4(0.5f, 0, 1, 1) // Purple
+        float4(0.5f, 0, 1, 1), // Purple
+        float4(1.0f, 1.0f, 1.0f, 1) // white 
     };
     
     return DebugColors[index];
