@@ -256,6 +256,26 @@ void DebugDrawCellBoundaryCenter(float3 cellPos, float3 gridCellHalfSize)
     }
 }
 
+struct ParticleGridData
+{
+    uint3 cellIndex;
+    float3 baricentricWeights;
+};
+
+ParticleGridData CalculateParticleGridData(float3 particlePos, float3 gridLowerEndCorner, float3 gridCellSize)
+{
+    float3 relativePos = particlePos - gridLowerEndCorner;
+    float3 cellIndexF = relativePos / gridCellSize;
+    uint3 cellIndex = (uint3)floor(cellIndexF);
+    float3 baricentricWeights = cellIndexF - cellIndex;
+    
+    ParticleGridData results;
+    results.cellIndex = cellIndex;
+    results.baricentricWeights = baricentricWeights;
+    
+    return results;
+}
+
 [numthreads(THREAD_GROUP_SIZE_X, THREAD_GROUP_SIZE_Y, THREAD_GROUP_SIZE_Z)]
 void CSMain(uint3 DTid : SV_DispatchThreadID)
 {
