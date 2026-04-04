@@ -8,7 +8,7 @@
 
 namespace Privates
 {
-    int32_t ParticleCount = 100;
+    int32_t ParticleCount = 1;
     const std::string MeshName = "Sphere";
 	ivec3 ParticlesSpawnOffset = ivec3(12, 12, 12);
     ivec3 PressureGridResolution = ivec3(8, 8, 8);
@@ -16,22 +16,31 @@ namespace Privates
     ivec3 VelocityGridResolution = ivec3(PressureGridResolution.x+1, PressureGridResolution.y+1, PressureGridResolution.z+1);
 	ivec3 GridWorldPosition = ivec3(5, 5, 5);
 	ivec3 GridWorldExtents = ivec3(30, 30, 30);
-	ivec3 DispatchThreadGroupSize = ivec3(8, 8, 8);
+    ivec3 GridDispatchThreadGroupSize = ivec3(8, 8, 8);
+    ivec3 ParticleDispatchThreadGroupSize = ivec3(8, 1, 1);
 
-    ivec3 Pressure_CalculateDispatchGroupCount()
+    ivec3 DispatchGroupCountPressure()
     {
         return ivec3(
-            (PressureGridResolution.x + DispatchThreadGroupSize.x - 1) / DispatchThreadGroupSize.x,
-            (PressureGridResolution.y + DispatchThreadGroupSize.y - 1) / DispatchThreadGroupSize.y,
-            (PressureGridResolution.z + DispatchThreadGroupSize.z - 1) / DispatchThreadGroupSize.z);
+            (PressureGridResolution.x + GridDispatchThreadGroupSize.x - 1) / GridDispatchThreadGroupSize.x,
+            (PressureGridResolution.y + GridDispatchThreadGroupSize.y - 1) / GridDispatchThreadGroupSize.y,
+            (PressureGridResolution.z + GridDispatchThreadGroupSize.z - 1) / GridDispatchThreadGroupSize.z);
 	}
 
-    ivec3 Velocity_CalculateDispatchGroupCount()
+    ivec3 DispatchGroupCountVelocity()
     {
         return ivec3(
-            (VelocityGridResolution.x + DispatchThreadGroupSize.x - 1) / DispatchThreadGroupSize.x,
-            (VelocityGridResolution.y + DispatchThreadGroupSize.y - 1) / DispatchThreadGroupSize.y,
-            (VelocityGridResolution.z + DispatchThreadGroupSize.z - 1) / DispatchThreadGroupSize.z);
+            (VelocityGridResolution.x + GridDispatchThreadGroupSize.x - 1) / GridDispatchThreadGroupSize.x,
+            (VelocityGridResolution.y + GridDispatchThreadGroupSize.y - 1) / GridDispatchThreadGroupSize.y,
+            (VelocityGridResolution.z + GridDispatchThreadGroupSize.z - 1) / GridDispatchThreadGroupSize.z);
+    }
+
+    ivec3 DispatchGroupCountParticles()
+    {
+        return ivec3(
+            (ParticleCount + ParticleDispatchThreadGroupSize.x - 1) / ParticleDispatchThreadGroupSize.x,
+            1,
+            1);
     }
 }
 
@@ -48,7 +57,7 @@ void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::Shad
             Privates::ParticlesSpawnOffset.x + x,
             Privates::ParticlesSpawnOffset.y + ((index / (ParticleGridSpacing* ParticleGridSpacing)) * 2.f),
             Privates::ParticlesSpawnOffset.z + ((index % (ParticleGridSpacing * ParticleGridSpacing)) / 10) * 3.f);
-        ParticleData.Vel = XMFLOAT3(std::rand() * 2.f, std::rand() * 2.f, -2.f + (std::rand() * 4.f));
+        ParticleData.Vel = XMFLOAT3(std::rand() * 0.02f, std::rand() * 0.02f, -0.02f + (std::rand() * 0.04f));
         //ParticleData.Vel = XMFLOAT3(0.f,0.f,0.f);
         index++;
     }
@@ -107,7 +116,6 @@ void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::Shad
 
     const auto rootPath = s2ws(DX::GetWorkingDirectory());
     {
-        const auto computeShaderPath = rootPath + std::wstring(L"\\Shaders\\LagrangianFluidSim\\Simulate.hlsl");
 
         std::vector<D3D12_ROOT_PARAMETER1> slotRootParams;
         const D3D12_ROOT_PARAMETER1 rootParamCBVPerObjectBindlessResourceIndices
@@ -145,22 +153,36 @@ void ComputePassPicFlip3D::Init(IRenderer* renderer, AstroTools::Rendering::Shad
         }
         ThrowIfFailed(hr);
 
-        ComPtr<ID3D12RootSignature> rootSignature = nullptr;
-        renderer->CreateRootSignature(serializedRootSignature, rootSignature);
+        renderer->CreateRootSignature(serializedRootSignature, m_sharedRootSignature);
 
-        ComputableDesc computableObjDesc(computeShaderPath);
-        computableObjDesc.RootSignature = rootSignature;
 
-        // Create shader
-        computableObjDesc.CS = shaderLibrary.GetCompiledShader(computableObjDesc.ComputeShaderPath, L"CSMain", {}, L"cs_6_6");
+        const auto computeShaderPath = rootPath + std::wstring(L"\\Shaders\\LagrangianFluidSim\\Simulate.hlsl");
+        ComputableDesc placeholderComputeObj(computeShaderPath);
+        placeholderComputeObj.RootSignature = m_sharedRootSignature;
 
-        // Compile PSO
-        renderer->CreateComputePipelineState(
-            computableObjDesc.PipelineStateObject,
-            computableObjDesc.RootSignature,
-            computableObjDesc.CS);
+        // Create shader - Debug Draw Grid
+        {
+            auto computeShader = shaderLibrary.GetCompiledShader(computeShaderPath, L"DebugDrawGrid", {}, L"cs_6_6");
+            // Compile PSO
+            renderer->CreateComputePipelineState(
+                placeholderComputeObj.PipelineStateObject,
+                m_sharedRootSignature,
+                computeShader);
+            m_debugDrawGridComputeObj = std::make_unique<ComputableObject>(placeholderComputeObj.RootSignature, placeholderComputeObj.PipelineStateObject);
+        }
 
-        m_particlesComputeObj = std::make_unique<ComputableObject>(computableObjDesc.RootSignature, computableObjDesc.PipelineStateObject);
+        // Create shader - SplatParticlesToGrid
+        {
+            auto computeShader = shaderLibrary.GetCompiledShader(computeShaderPath, L"SplatParticlesToGrid", {}, L"cs_6_6");
+            // Compile PSO
+            renderer->CreateComputePipelineState(
+                placeholderComputeObj.PipelineStateObject,
+                m_sharedRootSignature,
+                computeShader);
+            m_splatParticlesToGridComputeObj = std::make_unique<ComputableObject>(placeholderComputeObj.RootSignature, placeholderComputeObj.PipelineStateObject);
+        }
+
+
     }
 
     m_debugDrawLineVertexBufferUAVIdx = debugDrawLine->GetDebugDrawLineVertexBufferUAVIndex();
@@ -188,10 +210,10 @@ void ComputePassPicFlip3D::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, fl
 {
     PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "ComputePassPicFlip3D");
 
-    // Dispatch Particle update
+	// Dispatch Debug Draw Grid
 
-    cmdList->SetComputeRootSignature(m_particlesComputeObj->GetRootSignature().Get());
-    cmdList->SetPipelineState(m_particlesComputeObj->GetPSO().Get());
+    cmdList->SetComputeRootSignature(m_debugDrawGridComputeObj->GetRootSignature().Get());
+    cmdList->SetPipelineState(m_debugDrawGridComputeObj->GetPSO().Get());
 
     constexpr int32_t BindlessResourceIndicesRootSigParamIndex = 0;
     const std::vector<int32_t> BindlessResourceIndices = {
@@ -222,10 +244,39 @@ void ComputePassPicFlip3D::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, fl
         (UINT)BindlessResourceIndicesRootSigParamIndex,
         (UINT)BindlessResourceIndices.size(), BindlessResourceIndices.data(), 0);
 
-    const ivec3 dispatchSize = Privates::Velocity_CalculateDispatchGroupCount();
-    cmdList->Dispatch(dispatchSize.x, dispatchSize.y, dispatchSize.z);
 
+    /*{
+        cmdList->ClearUnorderedAccessViewFloat(
+            m_pressureGridPair->GetOutput()->GetGPUHandleForUAVHeap(),
+            m_pressureGridPair->GetOutput()->GetCPUHandleForUAVHeap(),
+            m_pressureGridPair->GetOutput()->Resource(),
+            std::array<float, 4>{0.f, 0.f, 0.f, 0.f}.data(),
+			0, nullptr);
+    }*/
+    // Or dispatch a clear UAV compute shader.
+
+    {
+        // Dispatch Debug draw Grid
+        PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "DebugDrawGrid");
+
+        const ivec3 dispatchSize = Privates::DispatchGroupCountVelocity();
+        cmdList->Dispatch(dispatchSize.x, dispatchSize.y, dispatchSize.z);
+    }
     
+    {
+        // Dispatch Splat Particles To Grid
+        PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "SplatParticlesToGrid");
+     
+        cmdList->SetPipelineState(m_splatParticlesToGridComputeObj->GetPSO().Get());
+        const ivec3 dispatchSize = Privates::DispatchGroupCountParticles();
+        cmdList->Dispatch(dispatchSize.x, dispatchSize.y, dispatchSize.z);
+    }
+
+
+
+
+
+
 
     // Transition resources into their next correct state
     const auto particleBufferInStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(

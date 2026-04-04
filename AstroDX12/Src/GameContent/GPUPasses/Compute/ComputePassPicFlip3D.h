@@ -50,7 +50,9 @@ private:
 
     std::unique_ptr<PicFlip::ParticleDataBufferPair> m_particleDataBufferPair;
 
-    std::unique_ptr<ComputableObject> m_particlesComputeObj;
+	ComPtr<ID3D12RootSignature> m_sharedRootSignature; // The same root signature is used for all compute passes in this sim
+    std::unique_ptr<ComputableObject> m_debugDrawGridComputeObj;
+    std::unique_ptr<ComputableObject> m_splatParticlesToGridComputeObj;
 
     std::unique_ptr<PicFlip::GridDataBufferPair> m_pressureGridPair;
     std::unique_ptr<PicFlip::GridDataBufferPair> m_velocityGridPair;
