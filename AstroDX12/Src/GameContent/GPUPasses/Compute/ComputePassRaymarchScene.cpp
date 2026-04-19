@@ -8,7 +8,7 @@ using namespace AstroTools::Rendering;
 
 namespace RaymarchScenePrivates
 {
-	static const int32_t ObjectCount = 10; // Number of SDF objects in the scene
+	static const int32_t ObjectCount = 20; // Number of SDF objects in the scene
 }
 
 void ComputePassRaymarchScene::Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, std::weak_ptr<ComputePassParticles> particleComputePass)
@@ -29,8 +29,13 @@ void ComputePassRaymarchScene::Init(IRenderer* renderer, AstroTools::Rendering::
  //   m_SDFSceneObjectsBuffer = std::make_unique<StructuredBuffer<SDFSceneObject>>(SDFSceneObjectsList);
  //   renderer->CreateStructuredBufferAndViews(m_SDFSceneObjectsBuffer.get(), false, true);
 
-    m_gBuffer1RT = std::make_shared<RenderTarget>();
-    renderer->InitialiseRenderTarget(m_gBuffer1RT.get(), L"GBuffer1",
+    m_depthRT = std::make_shared<RenderTarget>();
+    renderer->InitialiseRenderTarget(m_depthRT.get(), L"RaymarchDepth",
+        GBufferStatics::GBufferWidth, GBufferStatics::GBufferHeight,
+        DXGI_FORMAT_R16_FLOAT, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+    m_colorRT = std::make_shared<RenderTarget>();
+    renderer->InitialiseRenderTarget(m_colorRT.get(), L"RaymarchColor",
         GBufferStatics::GBufferWidth, GBufferStatics::GBufferHeight,
         DXGI_FORMAT_R16G16B16A16_FLOAT, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
@@ -59,7 +64,7 @@ void ComputePassRaymarchScene::Init(IRenderer* renderer, AstroTools::Rendering::
             {
                 .ShaderRegister = 1,
                 .RegisterSpace = 0,
-                .Num32BitValues = 5
+                .Num32BitValues = 6
             },
             .ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL
         };
@@ -120,12 +125,15 @@ void ComputePassRaymarchScene::Execute(
 {
     PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "ComputePassRaymarchScene");
 
-    const auto GBufferRTPreDrawStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
-        m_gBuffer1RT->GetResource(),
+    const auto depthRTPreDrawTransition = CD3DX12_RESOURCE_BARRIER::Transition(
+        m_depthRT->GetResource(),
+        D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    const auto colorRTPreDrawTransition = CD3DX12_RESOURCE_BARRIER::Transition(
+        m_colorRT->GetResource(),
         D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-    std::vector<CD3DX12_RESOURCE_BARRIER> buffersPreDrawStateTransition = { GBufferRTPreDrawStateTransition };
-    cmdList->ResourceBarrier(1, buffersPreDrawStateTransition.data());
+    CD3DX12_RESOURCE_BARRIER buffersPreDrawStateTransition[] = { depthRTPreDrawTransition, colorRTPreDrawTransition };
+    cmdList->ResourceBarrier(2, buffersPreDrawStateTransition);
 
 
     cmdList->SetComputeRootSignature(m_raymarchRootSignature.Get());
@@ -137,7 +145,8 @@ void ComputePassRaymarchScene::Execute(
     constexpr int32_t BindlessResourceIndicesRootSigParamIndex = 1;
     const std::vector<int32_t> BindlessResourceIndices = {
         m_currentParticleDataBufferSRVIdx,
-        m_gBuffer1RT->GetUAVIndex(),
+        m_depthRT->GetUAVIndex(),
+        m_colorRT->GetUAVIndex(),
         RaymarchScenePrivates::ObjectCount,
         GBufferStatics::GBufferWidth,
 		GBufferStatics::GBufferHeight    
@@ -151,12 +160,15 @@ void ComputePassRaymarchScene::Execute(
 	int32_t DispatchY = GBufferStatics::GBufferHeight / 8; // 8 threads per group in Y
     cmdList->Dispatch(DispatchX, DispatchY, 1);
 
-    const auto GBufferRTPostDrawStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
-        m_gBuffer1RT->GetResource(),
+    const auto depthRTPostDrawTransition = CD3DX12_RESOURCE_BARRIER::Transition(
+        m_depthRT->GetResource(),
+        D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    const auto colorRTPostDrawTransition = CD3DX12_RESOURCE_BARRIER::Transition(
+        m_colorRT->GetResource(),
         D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-    std::vector<CD3DX12_RESOURCE_BARRIER> buffersPostDrawStateTransition = { GBufferRTPostDrawStateTransition };
-    cmdList->ResourceBarrier(1, buffersPostDrawStateTransition.data());
+    CD3DX12_RESOURCE_BARRIER buffersPostDrawStateTransition[] = { depthRTPostDrawTransition, colorRTPostDrawTransition };
+    cmdList->ResourceBarrier(2, buffersPostDrawStateTransition);
 }
 
 void ComputePassRaymarchScene::Shutdown()

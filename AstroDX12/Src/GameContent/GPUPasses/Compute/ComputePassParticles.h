@@ -73,7 +73,7 @@ public:
     virtual void Shutdown() override;
 
 private:
-    std::weak_ptr<IMesh> m_boxMesh;
+    std::weak_ptr<IMesh> m_mesh;
     ComPtr<ID3D12PipelineState> m_pipelineStateObject;
     ComPtr<ID3D12RootSignature> m_rootSignature;
 

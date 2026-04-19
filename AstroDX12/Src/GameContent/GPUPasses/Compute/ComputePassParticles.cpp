@@ -6,6 +6,7 @@
 #include <Rendering\Common\MeshLibrary.h>
 #include <Rendering\Renderable\IRenderable.h>
 #include <Rendering\Common\FrameResource.h>
+#include <Rendering/CommonMeshes.h>
 
 using namespace AstroTools::Rendering;
 
@@ -17,7 +18,7 @@ ComputePassParticles::ComputePassParticles()
     for (auto& ParticleData : BufferDataVector)
     {
         ParticleData.Duration = 3.f + (float(rand() % 200) / 200);
-        ParticleData.Size = 2.f;
+        ParticleData.Size = 1.f;
     }
 
     m_particleDataBufferPing = std::make_unique<StructuredBuffer<ParticleData>>(BufferDataVector);
@@ -131,19 +132,20 @@ void ComputePassParticles::Execute(
         (UINT)BindlessResourceIndicesRootSigParamIndex,
         (UINT)BindlessResourceIndices.size(), BindlessResourceIndices.data(), 0);
 
+    //TODO compute dispatch size
+	cmdList->Dispatch(1, 1, 1);
+
     // Transition resources into their next correct state
     const auto bufferInStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
-        bufferInput->Resource(),
+        bufferOutput->Resource(),
         D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     const auto bufferOutStateTransition = CD3DX12_RESOURCE_BARRIER::Transition(
-        bufferOutput->Resource(),
-        D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE , D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        bufferInput->Resource(),
+        D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
     std::vector<CD3DX12_RESOURCE_BARRIER> buffersStateTransition = { bufferInStateTransition , bufferOutStateTransition };
     cmdList->ResourceBarrier(2, buffersStateTransition.data());
 
-    //TODO compute dispatch size
-	cmdList->Dispatch(1, 1, 1);
 }
 
 
@@ -156,7 +158,7 @@ void ComputePassParticles::Shutdown()
 //---------------------------------------------------------------------------------------
 
 GraphicsPassParticles::GraphicsPassParticles()
-    : m_boxMesh()
+    : m_mesh()
 {
 }
 
@@ -168,8 +170,7 @@ void GraphicsPassParticles::Init(std::weak_ptr<const ComputePassParticles>  part
     
     // TODO: rethink this - it's ugly that we're having to do this all manually, when the RenderableStaticObject doesn't quite fit our needs (ie: we don't need to update transforms on the CPU - using GPU buffers instead)
     //      We only need the root signature, PSO, and vertex buffer (store din the mesh, not the RenderableStaticObject
-
-    assert(meshLibrary.GetMesh(std::string("BoxGeometry"), m_boxMesh));
+    DX::astro_assert(AstroDX::CommonMeshes::GetCommonMesh(meshLibrary, AstroDX::CommonMeshNames::Sphere, m_mesh), "Failed to load Cube mesh");
     const auto particleGraphicsShaderPath = rootPath + std::wstring(L"\\Shaders\\particleGraphics.hlsl");
 
     auto vs = shaderLibrary.GetCompiledShader(particleGraphicsShaderPath, L"VS", {}, L"vs_6_6");
@@ -252,7 +253,7 @@ void GraphicsPassParticles::Execute(
 {
     PIXScopedEvent(cmdList.Get(), PIX_COLOR(255, 128, 0), "GraphicsPassParticles");
 
-    const auto indexBuffer = m_boxMesh.lock()->IndexBufferView();
+    const auto indexBuffer = m_mesh.lock()->IndexBufferView();
     cmdList->IASetIndexBuffer(&indexBuffer);
     cmdList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -264,15 +265,15 @@ void GraphicsPassParticles::Execute(
 
     const uint32_t GraphicsBindlessResourceIndicesRootSigParamIndex = 1;
     const std::vector<int32_t> GraphicsBindlessResourceIndices = {
-        m_particlesComputePass.lock()->GetParticleReadBufferSRVHeapIndex(), 
-        m_boxMesh.lock()->GetVertexBufferSRV()                             
+        m_particlesComputePass.lock()->GetParticleOutputBufferSRVHeapIndex(),
+        m_mesh.lock()->GetVertexBufferSRV()                             
     };                                                                      
     cmdList->SetGraphicsRoot32BitConstants(
         (UINT)GraphicsBindlessResourceIndicesRootSigParamIndex,
         (UINT)GraphicsBindlessResourceIndices.size(), GraphicsBindlessResourceIndices.data(), 0);
 
     const int particleCount = 20; // TODO: this is the maximum - the GPU will need to set the size of the mesh to zero for particles that are not alive
-    cmdList->DrawIndexedInstanced((UINT)m_boxMesh.lock()->GetVertexIndicesCount(), particleCount, 0, 0, 0);
+    cmdList->DrawIndexedInstanced((UINT)m_mesh.lock()->GetVertexIndicesCount(), particleCount, 0, 0, 0);
 }
 
 void GraphicsPassParticles::Shutdown()

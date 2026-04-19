@@ -4,13 +4,16 @@
 #include <map>
 #include <cmath>
 #include <DirectXMath.h>
-
+#include <Rendering\RenderData\VertexData.h>
+#include <Rendering/RenderData/VertexDataFactory.h>
 
 using float3 = DirectX::XMFLOAT3;
+using float4 = DirectX::XMFLOAT4;
 
+template<typename TVertexData>
 struct Geometry 
 {
-    std::vector<float3> vertices;
+    std::vector<TVertexData> vertices;
     std::vector<uint32_t> indices;
 };
 
@@ -38,8 +41,8 @@ namespace GeometryHelper
         return id;
     }
 
-    static Geometry GenerateDelaunaySphere(int subdivisions) {
-        Geometry mesh;
+    static Geometry<float3> GenerateDelaunaySphere(int subdivisions) {
+        Geometry<float3> mesh;
         const float t = (1.0f + std::sqrt(5.0f)) / 2.0f;
 
         // 1. Create 12 vertices of an Icosahedron
@@ -48,7 +51,7 @@ namespace GeometryHelper
             { 0, -1,  t}, { 0,  1,  t}, { 0, -1, -t}, { 0,  1, -t},
             { t,  0, -1}, { t,  0,  1}, {-t,  0, -1}, {-t,  0,  1}
         };
-
+        
         // Normalize initial vertices to make it a unit sphere
         for (auto& v : mesh.vertices) {
             float len = std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
@@ -87,6 +90,51 @@ namespace GeometryHelper
             }
             mesh.indices = nextIndices;
         }
+
+        return mesh;
+    }
+
+    static Geometry<VertexData_Short_POD> GenerateCube()
+    {
+        Geometry<VertexData_Short_POD> mesh;
+        std::vector<VertexData_Short> vertices =
+        {
+            { {-1.5f, -1.5f, -1.5f}, DirectX::XMFLOAT4(Colors::White) },
+            { {-1.5f, +1.5f, -1.5f}, DirectX::XMFLOAT4(Colors::Black) },
+            { {+1.5f, +1.5f, -1.5f}, DirectX::XMFLOAT4(Colors::Red) },
+            { {+1.5f, -1.5f, -1.5f}, DirectX::XMFLOAT4(Colors::Green) },
+            { {-1.5f, -1.5f, +1.5f}, DirectX::XMFLOAT4(Colors::Blue) },
+            { {-1.5f, +1.5f, +1.5f}, DirectX::XMFLOAT4(Colors::Yellow) },
+            { {+1.5f, +1.5f, +1.5f}, DirectX::XMFLOAT4(Colors::Cyan) },
+            { {+1.5f, -1.5f, +1.5f}, DirectX::XMFLOAT4(Colors::Magenta) },
+        };
+        mesh.vertices = VertexDataFactory::Convert(vertices);
+
+        mesh.indices = {
+            // Front face
+            0, 1, 2,
+            0, 2, 3,
+
+            // Back face
+            4, 6, 5,
+            4, 7, 6,
+
+            // Left face
+            4, 5, 1,
+            4, 1, 0,
+
+            // Right face
+            3, 2, 6,
+            3, 6, 7,
+
+            // Top face
+            1, 5, 6,
+            1, 6, 2,
+
+            // Bottom face
+            4, 0, 3,
+            4, 3, 7
+        };
 
         return mesh;
     }

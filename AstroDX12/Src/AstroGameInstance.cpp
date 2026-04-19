@@ -133,18 +133,18 @@ void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shade
 	auto debugDrawLinePass = std::make_shared<ComputePassVertexLineDebugDraw>();
 	debugDrawLinePass->Init(m_renderer.get(), shaderLibrary);
 
-	auto debugDrawRenderPass = std::make_shared< GraphicsPassDebugDraw >();
-	debugDrawRenderPass->Init(m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
+	//auto debugDrawRenderPass = std::make_shared< GraphicsPassDebugDraw >();
+	//debugDrawRenderPass->Init(m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
 
-	// //Particle System Passes
-	//auto particlesSimPass = std::make_shared< ComputePassParticles >();	
-	//particlesSimPass->Init(m_renderer.get(), shaderLibrary);
-	//std::weak_ptr< ComputePassParticles > ParticleSimPassWeak = particlesSimPass;
-	//m_gpuPasses.push_back(std::move(particlesSimPass));
+	 //Particle System Passes
+	auto particlesSimPass = std::make_shared< ComputePassParticles >();	
+	particlesSimPass->Init(m_renderer.get(), shaderLibrary);
+	std::weak_ptr< ComputePassParticles > ParticleSimPassWeak = particlesSimPass;
+	m_gpuPasses.push_back(std::move(particlesSimPass));
 
-	//auto particlesRenderPass = std::make_shared< GraphicsPassParticles >();
-	//particlesRenderPass->Init(ParticleSimPassWeak, m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
-	//m_gpuPasses.push_back(std::move(particlesRenderPass));
+	auto particlesRenderPass = std::make_shared< GraphicsPassParticles >();
+	particlesRenderPass->Init(ParticleSimPassWeak, m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
+	m_gpuPasses.push_back(std::move(particlesRenderPass));
 
 	//// Physics chain passes
 	//auto physicsChainSimPass = std::make_shared< ComputePassPhysicsChain >();
@@ -167,31 +167,31 @@ void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shade
 	//m_gpuPasses.push_back(std::move(fluidSim2DGraphicsPass));
 
 
-	// Pic Flip 3D fluid sim
-	auto fluidSim3DComputePass = std::make_shared< ComputePassPicFlip3D >();
-	fluidSim3DComputePass->Init(m_renderer.get(), shaderLibrary, debugDrawLinePass);
+	//// Pic Flip 3D fluid sim
+	//auto fluidSim3DComputePass = std::make_shared< ComputePassPicFlip3D >();
+	//fluidSim3DComputePass->Init(m_renderer.get(), shaderLibrary, debugDrawLinePass);
 
-	auto fluidSim3DGraphicsPass = std::make_shared< GraphicsPassPicFlip3D >();
-	fluidSim3DGraphicsPass->Init(fluidSim3DComputePass, m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
+	//auto fluidSim3DGraphicsPass = std::make_shared< GraphicsPassPicFlip3D >();
+	//fluidSim3DGraphicsPass->Init(fluidSim3DComputePass, m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
 
-	m_gpuPasses.push_back(std::move(fluidSim3DComputePass));
-	m_gpuPasses.push_back(std::move(fluidSim3DGraphicsPass));
+	//m_gpuPasses.push_back(std::move(fluidSim3DComputePass));
+	//m_gpuPasses.push_back(std::move(fluidSim3DGraphicsPass));
 
 
 	
 
 	 //Debug draw is the last pass to render debug objects on top of everything else
 	m_gpuPasses.push_back(std::move(debugDrawLinePass));
-	m_gpuPasses.push_back(std::move(debugDrawRenderPass));
+	//m_gpuPasses.push_back(std::move(debugDrawRenderPass));
 	
-	//auto raymarchSDFScenePass = std::make_shared<ComputePassRaymarchScene>();
-	//raymarchSDFScenePass->Init(m_renderer.get(), shaderLibrary, ParticleSimPassWeak);
-	//const int32_t GBufferResourceViewIndex = raymarchSDFScenePass->GetGBufferRTViewIndex();
-	//m_gpuPasses.push_back(std::move(raymarchSDFScenePass));
+	auto raymarchSDFScenePass = std::make_shared<ComputePassRaymarchScene>();
+	raymarchSDFScenePass->Init(m_renderer.get(), shaderLibrary, ParticleSimPassWeak);
+	const int32_t GBufferColorViewIndex = raymarchSDFScenePass->GetColorRTViewIndex();
+	m_gpuPasses.push_back(std::move(raymarchSDFScenePass));
 
-	//auto copyGbufferToBackBufferPass = std::make_shared<GraphicsPassCopyGBufferToBackbuffer>();
-	//copyGbufferToBackBufferPass->Init(m_renderer.get(), shaderLibrary, GBufferResourceViewIndex);
-	//m_gpuPasses.push_back(std::move(copyGbufferToBackBufferPass));
+	auto copyGbufferToBackBufferPass = std::make_shared<GraphicsPassCopyGBufferToBackbuffer>();
+	copyGbufferToBackBufferPass->Init(m_renderer.get(), shaderLibrary, GBufferColorViewIndex);
+	m_gpuPasses.push_back(std::move(copyGbufferToBackBufferPass));
 }
 
 void AstroGameInstance::Update(float deltaTime, ivec2 cursorPos)

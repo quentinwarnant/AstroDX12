@@ -21,6 +21,7 @@ cbuffer BindlessRenderResources : register(b1)
 {
     int SDFSceneObjectsResourceIndex;
     int OutputTextureDepthResourceIndex;
+    int OutputTextureColorResourceIndex;
     int SDFObjectCount;
     int GBufferWidth;
     int GBufferHeight;
@@ -40,6 +41,23 @@ struct SDFSceneObject //ParticleData
     float Size;
 };
 
+struct SminResult
+{
+    float dist;
+    float blend; // 0 = fully a, 1 = fully b
+};
+
+SminResult smin(float a, float b, float k)
+{
+    float h = saturate(0.5 + 0.5 * (b - a) / k);
+    float d = lerp(b, a, h) - k * h * (1.0 - h);
+    SminResult result;
+    result.dist = d;
+    result.blend = h;
+    return result;
+}
+
+
 [numthreads(8, 8, 1)]
 void CSMain(uint3 DTid : SV_DispatchThreadID)
 {
@@ -50,16 +68,13 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
 
     const float2 RenderTargetPixelSize = float2(GBufferWidth, GBufferHeight);
     float2 UV = ((DTid.xy + 0.5) / RenderTargetPixelSize);
-    UV.y = 1.f - UV.y; // flip vertically so origin is in bottom left corner.
-    float2 ndc = (UV * 2.f) - 1.f; // Center origin and use -1 to 1 range
-    const float AspectRatio = RenderTargetPixelSize.x / RenderTargetPixelSize.y;
-    ndc.x *= AspectRatio;
-    
+    float2 ndc = (UV * 2.f) - 1.f;
     const float3 RayOrigin = gEyePosW;
-    float3 rayDirInCamSpace = float3(ndc.x, ndc.y, 1.0f);
+    float4 rayEndCamSpace = mul(float4(ndc, 1.0f, 1.0f), gInvProj);
+    float3 rayDirInCamSpace = rayEndCamSpace.xyz / rayEndCamSpace.w;
     
     float3 RayDir = normalize(
-        mul(InvView, float4(rayDirInCamSpace, 0.f)).xyz
+        mul(float4(rayDirInCamSpace, 0.f), InvView).xyz
     );
     
     const float minDistForCollision = 0.0001f;
@@ -67,20 +82,26 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
     float3 RayPos = RayOrigin;
 
     bool Hit = false;
+    float3 HitNormal = float3(0.f, 0.f, 0.f);
     for (int Step = 0; Step < RaymarchStepCount; ++Step)
     {
-        float DistToClosestObject = MaxDistancePerStep; // minimum distance to travel at each step
+        float DistToClosestObject = MaxDistancePerStep;
+        float3 blendedNormal = float3(0.f, 0.f, 0.f);
 
-        // for loop over all the objects near the sampling point
         for (int objIdx = 0; objIdx < SDFObjectCount; ++objIdx)
         {
             SDFSceneObject SDFObject = SDFSceneBuffer[objIdx];
             
             const float3 objToSamplePos = (SDFObject.Pos.xyz - RayPos);
             float distToCenter = length(objToSamplePos);
+            float objDist = distToCenter - SDFObject.Size;
+            float3 objNormal = -objToSamplePos / max(distToCenter, 0.0001f);
 
-            // Keep minimum distance between all evaluated objects to travel the next jump
-            DistToClosestObject = min(DistToClosestObject, distToCenter - SDFObject.Size);
+            // Smoothly blend distances and normals of multiple objects to create a combined SDF field
+            static const float blendFactor = 15.f;
+            SminResult result = smin(DistToClosestObject, objDist, blendFactor);
+            blendedNormal = lerp(objNormal, blendedNormal, result.blend);
+            DistToClosestObject = result.dist;
         }
 
         distanceTravelled += DistToClosestObject;
@@ -89,6 +110,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
         if (DistToClosestObject <= minDistForCollision)
         {
             Hit = true;
+            HitNormal = normalize(blendedNormal);
             break;
         }
         
@@ -100,7 +122,20 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
     }
         
     // Normalize distance to [0, 1] range
-    distanceTravelled = 1.f - saturate(distanceTravelled / WorldSize);
-    RWTexture2D<float4> outputTexture = ResourceDescriptorHeap[OutputTextureDepthResourceIndex];
-    outputTexture[DTid.xy] = float4(distanceTravelled,  0.f, 0.f, 0.0f);
+    float normalizedDepth = 1.f - saturate(distanceTravelled / WorldSize);
+
+    RWTexture2D<float> depthTexture = ResourceDescriptorHeap[OutputTextureDepthResourceIndex];
+    depthTexture[DTid.xy] = normalizedDepth;
+
+    RWTexture2D<float4> colorTexture = ResourceDescriptorHeap[OutputTextureColorResourceIndex];
+    float4 shading = float4(0.f, 0.f, 0.f, 0.f);
+    if( Hit )
+    {
+        static const float3 fakeLightDir = normalize(float3(0.5f, 1.0f, -0.5f));
+        static const float3 fakeLightColor = normalize(float3(1.5f, 1.0f, 0.0f));
+        const float nDotL = saturate(dot(HitNormal, fakeLightDir));
+        const float3 ambientColor = float3(0.2f, 0.2f, 0.2f);
+        shading = float4(ambientColor + (nDotL * fakeLightColor), 1.f);
+    }
+    colorTexture[DTid.xy] = shading;
 }

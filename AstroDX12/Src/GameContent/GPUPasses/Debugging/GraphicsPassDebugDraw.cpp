@@ -138,9 +138,6 @@ void GraphicsPassDebugDraw::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, f
 		(UINT)GraphicsBindlessResourceIndices.size(), GraphicsBindlessResourceIndices.data(), 0);
 
 	cmdList->DrawIndexedInstanced((UINT)m_debugMesh.lock()->GetVertexIndicesCount(), Privates::MaxDebugObjects, 0, 0, 0);
-
-	//cmdList->ExecuteIndirect()
-
 }
 
 void GraphicsPassDebugDraw::Shutdown()

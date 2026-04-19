@@ -27,7 +27,6 @@ cbuffer BindlessRenderResources : register(b1)
 struct VertexData
 {
     float3 posLocal;
-    float4 color;
 };
 
 struct PSInput
@@ -44,10 +43,16 @@ PSInput VS(uint VertexID : SV_VertexID, uint InstanceID : SV_InstanceID)
     StructuredBuffer<VertexData> vertexData = ResourceDescriptorHeap[modelVertexDataBufferIdx];
 
 	// Transform to homogeneous clip space.
-    const float3 posL = vertexData[VertexID].posLocal;
+    const float3 posL = vertexData[VertexID].posLocal * particleData[InstanceID].Size;
     const float3 posW = posL + particleData[InstanceID].Pos;
     o.PosH = mul(float4(posW, 1.0f), gViewProj);
-    o.Color = vertexData[VertexID].color;
+    
+    float3 normalWS = posL;
+    static const float3 fakeLightDir = normalize(float3(0.5f, 1.0f, -0.5f));
+    static const float3 fakeLightColor = normalize(float3(1.5f, 1.0f, 0.0f));
+    const float nDotL = saturate(dot(normalWS, fakeLightDir));
+    const float3 ambientColor = float3(0.2f, 0.2f, 0.2f);
+    o.Color = float4(ambientColor + (nDotL * fakeLightColor), 1.f);
 
     return o;
 }

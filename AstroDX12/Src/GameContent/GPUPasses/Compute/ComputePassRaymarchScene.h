@@ -27,7 +27,8 @@ class ComputePassRaymarchScene :
 {
 public:
     ComputePassRaymarchScene()
-        : m_gBuffer1RT(nullptr)
+        : m_depthRT(nullptr)
+        , m_colorRT(nullptr)
         , m_raymarchRootSignature(nullptr)
 		, m_raymarchPSO(nullptr)
 		, m_currentParticleDataBufferSRVIdx(-1)
@@ -47,13 +48,19 @@ public:
         const FrameResource& frameResources) const override;
     virtual void Shutdown() override;
 
-    int32_t GetGBufferRTViewIndex() const
+    int32_t GetDepthRTViewIndex() const
     {
-        return m_gBuffer1RT->GetSRVIndex();
+        return m_depthRT->GetSRVIndex();
+	}
+
+    int32_t GetColorRTViewIndex() const
+    {
+        return m_colorRT->GetSRVIndex();
 	}
 
 private:
-	std::shared_ptr<RenderTarget> m_gBuffer1RT;
+	std::shared_ptr<RenderTarget> m_depthRT;
+	std::shared_ptr<RenderTarget> m_colorRT;
     std::unique_ptr<StructuredBuffer<SDFSceneObject>> m_SDFSceneObjectsBuffer;
 
     ComPtr<ID3D12RootSignature> m_raymarchRootSignature;
