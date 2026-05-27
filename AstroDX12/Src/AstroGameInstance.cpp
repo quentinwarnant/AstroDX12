@@ -125,73 +125,105 @@ void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shade
 {
 	AstroDX::CommonMeshes::CreateCommonMeshes(*m_meshLibrary.get(), m_renderer->GetRendererContext());
 
-	 //Base Geo PASS
-	//auto baseGeoPass = std::make_shared< BasePassSceneGeometry>();
-	//baseGeoPass->Init(m_renderer.get(),shaderLibrary, *m_meshLibrary, NumFrameResources);
-	//m_gpuPasses.push_back(std::move(baseGeoPass));
+	// --- Create all passes upfront ---
 
+	// Base Geo
+	auto baseGeoPass = std::make_shared<BasePassSceneGeometry>();
+	baseGeoPass->Init(m_renderer.get(), shaderLibrary, *m_meshLibrary, NumFrameResources);
+	m_gpuPasses.push_back(baseGeoPass);
+
+	// Debug Draw
 	auto debugDrawLinePass = std::make_shared<ComputePassVertexLineDebugDraw>();
 	debugDrawLinePass->Init(m_renderer.get(), shaderLibrary);
 
-	//auto debugDrawRenderPass = std::make_shared< GraphicsPassDebugDraw >();
-	//debugDrawRenderPass->Init(m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
+	auto debugDrawRenderPass = std::make_shared<GraphicsPassDebugDraw>();
+	debugDrawRenderPass->Init(m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
 
-	 //Particle System Passes
-	auto particlesSimPass = std::make_shared< ComputePassParticles >();	
+	// Particle System
+	auto particlesSimPass = std::make_shared<ComputePassParticles>();
 	particlesSimPass->Init(m_renderer.get(), shaderLibrary);
-	std::weak_ptr< ComputePassParticles > ParticleSimPassWeak = particlesSimPass;
-	m_gpuPasses.push_back(std::move(particlesSimPass));
+	std::weak_ptr<ComputePassParticles> particleSimPassWeak = particlesSimPass;
+	m_gpuPasses.push_back(particlesSimPass);
 
-	auto particlesRenderPass = std::make_shared< GraphicsPassParticles >();
-	particlesRenderPass->Init(ParticleSimPassWeak, m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
-	m_gpuPasses.push_back(std::move(particlesRenderPass));
+	auto particlesRenderPass = std::make_shared<GraphicsPassParticles>();
+	particlesRenderPass->Init(particleSimPassWeak, m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
+	m_gpuPasses.push_back(particlesRenderPass);
 
-	//// Physics chain passes
-	//auto physicsChainSimPass = std::make_shared< ComputePassPhysicsChain >();
-	//physicsChainSimPass->Init(m_renderer.get(), shaderLibrary, debugDrawRenderPass->GetDebugObjectsBufferUAVIndex());
-	//std::weak_ptr< ComputePassPhysicsChain > physicsChainSimPassWeak = physicsChainSimPass;
-	//m_gpuPasses.push_back(std::move(physicsChainSimPass));
+	// Physics Chain
+	auto physicsChainSimPass = std::make_shared<ComputePassPhysicsChain>();
+	physicsChainSimPass->Init(m_renderer.get(), shaderLibrary, debugDrawRenderPass->GetDebugObjectsBufferUAVIndex());
+	std::weak_ptr<ComputePassPhysicsChain> physicsChainSimPassWeak = physicsChainSimPass;
+	m_gpuPasses.push_back(physicsChainSimPass);
 
-	//auto physicsChainRenderPass = std::make_shared< GraphicsPassPhysicsChain >();
-	//physicsChainRenderPass->Init(physicsChainSimPassWeak, m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
-	//m_gpuPasses.push_back(std::move(physicsChainRenderPass));
+	auto physicsChainRenderPass = std::make_shared<GraphicsPassPhysicsChain>();
+	physicsChainRenderPass->Init(physicsChainSimPassWeak, m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
+	m_gpuPasses.push_back(physicsChainRenderPass);
 
-	// Eulerian Fluid Sim
-	//auto fluidSim2DComputePass = std::make_shared< ComputePassFluidSim2D >();
-	//fluidSim2DComputePass->Init(m_renderer.get(), shaderLibrary);
+	// Eulerian Fluid Sim 2D
+	auto fluidSim2DComputePass = std::make_shared<ComputePassFluidSim2D>();
+	fluidSim2DComputePass->Init(m_renderer.get(), shaderLibrary);
+	std::weak_ptr<ComputePassFluidSim2D> fluidSim2DComputePassWeak = fluidSim2DComputePass;
+	m_gpuPasses.push_back(fluidSim2DComputePass);
 
-	//auto fluidSim2DGraphicsPass = std::make_shared< GraphicsPassFluidSim2D >();
-	//fluidSim2DGraphicsPass->Init(fluidSim2DComputePass,m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
+	auto fluidSim2DGraphicsPass = std::make_shared<GraphicsPassFluidSim2D>();
+	fluidSim2DGraphicsPass->Init(fluidSim2DComputePassWeak, m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
+	m_gpuPasses.push_back(fluidSim2DGraphicsPass);
 
-	//m_gpuPasses.push_back(std::move(fluidSim2DComputePass));
-	//m_gpuPasses.push_back(std::move(fluidSim2DGraphicsPass));
+	// PIC/FLIP 3D Fluid Sim
+	auto fluidSim3DComputePass = std::make_shared<ComputePassPicFlip3D>();
+	fluidSim3DComputePass->Init(m_renderer.get(), shaderLibrary, debugDrawLinePass);
+	std::weak_ptr<ComputePassPicFlip3D> fluidSim3DComputePassWeak = fluidSim3DComputePass;
+	m_gpuPasses.push_back(fluidSim3DComputePass);
 
+	auto fluidSim3DGraphicsPass = std::make_shared<GraphicsPassPicFlip3D>();
+	fluidSim3DGraphicsPass->Init(fluidSim3DComputePassWeak, m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
+	m_gpuPasses.push_back(fluidSim3DGraphicsPass);
 
-	//// Pic Flip 3D fluid sim
-	//auto fluidSim3DComputePass = std::make_shared< ComputePassPicFlip3D >();
-	//fluidSim3DComputePass->Init(m_renderer.get(), shaderLibrary, debugDrawLinePass);
+	// Debug draw passes render last to overlay on top
+	m_gpuPasses.push_back(debugDrawLinePass);
+	m_gpuPasses.push_back(debugDrawRenderPass);
 
-	//auto fluidSim3DGraphicsPass = std::make_shared< GraphicsPassPicFlip3D >();
-	//fluidSim3DGraphicsPass->Init(fluidSim3DComputePass, m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
-
-	//m_gpuPasses.push_back(std::move(fluidSim3DComputePass));
-	//m_gpuPasses.push_back(std::move(fluidSim3DGraphicsPass));
-
-
-	
-
-	 //Debug draw is the last pass to render debug objects on top of everything else
-	m_gpuPasses.push_back(std::move(debugDrawLinePass));
-	//m_gpuPasses.push_back(std::move(debugDrawRenderPass));
-	
+	// Raymarch SDF Scene (depends on particle sim data)
 	auto raymarchSDFScenePass = std::make_shared<ComputePassRaymarchScene>();
-	raymarchSDFScenePass->Init(m_renderer.get(), shaderLibrary, ParticleSimPassWeak);
+	raymarchSDFScenePass->Init(m_renderer.get(), shaderLibrary, particleSimPassWeak);
 	const int32_t GBufferColorViewIndex = raymarchSDFScenePass->GetColorRTViewIndex();
-	m_gpuPasses.push_back(std::move(raymarchSDFScenePass));
+	m_gpuPasses.push_back(raymarchSDFScenePass);
 
 	auto copyGbufferToBackBufferPass = std::make_shared<GraphicsPassCopyGBufferToBackbuffer>();
 	copyGbufferToBackBufferPass->Init(m_renderer.get(), shaderLibrary, GBufferColorViewIndex);
-	m_gpuPasses.push_back(std::move(copyGbufferToBackBufferPass));
+	m_gpuPasses.push_back(copyGbufferToBackBufferPass);
+
+	// --- Register demos ---
+	m_demoManager.RegisterDemo("BaseGeo",
+		{ baseGeoPass.get() });
+
+	m_demoManager.RegisterDemo("DebugDrawLine",
+		{ debugDrawLinePass.get() });
+
+	m_demoManager.RegisterDemo("DebugDrawRender",
+		{ debugDrawRenderPass.get() });
+
+	m_demoManager.RegisterDemo("Particles",
+		{ particlesSimPass.get(), particlesRenderPass.get() });
+
+	m_demoManager.RegisterDemo("PhysicsChain",
+		{ physicsChainSimPass.get(), physicsChainRenderPass.get() },
+		{ "DebugDrawRender" });
+
+	m_demoManager.RegisterDemo("FluidSim2D",
+		{ fluidSim2DComputePass.get(), fluidSim2DGraphicsPass.get() });
+
+	m_demoManager.RegisterDemo("FluidSim3D",
+		{ fluidSim3DComputePass.get(), fluidSim3DGraphicsPass.get() },
+		{ "DebugDrawLine" });
+
+	m_demoManager.RegisterDemo("RaymarchSDF",
+		{ raymarchSDFScenePass.get(), copyGbufferToBackBufferPass.get() },
+		{ "Particles" });
+
+	// Load config (creates default file if none exists)
+	const std::string configPath = GetWorkingDirectory() + "\\demos.cfg";
+	m_demoManager.LoadConfig(configPath);
 }
 
 void AstroGameInstance::Update(float deltaTime, ivec2 cursorPos)
@@ -243,7 +275,8 @@ void AstroGameInstance::Update(float deltaTime, ivec2 cursorPos)
 
 	for (auto& gpuPass : m_gpuPasses)
 	{
-		gpuPass.get()->Update(updateData);
+		if (gpuPass->IsEnabled())
+			gpuPass->Update(updateData);
 	}
 
 	PIXEndEvent();
@@ -257,6 +290,9 @@ void AstroGameInstance::Render(float deltaTime)
 
 	for (auto& pass : m_gpuPasses)
 	{
+		if (!pass->IsEnabled())
+			continue;
+
 		m_renderer->ProcessGPUPass(*pass.get(), *m_currentFrameResource, deltaTime);
 		
 		switch (pass->PassType())
@@ -287,6 +323,8 @@ void AstroGameInstance::OnSimReset()
 
 void AstroGameInstance::Shutdown()
 {
+	m_demoManager.SaveConfig();
+
 	for (auto& pass : m_gpuPasses)
 	{
 		pass->Shutdown();

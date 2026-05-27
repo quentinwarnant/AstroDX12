@@ -31,6 +31,12 @@ public:
 	virtual void Shutdown() = 0;
 
 	virtual GPUPassType PassType() const = 0;
+
+	bool IsEnabled() const { return m_enabled; }
+	void SetEnabled(bool enabled) { m_enabled = enabled; }
+
+private:
+	bool m_enabled = true;
 };
 
 class GraphicsPass : public GPUPass

@@ -7,6 +7,7 @@
 #include <Rendering/Common/GPUPass.h>
 #include <Rendering/Common/MeshLibrary.h>
 #include <Rendering/Common/UploadBuffer.h>
+#include <DemoManager.h>
 
 using Microsoft::WRL::ComPtr;
 struct SceneData;
@@ -53,6 +54,7 @@ private:
     int m_currentFrameResourceIndex = 0;
 
     std::vector<std::shared_ptr<GPUPass>> m_gpuPasses;
+    DemoManager m_demoManager;
 
     virtual void CreatePasses(AstroTools::Rendering::ShaderLibrary& shaderLibrary) override;
     virtual void Update(float deltaTime, ivec2 cursorPos) override;
