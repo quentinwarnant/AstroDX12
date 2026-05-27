@@ -1,3 +1,4 @@
+#include "Shaders/ParticlesCommon.hlsli"
 
 cbuffer cbPass : register(b0)
 {
@@ -27,20 +28,6 @@ cbuffer BindlessRenderResources : register(b1)
     int GBufferHeight;
 }
 
-//struct SDFSceneObject
-//{
-//    float4 Pos;    
-//};
-
-struct SDFSceneObject //ParticleData
-{
-    float3 Pos;
-    float3 Vel;
-    float Age;
-    float Lifetime;
-    float Size;
-};
-
 struct SminResult
 {
     float dist;
@@ -57,11 +44,10 @@ SminResult smin(float a, float b, float k)
     return result;
 }
 
-
 [numthreads(8, 8, 1)]
 void CSMain(uint3 DTid : SV_DispatchThreadID)
 {
-    StructuredBuffer<SDFSceneObject> SDFSceneBuffer = ResourceDescriptorHeap[SDFSceneObjectsResourceIndex];
+    StructuredBuffer<ParticleData> SDFSceneBuffer = ResourceDescriptorHeap[SDFSceneObjectsResourceIndex];
     const int RaymarchStepCount = 100;
     const float MaxDistancePerStep = 30.f; 
     const float WorldSize = gFarZ - gNearZ;
@@ -90,7 +76,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
 
         for (int objIdx = 0; objIdx < SDFObjectCount; ++objIdx)
         {
-            SDFSceneObject SDFObject = SDFSceneBuffer[objIdx];
+            ParticleData SDFObject = SDFSceneBuffer[objIdx];
             
             const float3 objToSamplePos = (SDFObject.Pos.xyz - RayPos);
             float distToCenter = length(objToSamplePos);
