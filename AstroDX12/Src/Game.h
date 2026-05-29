@@ -66,6 +66,7 @@ protected:
     virtual void OnSimReset() = 0;
 
     std::unique_ptr<IRenderer> m_renderer;
+    HWND m_hwnd = nullptr;
 
 private:
     int m_screenWidth;

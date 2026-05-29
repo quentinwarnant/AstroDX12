@@ -9,6 +9,11 @@
 #include <Timing/GameTimer.h>
 #include <Input/KeyboardInput.h>
 
+#include <imgui.h>
+#include <imgui_impl_win32.h>
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 using namespace DirectX;
 
 namespace
@@ -148,6 +153,12 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 // Windows procedure
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    if (ImGui::GetCurrentContext() && ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
+    {
+        // ImGui consumed the input, skip normal processing
+        return true;
+    }
+
     static bool s_in_sizemove = false;
     static bool s_in_suspend = false;
     static bool s_minimized = false;
@@ -181,17 +192,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_LBUTTONDOWN:
     case WM_MBUTTONDOWN:
     case WM_RBUTTONDOWN:
-        game->OnMouseDown(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-        SetCapture(hWnd);
+        if (!(ImGui::GetCurrentContext() && ImGui::GetIO().WantCaptureMouse))
+        {
+            game->OnMouseDown(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+            SetCapture(hWnd);
+        }
         break;
     case WM_LBUTTONUP:
     case WM_MBUTTONUP:
     case WM_RBUTTONUP:
-        game->OnMouseUp(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+        if (!(ImGui::GetCurrentContext() && ImGui::GetIO().WantCaptureMouse))
+        {
+            game->OnMouseUp(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+        }
         ReleaseCapture();
         break;
     case WM_MOUSEMOVE:
-        game->OnMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+        if (!(ImGui::GetCurrentContext() && ImGui::GetIO().WantCaptureMouse))
+        {
+            game->OnMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+        }
         break;
 
     case WM_SIZE:
@@ -320,6 +340,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
     case WM_CHAR:
+        if (ImGui::GetCurrentContext() && ImGui::GetIO().WantCaptureKeyboard)
+            break;
         switch (wParam)
         {
         case 0x7a:   // Forward

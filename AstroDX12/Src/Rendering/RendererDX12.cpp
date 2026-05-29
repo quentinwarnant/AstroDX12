@@ -146,6 +146,7 @@ void RendererDX12::Init(HWND window, int width, int height)
 	m_rendererContext = {
 		.Device = m_device,
 		.CommandList = m_commandList,
+		.CommandQueue = m_commandQueue,
 		.GlobalCBVSRVUAVDescriptorHeap = m_globalCBVSRVUAVDescriptorHeap
 	};
 

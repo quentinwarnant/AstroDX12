@@ -19,6 +19,7 @@
 #include <GameContent/GPUPasses/Debugging/ComputePassVertexLineDebugDraw.h>
 #include <GameContent/GPUPasses/Compute/ComputePassFluidSim2D.h>
 #include <GameContent/GPUPasses/Compute/ComputePassPicFlip3D.h>
+#include <GameContent/GPUPasses/GraphicsPassImGui.h>
 
 #include <Rendering/RenderData/RenderConstants.h>
 
@@ -125,6 +126,11 @@ void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shade
 {
 	AstroDX::CommonMeshes::CreateCommonMeshes(*m_meshLibrary.get(), m_renderer->GetRendererContext());
 
+	// Load config (creates default file if none exists)
+	const std::string configPath = GetWorkingDirectory() + "\\demos.cfg";
+	m_demoManager.LoadConfig(configPath);
+
+
 	// --- Create all passes upfront ---
 
 	// Base Geo
@@ -193,6 +199,12 @@ void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shade
 	copyGbufferToBackBufferPass->Init(m_renderer.get(), shaderLibrary, GBufferColorViewIndex);
 	m_gpuPasses.push_back(copyGbufferToBackBufferPass);
 
+	// ImGui pass (always on, not part of DemoManager)
+	auto imguiPass = std::make_shared<GraphicsPassImGui>();
+	imguiPass->Init(m_hwnd, m_renderer->GetRendererContext(), NumFrameResources, &m_demoManager);
+	m_gpuPasses.push_back(imguiPass);
+
+
 	// --- Register demos ---
 	m_demoManager.RegisterDemo("BaseGeo",
 		{ baseGeoPass.get() });
@@ -221,9 +233,6 @@ void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shade
 		{ raymarchSDFScenePass.get(), copyGbufferToBackBufferPass.get() },
 		{ "Particles" });
 
-	// Load config (creates default file if none exists)
-	const std::string configPath = GetWorkingDirectory() + "\\demos.cfg";
-	m_demoManager.LoadConfig(configPath);
 }
 
 void AstroGameInstance::Update(float deltaTime, ivec2 cursorPos)
