@@ -98,7 +98,8 @@ void DemoManager::LoadConfig(const std::string& configPath)
 	std::ifstream file(configPath);
 	if (!file.is_open())
 	{
-		// No config file yet - write defaults
+		// No config file yet - write defaults and apply
+		ApplyEnabledStates();
 		SaveConfig();
 		return;
 	}
