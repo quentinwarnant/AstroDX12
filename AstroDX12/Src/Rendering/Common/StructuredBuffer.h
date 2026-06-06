@@ -130,6 +130,30 @@ public:
 		return UavIndex;
 	}
 
+	// Resets the default buffer contents to zero by copying from the upload buffer (which is pre-initialized to 0).
+	// Must be called on the GPU timeline via a command list.
+	void ResetToZero(ID3D12GraphicsCommandList* cmdList)
+	{
+		assert(m_initialised);
+
+		auto barrierToCopyDest = CD3DX12_RESOURCE_BARRIER::Transition(
+			m_defaultBuffer.Get(),
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+			D3D12_RESOURCE_STATE_COPY_DEST);
+		cmdList->ResourceBarrier(1, &barrierToCopyDest);
+
+		cmdList->CopyBufferRegion(
+			m_defaultBuffer.Get(), 0,
+			m_uploadBuffer.Get(), 0,
+			m_dataVector.size() * m_elementByteSize);
+
+		auto barrierToUAV = CD3DX12_RESOURCE_BARRIER::Transition(
+			m_defaultBuffer.Get(),
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		cmdList->ResourceBarrier(1, &barrierToUAV);
+	}
+
 	virtual void DisposeUploadBuffer() override
 	{
 		m_uploadBuffer = nullptr;

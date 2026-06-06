@@ -56,7 +56,7 @@ class ComputePassPhysicsChain :
 public:
     ComputePassPhysicsChain();
 
-    void Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, int32_t debugDrawBufferUAVIndex);
+    void Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, int32_t debugDrawBufferUAVIndex, int32_t debugDrawCounterUAVIndex);
     virtual void Update(const GPUPassUpdateData& updateData) override;
     virtual void Execute(
         ComPtr<ID3D12GraphicsCommandList> cmdList,
@@ -77,6 +77,7 @@ private:
     TickableResetFlag m_simNeedsReset;
 
 	int32_t m_debugDrawBufferUAVIndex = -1;
+    int32_t m_debugDrawCounterUAVIndex = -1;
 
     std::unique_ptr<StructuredBuffer<PhysicsChain::ChainElementData>> m_chainDataBufferPing;
     std::unique_ptr<StructuredBuffer<PhysicsChain::ChainElementData>> m_chainDataBufferPong;

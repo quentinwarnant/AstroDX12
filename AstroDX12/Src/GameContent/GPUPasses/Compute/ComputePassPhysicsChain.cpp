@@ -51,7 +51,7 @@ ComputePassPhysicsChain::ComputePassPhysicsChain()
     m_chainDataBufferPong = std::make_unique<StructuredBuffer<PhysicsChain::ChainElementData>>(BufferDataVector);
 }
 
-void ComputePassPhysicsChain::Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, int32_t debugDrawBufferUAVIndex)
+void ComputePassPhysicsChain::Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, int32_t debugDrawBufferUAVIndex, int32_t debugDrawCounterUAVIndex)
 {
     const auto rootPath = s2ws(DX::GetWorkingDirectory());
     {
@@ -68,7 +68,7 @@ void ComputePassPhysicsChain::Init(IRenderer* renderer, AstroTools::Rendering::S
             {
                 .ShaderRegister = 0,
                 .RegisterSpace = 0,
-                .Num32BitValues = 4
+                .Num32BitValues = 5
             },
             .ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL
         };
@@ -118,6 +118,7 @@ void ComputePassPhysicsChain::Init(IRenderer* renderer, AstroTools::Rendering::S
     // TODO (schedule init particles pass)
 
     m_debugDrawBufferUAVIndex = debugDrawBufferUAVIndex;
+    m_debugDrawCounterUAVIndex = debugDrawCounterUAVIndex;
 }
 
 void ComputePassPhysicsChain::Update(const GPUPassUpdateData& updateData)
@@ -158,7 +159,8 @@ void ComputePassPhysicsChain::Execute(
         bufferInput->GetSRVIndex(),
         bufferOutput->GetUAVIndex(),
         m_simNeedsReset.NeedsReset() ? 1 : 0,
-        m_debugDrawBufferUAVIndex
+        m_debugDrawBufferUAVIndex,
+        m_debugDrawCounterUAVIndex
     };
     cmdList->SetComputeRoot32BitConstants(
         (UINT)BindlessResourceIndicesRootSigParamIndex,

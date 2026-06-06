@@ -24,6 +24,11 @@ void GraphicsPassDebugDraw::Init(IRenderer* renderer, AstroTools::Rendering::Sha
     m_debugObjectsBuffer = std::make_unique<StructuredBuffer<GraphicsPassDebugDraw::DebugObjectData>>(BufferDataVector);
     renderer->CreateStructuredBufferAndViews(m_debugObjectsBuffer.get(), std::wstring_view(L"DebugDrawData"), true, true);
 
+    // Atomic counter buffer (single uint32, used by compute passes via InterlockedAdd)
+    std::vector<uint32_t> counterInit = { 0 };
+    m_counterBuffer = std::make_unique<StructuredBuffer<uint32_t>>(counterInit);
+    renderer->CreateStructuredBufferAndViews(m_counterBuffer.get(), std::wstring_view(L"DebugDrawCounter"), true, true);
+
 	CreateRootSignature(renderer);
 	CreatePipelineState(renderer, shaderLibrary);
 
@@ -58,7 +63,7 @@ void GraphicsPassDebugDraw::CreateRootSignature(IRenderer* renderer)
 		{
 			.ShaderRegister = 1,
 			.RegisterSpace = 0,
-			.Num32BitValues = 2 // index to the structured buffer containing the debug objects data
+			.Num32BitValues = 3 // mesh vertex SRV, debug objects SRV, counter SRV
 		}
 	};
 	slotRootParams.push_back(rootParamCBVPerObjectBindlessResourceIndices);
@@ -131,13 +136,17 @@ void GraphicsPassDebugDraw::Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, f
 	const uint32_t GraphicsBindlessResourceIndicesRootSigParamIndex = 1;
 	const std::vector<int32_t> GraphicsBindlessResourceIndices = {
 		m_debugMesh.lock()->GetVertexBufferSRV(),
-		m_debugObjectsBuffer->GetSRVIndex()
+		m_debugObjectsBuffer->GetSRVIndex(),
+		m_counterBuffer->GetSRVIndex() 
 	};
 	cmdList->SetGraphicsRoot32BitConstants(
 		(UINT)GraphicsBindlessResourceIndicesRootSigParamIndex,
 		(UINT)GraphicsBindlessResourceIndices.size(), GraphicsBindlessResourceIndices.data(), 0);
 
 	cmdList->DrawIndexedInstanced((UINT)m_debugMesh.lock()->GetVertexIndicesCount(), Privates::MaxDebugObjects, 0, 0, 0);
+
+	// Reset counter to 0 on GPU timeline for next frame's compute passes
+	m_counterBuffer->ResetToZero(cmdList.Get());
 }
 
 void GraphicsPassDebugDraw::Shutdown()

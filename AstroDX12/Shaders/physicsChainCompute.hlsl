@@ -21,6 +21,7 @@ cbuffer BindlessRenderResources : register(b0)
     int BindlessIndexChainElementBufferOutput;
     int SimNeedsReset;
     int DebugDrawBufferUAVIndex;
+    int DebugDrawCounterUAVIndex;
 };
 
 #define GROUP_SIZE 32
@@ -81,7 +82,7 @@ void HandleCollisions(inout float3 nodePos, in float nodeRadius, in CollisionCol
     }
 }
 
-void PBDSolver(float dt, float3 externalForces, uint elementCount, in CollisionCollectionData collisionData)
+void PBDSolver(float dt, float3 externalForcesAcceleration, uint elementCount, in CollisionCollectionData collisionData)
 {
     
     const uint iterationCount = 30;
@@ -102,8 +103,8 @@ void PBDSolver(float dt, float3 externalForces, uint elementCount, in CollisionC
                 float3 newPos = Pos[i];
                 const float dampeningFactor = 0.99f;
                 newPos += velocity[i] * dtIt * dampeningFactor; // velocity + Damping
-                // TODO: factor in acceleration 
-                newPos += externalForces * dtIt;
+                // factor in acceleration 
+                newPos += externalForcesAcceleration * dtItSqr;
 
                 const uint parentIdx = ParentIndex[i];
                 
@@ -155,7 +156,8 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
     }
     
     const float dt = 1.f / 60.f; // should be an input arg
-    const float3 gravity = float3(0.f, -9.81f, 0.f);
+    const float gravityScale = 1000.f;
+    const float3 gravity = float3(0.f, -9.81f, 0.f) * gravityScale;
     const uint elementCount = LANECOUNT; //TODO: should be an input arg
     
     Pos[DTid.x] = Data.Particle.Pos;
@@ -166,7 +168,8 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
     NodeRadii[DTid.x] = Data.Radius;
     
     GroupMemoryBarrierWithGroupSync();
-        // Tmp - create collision data in shader for now
+    
+    // Tmp - create collision data in shader for now
     const CollisionCollectionData collisionData = MakeCollisionData();
 
     if (DTid.x == 0)
@@ -191,16 +194,20 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
     chainDataBufferOut[DTid.x] = Data;
     
     //--------------------------------------
-    // Debug visualsiation
-    // Visualise the Chain Nodes
+    // Debug visualisation - allocate slots via atomic counter
+    RWStructuredBuffer<uint> drawDebugCounterOut = ResourceDescriptorHeap[DebugDrawCounterUAVIndex];
+    
+    uint mySlot;
+    InterlockedAdd(drawDebugCounterOut[0], 1, mySlot);
+    
     const float size = Data.Radius * 3.f;
-    drawDebugBufferOut[DTid.x].Transform = float4x4(
+    drawDebugBufferOut[mySlot].Transform = float4x4(
         float4(size, 0.f, 0.f, 0.f),
         float4(0.f, size, 0.f, 0.f),
         float4(0.f, 0.f, size, 0.f),
         float4(Data.Particle.Pos.x, Data.Particle.Pos.y, Data.Particle.Pos.z, 1.f)
     );
-    drawDebugBufferOut[DTid.x].Color = float3(0.f, 0.f, 1.f);
+    drawDebugBufferOut[mySlot].Color = float3(0.f, 0.f, 1.f);
     
     //Visualise the collision elements
     if (DTid.x == 0)
@@ -210,13 +217,15 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
             const float3 pos = collisionData.Elements[i].Pos;
             const float radius = collisionData.Elements[i].Radius;
             
-            drawDebugBufferOut[LANECOUNT + i].Transform = float4x4(
+            uint collSlot;
+            InterlockedAdd(drawDebugCounterOut[0], 1, collSlot);
+            drawDebugBufferOut[collSlot].Transform = float4x4(
                 float4(radius * 2.f, 0.f, 0.f, 0.f),
                 float4(0.f, radius * 2.f, 0.f, 0.f),
                 float4(0.f, 0.f, radius * 2.f, 0.f),
                 float4(pos.x, pos.y, pos.z, 1.f)
             );
-            drawDebugBufferOut[LANECOUNT + i].Color = float3(1.f, 1.f, 0.f);
+            drawDebugBufferOut[collSlot].Color = float3(1.f, 1.f, 0.f);
 
         }
     }

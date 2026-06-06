@@ -22,6 +22,7 @@ cbuffer BindlessRenderResources : register(b1)
 {
     int vertexDataBufferIndex;
     int debugObjectDataBufferIndex;
+    int debugCounterBufferIndex;
 }
 
 
@@ -39,6 +40,17 @@ struct VertexData
 PSInput VS(uint VertexID : SV_VertexID, uint InstanceID : SV_InstanceID)
 {
     PSInput o;
+
+    StructuredBuffer<uint> counterBuffer = ResourceDescriptorHeap[debugCounterBufferIndex];
+    uint activeCount = counterBuffer[0];
+
+    // Cull instances beyond the active count (degenerate triangle)
+    if (InstanceID >= activeCount)
+    {
+        o.PosH = float4(0, 0, 0, 0);
+        o.Color = float3(0, 0, 0);
+        return o;
+    }
 
     StructuredBuffer<DebugObjectData> objectConstantsBuffer = ResourceDescriptorHeap[debugObjectDataBufferIndex];
     StructuredBuffer<VertexData> vertexBuffer = ResourceDescriptorHeap[vertexDataBufferIndex];

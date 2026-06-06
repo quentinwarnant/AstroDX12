@@ -152,7 +152,7 @@ void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shade
 
 	// Physics Chain
 	auto physicsChainSimPass = std::make_shared<ComputePassPhysicsChain>();
-	physicsChainSimPass->Init(m_renderer.get(), shaderLibrary, debugDrawRenderPass->GetDebugObjectsBufferUAVIndex());
+	physicsChainSimPass->Init(m_renderer.get(), shaderLibrary, debugDrawRenderPass->GetDebugObjectsBufferUAVIndex(), debugDrawRenderPass->GetDebugCounterBufferUAVIndex());
 	std::weak_ptr<ComputePassPhysicsChain> physicsChainSimPassWeak = physicsChainSimPass;
 	m_gpuPasses.push_back(physicsChainSimPass);
 

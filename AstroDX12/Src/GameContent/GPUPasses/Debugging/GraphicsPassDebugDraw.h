@@ -30,6 +30,11 @@ public:
 		return m_debugObjectsBuffer->GetUAVIndex();
 	}
 
+	int32_t GetDebugCounterBufferUAVIndex() const
+	{
+		return m_counterBuffer->GetUAVIndex();
+	}
+
 private:
 	
 	void CreateRootSignature(IRenderer* renderer);
@@ -41,6 +46,7 @@ private:
 		DirectX::XMFLOAT3 Color;
 	};
 	std::unique_ptr<StructuredBuffer<DebugObjectData>> m_debugObjectsBuffer;
+	std::unique_ptr<StructuredBuffer<uint32_t>> m_counterBuffer;
 
 	ComPtr<ID3D12RootSignature> m_rootSignature = nullptr;
 	ComPtr<ID3D12PipelineState> m_pso = nullptr;
