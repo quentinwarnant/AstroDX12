@@ -1,0 +1,103 @@
+#pragma once
+
+#include <memory>
+#include <Rendering/Common/GPUPass.h>
+#include <Rendering/Compute/ComputableObject.h>
+#include <directxmath.h>
+#include <Rendering/Common/StructuredBuffer.h>
+#include <Rendering/RenderData/Mesh.h>
+#include <Rendering/Common/TickableResetFlag.h>
+
+using Microsoft::WRL::ComPtr;
+
+class IRenderer;
+class MeshLibrary;
+namespace AstroTools::Rendering
+{
+    class ShaderLibrary;
+}
+
+namespace VBDChain
+{
+
+    struct ParticleData
+    {
+        ParticleData()
+            : Pos(0.f, 0.f, 0.f)
+			, PrevPos(0.f, 0.f, 0.f)
+            , Rot(
+                1.f, 0.f, 0.f,
+                0.f, 1.f, 0.f,
+    			0.f, 0.f, 1.f)
+        {
+        }
+
+        DirectX::XMFLOAT3 Pos;
+        DirectX::XMFLOAT3 PrevPos;
+        DirectX::XMFLOAT3X3 Rot;
+    };
+
+
+    struct ChainElementData
+    {
+	    ParticleData Particle;
+	    int32_t ParentIndex;
+	    float RestLength;
+        bool Pinned;
+        float Radius;
+    };
+
+}
+
+class ComputePassVBDChain :
+    public ComputePass
+{
+public:
+    ComputePassVBDChain();
+
+    void Init(IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, int32_t debugDrawBufferUAVIndex, int32_t debugCounterBufferUAVIndex);
+    virtual void Update(const GPUPassUpdateData& updateData) override;
+    virtual void Execute(
+        ComPtr<ID3D12GraphicsCommandList> cmdList,
+        float deltaTime,
+        const FrameResource& frameResources) const override;
+    virtual void Shutdown() override;
+
+    virtual void OnSimReset() override
+    {
+        m_simNeedsReset.FlagForReset();
+    }
+
+    int32_t GetParticleReadBufferSRVHeapIndex() const;
+    int32_t GetParticleOutputBufferSRVHeapIndex() const;
+
+private:
+    int32_t m_frameIdxModulo = 0;
+    TickableResetFlag m_simNeedsReset;
+
+	int32_t m_debugDrawBufferUAVIndex = -1;
+    int32_t m_debugDrawCounterUAVIndex = -1;
+
+    std::unique_ptr<StructuredBuffer<VBDChain::ChainElementData>> m_chainDataBufferPing;
+    std::unique_ptr<StructuredBuffer<VBDChain::ChainElementData>> m_chainDataBufferPong;
+
+    std::unique_ptr<ComputableObject> m_particlesComputeObj;
+};
+
+class GraphicsPassVBDChain : public GraphicsPass
+{
+public:
+    GraphicsPassVBDChain();
+    void Init(std::weak_ptr<const ComputePassVBDChain> particlesComputePass, IRenderer* renderer, AstroTools::Rendering::ShaderLibrary& shaderLibrary, MeshLibrary& meshLibrary);
+    virtual void Update(const GPUPassUpdateData& updateData) override;
+    virtual void Execute(ComPtr<ID3D12GraphicsCommandList> cmdList, float deltaTime, const FrameResource& frameResources) const override;
+    virtual void Shutdown() override;
+
+private:
+    void CreateChainElementMesh(IRenderer* renderer, MeshLibrary& meshLibrary);
+    std::weak_ptr<IMesh> m_chainElementMesh;
+    ComPtr<ID3D12PipelineState> m_pipelineStateObject;
+    ComPtr<ID3D12RootSignature> m_rootSignature;
+
+    std::weak_ptr<const ComputePassVBDChain> m_particlesComputePass;
+};

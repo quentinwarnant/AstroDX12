@@ -15,6 +15,7 @@
 #include <GameContent/GPUPasses/Compute/ComputePassRaymarchScene.h>
 #include <GameContent/GPUPasses/GraphicsPassCopyGBufferToBackbuffer.h>
 #include <GameContent/GPUPasses/Compute/ComputePassPhysicsChain.h>
+#include <GameContent/GPUPasses/Compute/ComputePassVBDChain.h>
 #include <GameContent/GPUPasses/Debugging/GraphicsPassDebugDraw.h>
 #include <GameContent/GPUPasses/Debugging/ComputePassVertexLineDebugDraw.h>
 #include <GameContent/GPUPasses/Compute/ComputePassFluidSim2D.h>
@@ -160,6 +161,16 @@ void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shade
 	physicsChainRenderPass->Init(physicsChainSimPassWeak, m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
 	m_gpuPasses.push_back(physicsChainRenderPass);
 
+	// VBD Chain (Vertex Block Descent solver)
+	auto vbdChainSimPass = std::make_shared<ComputePassVBDChain>();
+	vbdChainSimPass->Init(m_renderer.get(), shaderLibrary, debugDrawRenderPass->GetDebugObjectsBufferUAVIndex(), debugDrawRenderPass->GetDebugCounterBufferUAVIndex());
+	std::weak_ptr<ComputePassVBDChain> vbdChainSimPassWeak = vbdChainSimPass;
+	m_gpuPasses.push_back(vbdChainSimPass);
+
+	auto vbdChainRenderPass = std::make_shared<GraphicsPassVBDChain>();
+	vbdChainRenderPass->Init(vbdChainSimPassWeak, m_renderer.get(), shaderLibrary, *m_meshLibrary.get());
+	m_gpuPasses.push_back(vbdChainRenderPass);
+
 	// Eulerian Fluid Sim 2D
 	auto fluidSim2DComputePass = std::make_shared<ComputePassFluidSim2D>();
 	fluidSim2DComputePass->Init(m_renderer.get(), shaderLibrary);
@@ -209,6 +220,10 @@ void AstroGameInstance::CreatePasses(AstroTools::Rendering::ShaderLibrary& shade
 
 	m_demoManager.RegisterDemo("PhysicsChain",
 		{ physicsChainSimPass.get(), physicsChainRenderPass.get() },
+		{ "DebugDrawRender" });
+
+	m_demoManager.RegisterDemo("VBDChain",
+		{ vbdChainSimPass.get(), vbdChainRenderPass.get() },
 		{ "DebugDrawRender" });
 
 	m_demoManager.RegisterDemo("FluidSim2D",
